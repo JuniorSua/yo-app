@@ -1,0 +1,21 @@
+# Only the agentd build inputs are needed (see computer/Dockerfile).
+**/node_modules
+**/dist
+**/.DS_Store
+**/*.log
+.git
+.gitignore
+.env
+.env.*
+secrets
+.yo-dev
+release
+e2e
+apps/web
+apps/desktop
+apps/core
+packages/avatar
+packages/testkit
+scripts
+**/test-results
+**/playwright-report

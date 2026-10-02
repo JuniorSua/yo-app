@@ -1,0 +1,90 @@
+name: Bug report
+description: Something in Yo doesn't work the way it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! You can also ask your Yo agent to "report this bug": it investigates and files the
+        same report for you (labelled `from-yo`). One problem per issue, please.
+        Security problems go to [a private advisory](https://github.com/JuniorSua/yo-app/security/advisories/new) instead.
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+      description: What you saw. Include the exact error message if there was one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open an agent and ask it to ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, exact errors, values, file paths, times. Drag images in here. Remove anything private.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: Suspected cause
+      description: Optional. Your best guess at why it happens.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested_fix
+    attributes:
+      label: Suggested fix
+      description: Optional. What you think would fix it.
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Yo version
+      description: Shown in Settings, or the git commit if you run from source.
+      placeholder: "0.1.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Where it happened
+      options:
+        - Yo.app on macOS (Apple silicon)
+        - Web UI in a browser
+        - Home PC (agent computer / core)
+        - Running from source (pnpm dev)
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: os_version
+    attributes:
+      label: OS version
+      placeholder: "macOS 26.1"
+    validations:
+      required: false

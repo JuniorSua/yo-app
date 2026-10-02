@@ -1,0 +1,48 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/vendor",
+      "!**/*.gen.ts",
+      "!**/release",
+      "!e2e/results",
+      "!e2e/playwright-report",
+      "!design",
+      "!.claude",
+      "!docs/**/*.html",
+      "!**/.build",
+      "!**/test-results",
+      "!**/.vercel"
+    ]
+  },
+  "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 110 },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": { "noExplicitAny": "off", "noArrayIndexKey": "off" },
+      "style": { "noNonNullAssertion": "off" },
+      "a11y": {
+        "useButtonType": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off",
+        "noSvgWithoutTitle": "off",
+        "noAutofocus": "off",
+        "useSemanticElements": "off"
+      },
+      "complexity": { "noForEach": "off" },
+      "correctness": { "useExhaustiveDependencies": "off" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/avatar/src/living/engine.ts"],
+      "linter": { "rules": { "correctness": { "useHookAtTopLevel": "off" } } }
+    }
+  ],
+  "javascript": { "formatter": { "quoteStyle": "double", "semicolons": "always" } },
+  "css": { "parser": { "tailwindDirectives": true } }
+}

@@ -1,0 +1,24 @@
+name: Native Mac helper
+
+# macOS runners use 10x the free minutes, so this only runs when the helper changes (or by hand from the
+# Actions tab: "Run workflow"). It is not a required check, so the path filter can't block a merge.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["apps/desktop/native/**"]
+  pull_request:
+    paths: ["apps/desktop/native/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    name: Build + test YoDeviceBridge
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - run: swift test --package-path apps/desktop/native/YoDeviceBridge
+      - run: bash apps/desktop/native/build.sh

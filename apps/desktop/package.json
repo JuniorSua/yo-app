@@ -1,0 +1,102 @@
+{
+  "name": "@yo/desktop",
+  "productName": "Yo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Yo \u2014 your AI, your subscription, its own computer.",
+  "author": "JuniorSua",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs && electron .",
+    "typecheck": "tsc --noEmit -p .",
+    "dist": "pnpm run package && node scripts/install-app.mjs",
+    "package": "node build.mjs --release && bash native/build.sh && node scripts/package-app.mjs && node scripts/sign-app.mjs"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "@yo/contracts": "workspace:*",
+    "electron": "44.5.0",
+    "electron-builder": "26.15.3",
+    "electron-updater": "6.8.9",
+    "esbuild": "^0.25.0",
+    "ws": "8.22.0"
+  },
+  "build": {
+    "appId": "dev.yo.app",
+    "productName": "Yo",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../core/dist",
+        "to": "core",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../web/dist",
+        "to": "web",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dist/yo-config.json",
+        "to": "yo-config.json"
+      },
+      {
+        "from": "dist/app-update.yml",
+        "to": "app-update.yml"
+      },
+      {
+        "from": "../../computer/compose.runtime.yaml",
+        "to": "compose.runtime.yaml"
+      },
+      {
+        "from": "native/bin/YoDeviceBridge",
+        "to": "YoDeviceBridge"
+      },
+      {
+        "from": "../../NOTICE",
+        "to": "NOTICE"
+      },
+      {
+        "from": "../../LICENSE",
+        "to": "LICENSE"
+      }
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "identity": null,
+      "target": [
+        "dir"
+      ],
+      "darkModeSupport": true,
+      "extendInfo": {
+        "LSUIElement": false,
+        "NSHumanReadableCopyright": "Yo",
+        "NSDocumentsFolderUsageDescription": "Yo opens only the folders and files you choose to share with it.",
+        "NSDesktopFolderUsageDescription": "Yo opens only the folders and files you choose to share with it.",
+        "NSDownloadsFolderUsageDescription": "Yo opens only the folders and files you choose to share with it.",
+        "NSRemovableVolumesUsageDescription": "Yo opens only the folders and files you choose to share with it.",
+        "NSNetworkVolumesUsageDescription": "Yo opens only the folders and files you choose to share with it.",
+        "NSContactsUsageDescription": "Yo looks up the people you ask about, only after you share Contacts with it.",
+        "NSCalendarsFullAccessUsageDescription": "Yo reads and, with your approval, adds or changes events, only after you share Calendar with it.",
+        "NSCalendarsUsageDescription": "Yo reads and, with your approval, adds or changes events, only after you share Calendar with it.",
+        "NSRemindersFullAccessUsageDescription": "Yo reads and, with your approval, adds or completes reminders, only after you share Reminders with it.",
+        "NSRemindersUsageDescription": "Yo reads and, with your approval, adds or completes reminders, only after you share Reminders with it.",
+        "NSAppleEventsUsageDescription": "Yo searches, reads and (with your approval) adds notes or mail drafts, only after you share Notes or Mail with it. Yo never sends mail."
+      }
+    }
+  }
+}

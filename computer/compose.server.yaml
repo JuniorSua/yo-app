@@ -1,0 +1,70 @@
+# Yo on a home server: Yo's core AND the agent's computer both run on an always-on Linux machine (or Windows
+# with WSL 2), so agents keep working while your Mac is closed. The Mac app reaches core through an SSH
+# tunnel. Walkthrough: the first agent's setup chat → "Home server" (apps/web/src/components/setup/homeServer.ts).
+#
+# Next to this file, a private .env (chmod 600):
+#   YO_AGENTD_TOKEN=<64 hex>   (openssl rand -hex 32)
+#   YO_UID=<id -u>  YO_GID=<id -g>   (owner of ./core-data)
+#   YO_TZ=Europe/Lisbon        (optional, your time zone)
+# Images (built from this checkout; see the setup chat): yo-core:local and yo-computer:local.
+#   docker compose -f compose.server.yaml up -d
+#
+# Both services listen on 127.0.0.1 only. Never publish 7777 or 7801 to your network or the internet:
+# the SSH tunnel is the way in.
+name: yo-server
+services:
+  yo-computer:
+    image: ${YO_COMPUTER_IMAGE:-yo-computer:local}
+    ports:
+      - "127.0.0.1:7801:7801"
+    environment:
+      YO_AGENTD_TOKEN: ${YO_AGENTD_TOKEN:?set YO_AGENTD_TOKEN in .env}
+      TZ: ${YO_TZ:-UTC}
+    shm_size: 1g
+    mem_limit: ${YO_COMPUTER_MEMORY:-4500m}
+    pids_limit: 4096
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - yo-data:/data
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  yo-core:
+    image: ${YO_CORE_IMAGE:-yo-core:local}
+    # Host networking bound to 127.0.0.1: reachable from the server itself (and its SSH tunnel) only, never
+    # from the agent's container.
+    network_mode: host
+    user: "${YO_UID:-1000}:${YO_GID:-1000}"
+    environment:
+      YO_AGENTD_TOKEN: ${YO_AGENTD_TOKEN:?set YO_AGENTD_TOKEN in .env}
+      YO_AGENTD_URL: http://127.0.0.1:7801
+      YO_HOST: 127.0.0.1
+      YO_PORT: "7777"
+      TZ: ${YO_TZ:-UTC}
+    volumes:
+      - ./core-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 1g
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - yo-computer
+    restart: unless-stopped
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  yo-data:

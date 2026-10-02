@@ -1,0 +1,16 @@
+node_modules
+dist
+release
+.DS_Store
+*.log
+.yo-dev
+e2e/results
+test-results
+playwright-report
+.env
+/secrets/
+design/*.zip
+apps/desktop/native/bin/
+.build/
+.claude/worktrees/
+__pycache__/

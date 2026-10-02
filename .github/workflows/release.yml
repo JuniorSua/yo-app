@@ -1,0 +1,251 @@
+name: Release
+
+# Public builds of Yo, published as a GitHub Release with Yo-<version>-arm64.dmg/.zip, plus the agent's
+# computer image on GHCR (ghcr.io/<owner>/yo-computer:<version> and :latest) that those builds pull.
+#
+# Runs ONLY in the public repo JuniorSua/yo-app (every job checks): macOS minutes cost 10x on the private
+# development repo, and releases live in the public one. Start it by pushing a tag v0.1.N there (the
+# maintainer's publish script does, right after it publishes a snapshot), or from the Actions tab with an
+# existing tag. The tag must match the snapshot's VERSION file when there is one.
+#
+# The app is ad-hoc signed (no paid Apple Developer ID): users open it once with right-click → Open, and it
+# updates through the "github" channel (it offers Download for newer releases; see apps/desktop/src/updates.ts).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release, e.g. v0.1.313"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Version from the tag
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+      image: ${{ steps.v.outputs.image }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+      - id: v
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tags look like v0.1.313, not $TAG"; exit 1
+          fi
+          version="${TAG#v}"
+          if [ -f VERSION ] && [ "$(tr -d '[:space:]' < VERSION)" != "$version" ]; then
+            echo "::error::Tag $TAG doesn't match VERSION ($(cat VERSION))"; exit 1
+          fi
+          {
+            echo "tag=$TAG"
+            echo "version=$version"
+            echo "image=ghcr.io/${OWNER,,}/yo-computer"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing Yo $version"
+
+  computer:
+    name: Computer image (${{ matrix.arch }})
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: arm64 # Apple silicon (Colima)
+            runner: ubuntu-24.04-arm
+          - arch: amd64 # home servers
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Pushed by digest only; the manifest job below tags both architectures together.
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: computer/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.description=Yo agent's computer (agentd, desktop and browser)
+          outputs: type=image,name=${{ needs.version.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=computer-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=computer-${{ matrix.arch }}
+      - name: Save the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p digests
+          touch "digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  computer-manifest:
+    name: Computer image (tag both architectures)
+    needs: [version, computer]
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: digest-*
+          path: digests
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag <version> and latest
+        working-directory: digests
+        env:
+          IMAGE: ${{ needs.version.outputs.image }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          refs=()
+          for d in *; do refs+=("$IMAGE@sha256:$d"); done
+          [ "${#refs[@]}" -eq 2 ] || { echo "::error::expected 2 digests, got ${#refs[@]}"; exit 1; }
+          docker buildx imagetools create -t "$IMAGE:$VERSION" -t "$IMAGE:latest" "${refs[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+
+  mac:
+    name: Yo.app (macOS arm64, ad-hoc signed)
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    # Apple silicon. macos-15 like native.yml: the helper needs Swift 6 (swift-tools-version 6.0).
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6 # pnpm version comes from "packageManager" in package.json
+      # No dependency cache on purpose: a release builds from a clean install (no cache poisoning).
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile
+      - name: Build core and web (bundled in the app)
+        run: pnpm --filter @yo/core --filter @yo/web build
+      # package = desktop build (channel baked in) + native helper + electron-builder + sign-app.mjs (ad-hoc).
+      - name: Package and sign Yo.app
+        env:
+          YO_APP_VERSION: ${{ needs.version.outputs.version }}
+          YO_UPDATE_CHANNEL: github
+          YO_UPDATE_REPO: ${{ github.repository }}
+          YO_ADHOC_SIGN: "1"
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm --filter @yo/desktop package
+      - name: Make the dmg and zip
+        run: node apps/desktop/scripts/make-dist.mjs
+      - name: Check the build
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          app=apps/desktop/release/mac-arm64/Yo.app
+          test "$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")" = "$VERSION"
+          codesign --verify --deep --strict "$app"
+          codesign -dv "$app" 2>&1 | grep -q 'Signature=adhoc'
+          grep -q '"computerImageRepo"' "$app/Contents/Resources/yo-config.json"
+          ls -la apps/desktop/release/dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: yo-mac
+          path: apps/desktop/release/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish the GitHub Release
+    # Only once the app AND the computer image it pulls exist.
+    needs: [version, computer-manifest, mac]
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: yo-mac
+          path: dist
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          IMAGE: ${{ needs.version.outputs.image }}
+        run: |
+          set -euo pipefail
+          cat > notes.md <<EOF
+          ## Install
+
+          1. Download **Yo-${VERSION}-arm64.dmg** below (Apple silicon Macs), open it and drag **Yo** into **Applications**.
+          2. **First open:** this build isn't notarized by Apple (there's no paid Developer ID yet), so macOS warns
+             the first time. In Applications, **right-click Yo → Open**, then **Open** again (on macOS 15 and
+             later: open it once, then **System Settings → Privacy & Security → Open Anyway**). If macOS says
+             Yo "is damaged" or still refuses, run this once in Terminal and open Yo normally:
+
+             \`\`\`
+             xattr -dr com.apple.quarantine /Applications/Yo.app
+             \`\`\`
+
+          Updating: Yo tells you when a newer release is out (the update button, bottom left). Download it here and
+          replace the app in Applications; your agents and settings stay.
+
+          The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it starts it).
+          EOF
+          files=(dist/*.dmg dist/*.zip)
+          if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" -R "$REPO" --clobber
+            gh release edit "$TAG" -R "$REPO" --notes-file notes.md
+          else
+            gh release create "$TAG" "${files[@]}" -R "$REPO" --verify-tag --title "Yo $VERSION" --notes-file notes.md
+          fi

@@ -1,0 +1,31 @@
+{
+  "name": "yo",
+  "private": true,
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:core": "pnpm --filter @yo/core dev",
+    "dev:web": "pnpm --filter @yo/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "computer:build": "docker compose build yo-computer",
+    "computer:up": "docker compose up -d yo-computer",
+    "app:build": "pnpm --filter @yo/desktop dist",
+    "app:package": "pnpm --filter @yo/desktop package",
+    "app:publish": "pnpm --filter @yo/core build && pnpm --filter @yo/web build && YO_UPDATE_CHANNEL=feed pnpm app:package && node apps/desktop/scripts/publish-app.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

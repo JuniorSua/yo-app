@@ -1,0 +1,152 @@
+name: CI
+
+# Runs on every pull request and on every push to main.
+# Branch rules should require only the final `ci` job: it passes when every other job passed
+# (or was skipped on purpose for a docs-only change), so jobs can be added or renamed freely.
+# No `paths-ignore` here on purpose: a required check that never starts blocks the merge forever.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run per PR (a new push cancels the old run). Every push to main gets its own run, never cancelled.
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Detect docs-only changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')"
+          elif [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            # The compare API lists at most 300 files; a bigger push just runs everything.
+            files="$(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq 'if (.files | length) >= 300 then "FORCE_FULL_RUN" else .files[].filename end' || echo FORCE_FULL_RUN)"
+          else
+            files="FORCE_FULL_RUN"
+          fi
+          echo "Changed files:"; echo "$files" | sed 's/^/  /'
+          # Docs-only = every file is Markdown, docs media, a GitHub form/owners file, NOTICE/LICENSE,
+          # or a reference screenshot. Anything else (including workflows and scripts) runs the full suite.
+          docs='(\.md$|^docs/.*\.(html|png|jpe?g|gif|svg)$|^NOTICE$|^LICENSE|^\.github/ISSUE_TEMPLATE/|^\.github/CODEOWNERS$|^e2e/screenshots/.*\.png$)'
+          other="$(grep -Ev "$docs" <<<"$files" || true)"
+          if [ -n "$files" ] && [ -z "$other" ]; then
+            echo "Docs-only change: skipping the build and test jobs."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  check:
+    name: Typecheck, lint, unit tests, build
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # pnpm version comes from "packageManager" in package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint (biome)
+        run: pnpm lint
+      - name: Unit + integration tests (vitest)
+        run: pnpm test
+      - name: Build (core, web, agentd, desktop main)
+        run: pnpm build
+
+  e2e:
+    name: UI end-to-end (mock backend)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright version
+        id: pw
+        run: |
+          echo "CPU cores: $(nproc)"
+          echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - name: Install Chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      # Mostly a no-op (the runner image already has Chrome's libraries), but it runs apt-get update, which once
+      # took 12 minutes on a slow mirror. Capped so a slow mirror can't eat the minutes; the tests still run.
+      - name: Install Chromium system libraries (browser restored from cache)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 3
+        continue-on-error: true
+        run: pnpm exec playwright install-deps chromium
+      # The `screenshots` tests only write reference images for humans (e2e/screenshots); they don't
+      # compare anything, so CI skips them.
+      - name: Playwright (chromium)
+        run: pnpm e2e --grep-invert screenshots
+      - name: Upload report, traces and failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/results
+          retention-days: 7
+
+  ci:
+    name: ci
+    if: always()
+    needs: [changes, check, e2e]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every job to pass
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+          DOCS_ONLY: ${{ needs.changes.outputs.code == 'false' }}
+        run: |
+          echo "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          # `changes` must succeed. The others must succeed, or be skipped because the change is docs-only.
+          echo "$RESULTS" | jq -e '
+            .changes.result == "success" and
+            ([to_entries[] | select(.key != "changes") | .value.result]
+              | all(. == "success" or (. == "skipped" and $docsOnly)))
+          ' --argjson docsOnly "$DOCS_ONLY" > /dev/null

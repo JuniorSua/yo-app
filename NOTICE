@@ -1,0 +1,17 @@
+Yo
+Copyright (c) 2026 JuniorSua (https://github.com/JuniorSua)
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes ideas and adapted code patterns from:
+
+- T3 Code (https://github.com/pingdotgg/t3code)
+  Copyright (c) 2026 T3 Tools Inc. — MIT License
+  (provider driver/adapter pattern, normalized provider runtime events)
+
+- Rakazo (https://github.com/elie222/rakazo)
+  Copyright Inbox Zero Inc. — Apache License 2.0
+  (agent computer image approach: Xvfb + Chromium CDP + VNC; bot persona model;
+  Telegram channel: getUpdates long polling with no public URL, one poller per bot (409),
+  unknown senders ignored — see apps/core/src/channels/telegram.ts)
+
+- noVNC (https://github.com/novnc/noVNC) — MPL-2.0
