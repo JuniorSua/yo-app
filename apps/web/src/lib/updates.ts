@@ -58,11 +58,11 @@ export interface DesktopUpdateState {
   message: string | null;
   errorContext: "check" | "download" | "install" | null;
   canRetry: boolean;
-  /** github channel: the release page Download opens. */
+  /** github channel: the release page (Download opens its .dmg when it has one). */
   releaseUrl?: string | null;
 }
 
-/** A public build's "Yo 0.1.N is available: Download" (opens the release page; nothing downloads in the app). */
+/** A public build's "Yo 0.1.N is available: Download" (opens the release's .dmg download, or its page; nothing installs in the app). */
 export function isGithubDownload(d: DesktopUpdateState | null | undefined): boolean {
   return d?.channel === "github" && d.status === "available" && !!d.availableVersion;
 }

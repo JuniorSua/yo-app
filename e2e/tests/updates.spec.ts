@@ -66,8 +66,34 @@ test.describe("update notices", () => {
     await expect(card).toContainText("Yo 0.1.313 is ready");
     await expect(card).toContainText("Restart to update.");
     await page.getByTestId("update-primary").click();
-    await expect(page.getByTestId("update-primary")).toHaveText("Restarting…");
-    await expect.poll(() => mock(page, "updates.installs")).toBe(1);
+    // It shows the install for a couple of seconds (a real update is already downloaded, so it'd be a blink),
+    // then restarts.
+    await expect(card).toContainText("Installing Yo 0.1.313…");
+    await expect(card.getByTestId("update-progress")).toBeVisible();
+    await expect(page.getByTestId("update-primary")).toHaveCount(0);
+    const clicked = Date.now();
+    await expect(card).toContainText("Restarting Yo…");
+    await expect.poll(() => mock(page, "updates.installs"), { timeout: 8000 }).toBe(1);
+    expect(Date.now() - clicked).toBeGreaterThan(1500);
+    // The update button shows it too.
+    await expect(page.getByTestId("update-button")).toHaveAttribute("data-state", "applying");
+  });
+
+  test("Refresh from the update button shows progress before it reloads", async ({ page }) => {
+    await openWith(page, "web");
+    await page.getByTestId("update-later").click();
+    await page.evaluate(() => {
+      (window as any).__stillHere = true;
+    });
+    await page.getByTestId("update-button").click();
+    await page.getByTestId("update-refresh").click();
+    const panel = page.getByTestId("update-panel");
+    await expect(panel).toContainText("Updating Yo…");
+    await expect(panel.getByTestId("update-progress")).toBeVisible();
+    await page.waitForTimeout(1000);
+    expect(await page.evaluate(() => (window as any).__stillHere)).toBe(true);
+    await page.waitForEvent("framenavigated", { timeout: 8000 });
+    await expect(page.getByTestId("sidebar")).toBeVisible();
   });
 
   test("Restart asks first while an agent is working on this Mac", async ({ page }) => {
@@ -100,7 +126,7 @@ test.describe("update notices", () => {
     await page.getByTestId("update-primary").click();
     await expect(page.getByTestId("update-primary")).toHaveText("Restart anyway");
     await page.getByTestId("update-primary").click();
-    await expect.poll(() => mock(page, "updates.installs")).toBe(1);
+    await expect.poll(() => mock(page, "updates.installs"), { timeout: 8000 }).toBe(1);
   });
 
   test("download progress and a failed download stay quiet on the button; a click recovers", async ({

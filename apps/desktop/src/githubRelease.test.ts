@@ -8,9 +8,11 @@ import {
   GITHUB_CHECK_INTERVAL_MS,
   GITHUB_RETRY_MS,
   githubCheckDue,
+  isReleaseAssetUrl,
   isReleasePageUrl,
   latestReleaseApiUrl,
   readLatestRelease,
+  releaseDmgUrl,
   releaseVersion,
 } from "./githubRelease";
 
@@ -23,6 +25,14 @@ const release = (tag: string, extra: Record<string, unknown> = {}) => ({
   prerelease: false,
   ...extra,
 });
+const download = (tag: string, name: string) => `https://github.com/${REPO}/releases/download/${tag}/${name}`;
+const asset = (tag: string, name: string) => ({ name, browser_download_url: download(tag, name) });
+/** A release as published: the .zip (for the setup prompt) and the .dmg (the app). */
+const assetsOf = (tag: string) => {
+  const v = tag.slice(1);
+  return [asset(tag, `Yo-${v}-arm64.zip`), asset(tag, `Yo-${v}-arm64.dmg`)];
+};
+const withAssets = (tag: string) => release(tag, { assets: assetsOf(tag) });
 
 describe("GitHub Releases check", () => {
   it("asks the public repo's latest release", () => {
@@ -75,6 +85,63 @@ describe("GitHub Releases check", () => {
       readLatestRelease(200, release("v0.1.400", { html_url: "https://evil.example/x" }), "0.1.312", REPO)
         .kind,
     ).toBe("quiet");
+  });
+
+  it("offers the .dmg itself, so Download starts the download instead of showing a page of files", () => {
+    expect(readLatestRelease(200, withAssets("v0.1.400"), "0.1.312", REPO)).toEqual({
+      kind: "newer",
+      version: "0.1.400",
+      url: download("v0.1.400", "Yo-0.1.400-arm64.dmg"),
+    });
+  });
+
+  it("falls back to the release page when there's no usable .dmg", () => {
+    const dmg = "Yo-0.1.400-arm64.dmg";
+    for (const assets of [
+      undefined,
+      null,
+      "Yo.dmg",
+      [],
+      [null, 42, {}],
+      [asset("v0.1.400", "Yo-0.1.400-arm64.zip")],
+      [asset("v0.1.400", "Yo-0.1.400-x64.dmg")],
+      [asset("v0.1.400", "Yo-0.1.400-arm64.dmg.sha256")],
+      // A .dmg hosted anywhere but this repo's release downloads is never opened.
+      [{ name: dmg, browser_download_url: `https://evil.example/${dmg}` }],
+      [
+        {
+          name: dmg,
+          browser_download_url: `https://github.com/someone/else/releases/download/v0.1.400/${dmg}`,
+        },
+      ],
+      [{ name: dmg, browser_download_url: page("v0.1.400") }],
+      [{ name: dmg, browser_download_url: 42 }],
+    ])
+      expect(readLatestRelease(200, release("v0.1.400", { assets }), "0.1.312", REPO)).toEqual({
+        kind: "newer",
+        version: "0.1.400",
+        url: page("v0.1.400"),
+      });
+  });
+
+  it("finds the .dmg among the release's files", () => {
+    expect(releaseDmgUrl(assetsOf("v0.1.270"), REPO)).toBe(download("v0.1.270", "Yo-0.1.270-arm64.dmg"));
+    expect(releaseDmgUrl([asset("v0.1.270", "Yo-0.1.270-arm64.zip")], REPO)).toBeNull();
+    expect(releaseDmgUrl(undefined, REPO)).toBeNull();
+  });
+
+  it("downloads only from https://github.com/<repo>/releases/download/…", () => {
+    expect(isReleaseAssetUrl(download("v0.1.270", "Yo-0.1.270-arm64.dmg"), REPO)).toBe(true);
+    for (const bad of [
+      page("v0.1.270"),
+      download("v0.1.270", "Yo.dmg").replace("https:", "http:"),
+      download("v0.1.270", "Yo.dmg").replace("github.com", "objects.githubusercontent.com"),
+      `https://github.com/someone/else/releases/download/v0.1.270/Yo.dmg`,
+      `https://github.com/${REPO}/releases/download/${"../".repeat(4)}evil/Yo.dmg`,
+      "not a url",
+      null,
+    ])
+      expect(isReleaseAssetUrl(bad, REPO)).toBe(false);
   });
 
   it("opens only https://github.com/<repo>/releases/… pages", () => {

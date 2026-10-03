@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { desktopStatusText, isGithubDownload } from "../../lib/updates";
 import { updates, useUpdates } from "../../stores/updates";
+import { ApplyBar, applyCopy, useApplying, useApplyLate } from "../UpdateProgress";
 import { Button } from "../ui/button";
 import { Group, Row } from "./parts";
 
@@ -12,6 +13,9 @@ export function UpdatesSettings() {
   const refresh = useUpdates((s) => s.refresh);
   const webCheckedAt = useUpdates((s) => s.webCheckedAt);
   const [checking, setChecking] = useState(false);
+  const applying = useApplying();
+  const late = useApplyLate(applying);
+  const applyingLabel = applying ? applyCopy(applying, late).short : null;
 
   const check = async () => {
     setChecking(true);
@@ -43,11 +47,23 @@ export function UpdatesSettings() {
         {desktop && (
           <Row
             title={`Yo app ${desktop.currentVersion}`}
-            desc={<span data-testid="desktop-update-status">{desktopStatusText(desktop)}</span>}
+            desc={
+              <>
+                <span data-testid="desktop-update-status">{desktopStatusText(desktop)}</span>
+                {applying?.kind === "restart" && (
+                  <ApplyBar applying={applying} className="mt-2 max-w-[220px]" />
+                )}
+              </>
+            }
           >
             {desktop.status === "downloaded" ? (
-              <Button size="sm" variant="primary" onClick={() => void updates.install()}>
-                Restart to update
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={!!applying}
+                onClick={() => void updates.apply("restart").catch(() => undefined)}
+              >
+                {applying?.kind === "restart" ? applyingLabel : "Restart to update"}
               </Button>
             ) : isGithubDownload(desktop) ? (
               <Button
@@ -65,11 +81,23 @@ export function UpdatesSettings() {
         )}
         <Row
           title={ownBuild ? `Server build ${serverBuild ?? ownBuild}` : "Server"}
-          desc={<span data-testid="web-update-status">{serverText}</span>}
+          desc={
+            <>
+              <span data-testid="web-update-status">{serverText}</span>
+              {applying?.kind === "refresh" && (
+                <ApplyBar applying={applying} className="mt-2 max-w-[220px]" />
+              )}
+            </>
+          }
         >
           {refresh ? (
-            <Button size="sm" variant="primary" onClick={updates.refresh}>
-              Refresh
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={!!applying}
+              onClick={() => void updates.apply("refresh")}
+            >
+              {applying?.kind === "refresh" ? applyingLabel : "Refresh"}
             </Button>
           ) : !desktop && ownBuild ? (
             checkButton

@@ -10,6 +10,7 @@ import { type Notice, pickNotice } from "../lib/updates";
 import { cn } from "../lib/utils";
 import { useApp } from "../stores/app";
 import { noticeInput, updates, useUpdates } from "../stores/updates";
+import { ApplyBar, applyCopy, useApplyFill, useApplying, useApplyLate } from "./UpdateProgress";
 import { Button } from "./ui/button";
 import { Tip } from "./ui/overlay";
 
@@ -43,24 +44,26 @@ const EMPTY = { kind: null, mode: null } as const;
 function UpdateCard({ notice, floating }: { notice: Notice; floating: boolean }) {
   const version = useUpdates((s) => s.desktop?.downloadedVersion);
   const busy = useLocalAgentsWorking();
+  const applying = useApplying();
+  const late = useApplyLate(applying);
   const [confirming, setConfirming] = useState(false);
-  const [restarting, setRestarting] = useState(false);
   const restart = notice.kind === "restart";
 
   const install = () => {
     if (busy && !confirming) return setConfirming(true);
-    setRestarting(true);
-    void updates.install().catch(() => setRestarting(false));
+    void updates.apply("restart").catch(() => undefined);
   };
 
-  const copy = confirming
-    ? { title: "Agents are still working", line: "Restarting Yo stops what they're doing on this Mac." }
-    : restart
-      ? {
-          title: version ? `Yo ${version} is ready` : "Yo is ready",
-          line: "Restart to update.",
-        }
-      : { title: "Yo was updated", line: "Refresh to load the new version." };
+  const copy = applying
+    ? applyCopy(applying, late)
+    : confirming
+      ? { title: "Agents are still working", line: "Restarting Yo stops what they're doing on this Mac." }
+      : restart
+        ? {
+            title: version ? `Yo ${version} is ready` : "Yo is ready",
+            line: "Restart to update.",
+          }
+        : { title: "Yo was updated", line: "Refresh to load the new version." };
 
   return (
     <div
@@ -75,32 +78,41 @@ function UpdateCard({ notice, floating }: { notice: Notice; floating: boolean })
     >
       <div className="flex items-start gap-2.5">
         <span className="mt-px grid size-7 shrink-0 place-items-center rounded-lg bg-brand/15 text-brand-ink">
-          {restart ? <Sparkles className="size-[15px]" /> : <RefreshCw className="size-[15px]" />}
+          {restart || applying?.kind === "restart" ? (
+            <Sparkles className="size-[15px]" />
+          ) : (
+            <RefreshCw className="size-[15px]" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="font-medium text-base">{copy.title}</div>
           <div className="text-muted text-sm">{copy.line}</div>
         </div>
       </div>
-      <div className="mt-2.5 flex justify-end gap-1.5">
-        <Button
-          size="sm"
-          variant="ghost"
-          data-testid="update-later"
-          onClick={() => (confirming ? setConfirming(false) : updates.later(restart ? "restart" : "refresh"))}
-        >
-          {confirming ? "Wait" : "Later"}
-        </Button>
-        <Button
-          size="sm"
-          variant="primary"
-          data-testid="update-primary"
-          disabled={restarting}
-          onClick={restart ? install : updates.refresh}
-        >
-          {restart ? (restarting ? "Restarting…" : confirming ? "Restart anyway" : "Restart") : "Refresh"}
-        </Button>
-      </div>
+      {applying ? (
+        <ApplyBar applying={applying} className="mt-3" />
+      ) : (
+        <div className="mt-2.5 flex justify-end gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            data-testid="update-later"
+            onClick={() =>
+              confirming ? setConfirming(false) : updates.later(restart ? "restart" : "refresh")
+            }
+          >
+            {confirming ? "Wait" : "Later"}
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            data-testid="update-primary"
+            onClick={restart ? install : () => void updates.apply("refresh")}
+          >
+            {restart ? (confirming ? "Restart anyway" : "Restart") : "Refresh"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -108,6 +120,8 @@ function UpdateCard({ notice, floating }: { notice: Notice; floating: boolean })
 function UpdatePill({ notice }: { notice: Notice }) {
   const desktop = useUpdates((s) => s.desktop);
   const busy = useLocalAgentsWorking();
+  const applying = useApplying();
+  const late = useApplyLate(applying);
   const percent = Math.round(desktop?.percent ?? 0);
 
   let icon: ReactNode;
@@ -120,12 +134,15 @@ function UpdatePill({ notice }: { notice: Notice }) {
       label = "Restart to update";
       trailing = desktop?.downloadedVersion ?? null;
       // With agents working on this Mac, bring the card back so it can ask first.
-      onClick = () => (busy ? useUpdates.setState({ laterVersion: null }) : void updates.install());
+      onClick = () =>
+        busy
+          ? useUpdates.setState({ laterVersion: null })
+          : void updates.apply("restart").catch(() => undefined);
       break;
     case "refresh":
       icon = <RefreshCw />;
       label = "Refresh to update";
-      onClick = updates.refresh;
+      onClick = () => void updates.apply("refresh");
       break;
     case "downloading":
       icon = <ArrowDownToLine />;
@@ -151,6 +168,11 @@ function UpdatePill({ notice }: { notice: Notice }) {
       onClick = () => void updates.retry();
   }
 
+  if (applying) {
+    label = applyCopy(applying, late).short;
+    onClick = undefined;
+  }
+
   const pill = (
     <button
       data-testid="update-pill"
@@ -166,7 +188,8 @@ function UpdatePill({ notice }: { notice: Notice }) {
       {icon}
       <span className="truncate">{label}</span>
       {trailing && <span className="ml-auto shrink-0 text-faint text-xs tabular-nums">{trailing}</span>}
-      {notice.kind === "downloading" && (
+      {applying && <PillBar />}
+      {!applying && notice.kind === "downloading" && (
         <span className="absolute inset-x-0 bottom-0 h-[2px] bg-border" aria-hidden>
           <span
             className="block h-full bg-link transition-[width] duration-300 ease-out"
@@ -178,4 +201,26 @@ function UpdatePill({ notice }: { notice: Notice }) {
   );
   if (notice.kind === "error" && desktop?.message) return <Tip label={desktop.message}>{pill}</Tip>;
   return pill;
+}
+
+/** The pill's thin bottom bar while an update is applied. */
+function PillBar() {
+  const applying = useApplying();
+  if (!applying) return null;
+  return <PillFill key={applying.startedAt} />;
+}
+
+function PillFill() {
+  const { fraction, transition } = useApplyFill(useApplying()!);
+  return (
+    <span className="absolute inset-x-0 bottom-0 h-[2px] bg-border" aria-hidden>
+      <span
+        className="block h-full bg-link"
+        style={{
+          width: `${fraction * 100}%`,
+          transition: transition === "none" ? "none" : `width ${transition}`,
+        }}
+      />
+    </span>
+  );
 }

@@ -131,6 +131,173 @@
   for (const a of $$('a[href="#first-open"]')) a.addEventListener("click", openFirstOpen);
   if (location.hash === "#first-open") openFirstOpen();
 
+  // ------------------------------------------------------ Download (.dmg)
+  // Every Download link points at the latest release page (works without JS). With JS, a click on a Mac starts
+  // the .dmg itself, found through GitHub's public API (CORS, no token; looked up once after load and cached),
+  // and a small panel says what to do next. Other computers get a "Mac-only for now" panel instead. If GitHub
+  // doesn't answer or the release has no .dmg, the link just opens the release page as before.
+  const RELEASE_API = "https://api.github.com/repos/JuniorSua/yo-app/releases/latest";
+  const DMG_PATH = "/JuniorSua/yo-app/releases/download/";
+  const isDmgUrl = (raw) => {
+    try {
+      const u = new URL(raw);
+      return (
+        u.protocol === "https:" &&
+        u.hostname === "github.com" &&
+        !u.port &&
+        !u.username &&
+        !u.password &&
+        u.pathname.startsWith(DMG_PATH) &&
+        u.pathname.endsWith(".dmg")
+      );
+    } catch {
+      return false;
+    }
+  };
+  let dmg = null; // { url, name } once found
+  let dmgLookup = null;
+  const findDmg = () => {
+    dmgLookup ??= fetch(RELEASE_API)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((release) => {
+        const asset = (Array.isArray(release?.assets) ? release.assets : []).find(
+          (a) =>
+            typeof a?.name === "string" && a.name.endsWith("-arm64.dmg") && isDmgUrl(a.browser_download_url),
+        );
+        if (!asset) return null;
+        dmg = { url: asset.browser_download_url, name: asset.name };
+        for (const a of $$("[data-dl-direct]")) a.href = dmg.url;
+        for (const n of $$("[data-dl-name]")) n.textContent = dmg.name;
+        return dmg;
+      })
+      .catch(() => null)
+      .then((found) => {
+        if (!found) dmgLookup = null; // let the next click ask again
+        return found;
+      });
+    return dmgLookup;
+  };
+  if ("requestIdleCallback" in window) requestIdleCallback(findDmg, { timeout: 2500 });
+  else setTimeout(findDmg, 800);
+
+  // Yo is Mac-only for now. iPhones say "like Mac OS X" and iPads say "Macintosh" (but have touch).
+  const isMac = (() => {
+    const platform = navigator.userAgentData?.platform;
+    if (platform) return platform === "macOS";
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod|Android/i.test(ua)) return false;
+    return /Macintosh/.test(ua) && !(navigator.maxTouchPoints > 1);
+  })();
+
+  const panel = document.querySelector("[data-dl-panel]");
+  let panelAnchor = null;
+  let panelReturn = null;
+  const placePanel = () => {
+    if (!panel || panel.hidden) return;
+    const r = panelAnchor?.getBoundingClientRect();
+    // Phones, and a link that's gone (the mobile menu closes on click): a sheet along the bottom.
+    const sheet = window.innerWidth < 640 || !r || (r.width === 0 && r.height === 0);
+    panel.classList.toggle("is-sheet", sheet);
+    if (sheet) {
+      panel.style.top = "";
+      panel.style.left = "";
+      return;
+    }
+    const m = 16;
+    const gap = 10;
+    const w = panel.offsetWidth;
+    const h = panel.offsetHeight;
+    let top = r.bottom + gap;
+    if (top + h > window.innerHeight - m && r.top - gap - h >= m) top = r.top - gap - h;
+    top = Math.max(m, Math.min(top, window.innerHeight - h - m));
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.left = `${Math.round(Math.max(m, Math.min(r.left, window.innerWidth - w - m)))}px`;
+  };
+  const openPanel = (mode, anchor) => {
+    if (!panel) return;
+    panel.querySelector("[data-dl-mac]").hidden = mode !== "mac";
+    panel.querySelector("[data-dl-other]").hidden = mode === "mac";
+    panel.setAttribute("aria-labelledby", mode === "mac" ? "dl-title-mac" : "dl-title-other");
+    panelAnchor = anchor;
+    panelReturn = anchor;
+    panel.hidden = false;
+    placePanel();
+    // No room under the link (the hero's Download near the fold): scroll a little so the panel can sit below it
+    // instead of covering the "Set up with your agent" chip above.
+    if (!panel.classList.contains("is-sheet")) {
+      const r = anchor.getBoundingClientRect();
+      const short = Math.ceil(r.bottom + 10 + panel.offsetHeight + 16 - window.innerHeight) + 8;
+      const room = r.top - 96; // stay clear of the sticky nav
+      if (short > 0 && short <= room)
+        window.scrollBy({ top: short, behavior: reduceMotion ? "auto" : "smooth" });
+    }
+    panel.classList.remove("is-in");
+    void panel.offsetWidth; // restart the entrance animation
+    panel.classList.add("is-in");
+    panel.focus({ preventScroll: true });
+  };
+  const closePanel = ({ restoreFocus = true } = {}) => {
+    if (!panel || panel.hidden) return;
+    panel.hidden = true;
+    if (restoreFocus && panelReturn?.isConnected && panelReturn.offsetParent !== null)
+      panelReturn.focus({ preventScroll: true });
+    panelAnchor = null;
+    panelReturn = null;
+  };
+  let placeQueued = false;
+  const queuePlace = () => {
+    if (placeQueued || !panel || panel.hidden) return;
+    placeQueued = true;
+    requestAnimationFrame(() => {
+      placeQueued = false;
+      placePanel();
+    });
+  };
+  window.addEventListener("scroll", queuePlace, { passive: true });
+  window.addEventListener("resize", queuePlace);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && panel && !panel.hidden) closePanel();
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (panel && !panel.hidden && !panel.contains(e.target) && !e.target.closest?.("[data-download]"))
+      closePanel({ restoreFocus: false });
+  });
+  panel?.querySelector("[data-dl-close]").addEventListener("click", () => closePanel());
+  panel?.addEventListener("click", (e) => {
+    if (e.target.closest('a[href^="#"]')) closePanel({ restoreFocus: false });
+  });
+  panel?.querySelector("[data-dl-setup]").addEventListener("click", () => {
+    closePanel({ restoreFocus: false });
+    if (!setupBtn) return;
+    setupBtn.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    setupBtn.focus({ preventScroll: true });
+    setupBtn.classList.remove("is-nudged");
+    void setupBtn.offsetWidth;
+    setupBtn.classList.add("is-nudged");
+  });
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  for (const link of $$("[data-download]")) {
+    link.addEventListener("click", async (e) => {
+      // Cmd/Ctrl/Shift-click and middle-click keep doing what the visitor asked for (a new tab, say).
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (!isMac) {
+        findDmg();
+        openPanel("other", link);
+        return;
+      }
+      const found = dmg ?? (await Promise.race([findDmg(), wait(3000)]));
+      if (!found) {
+        location.assign(link.href);
+        return;
+      }
+      openPanel("mac", link);
+      // A download: the browser saves it and this page stays put.
+      location.assign(found.url);
+    });
+  }
+
   // ------------------------------------------------------------ Mascot
   // Swap each <img> logo for inline SVG so the eyes can follow the pointer and blink.
   const mascots = $$("[data-mascot]");

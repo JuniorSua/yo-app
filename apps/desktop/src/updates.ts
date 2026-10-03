@@ -11,13 +11,13 @@
  * github (public, ad-hoc signed builds from GitHub Releases): Squirrel.Mac refuses ad-hoc signed updates, so
  * nothing is downloaded. The app asks the GitHub API for the newest release at startup, every 6 hours and when
  * the UI asks (unauthenticated: 60 requests/hour/IP), and offers "Yo 0.1.N is available: Download", which
- * opens the release page in the browser. Offline, rate limits and "no release yet" stay quiet.
+ * downloads the release's .dmg in the browser (or opens the release page if it has none). Offline, rate limits and "no release yet" stay quiet.
  *
  * Both are off in unpackaged (development) builds.
  *
  * IPC (preload `updates`): getState / check / install / download, plus the "yo:updates:state" push. Calls are
  * accepted only from the main frame of Yo's own window at the UI origin, and take no arguments: Download opens
- * the URL main got from GitHub itself, after checking it is this repo's release page.
+ * the URL main got from GitHub itself, after checking it is one of this repo's release pages or downloads.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -159,7 +159,7 @@ export class DesktopUpdates {
     return this.state;
   }
 
-  /** github channel: open the newer release's page in the browser. */
+  /** github channel: download the newer release's .dmg in the browser (or open its release page). */
   async download() {
     const url = this.state.releaseUrl;
     if (UPDATE_CHANNEL !== "github" || this.state.status !== "available") return;
@@ -167,14 +167,11 @@ export class DesktopUpdates {
       this.log("error", "refusing to open an unexpected release URL");
       return;
     }
-    this.log("info", `opening the release page for ${this.state.availableVersion}`);
+    this.log("info", `opening the download for ${this.state.availableVersion}`);
     try {
       await shell.openExternal(url);
     } catch (err) {
-      this.log(
-        "warn",
-        `couldn't open the release page: ${String((err as Error)?.message ?? err).slice(0, 200)}`,
-      );
+      this.log("warn", `couldn't open the download: ${String((err as Error)?.message ?? err).slice(0, 200)}`);
     }
   }
 

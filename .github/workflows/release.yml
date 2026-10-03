@@ -232,26 +232,34 @@ jobs:
           IMAGE: ${{ needs.version.outputs.image }}
         run: |
           set -euo pipefail
+          # Written for everyday people: the top line is the one link they need. One line per paragraph or
+          # item (GitHub turns line breaks in release notes into real ones). The fixed-issues job below appends
+          # "## Fixed in this version" at the end, so keep that heading out of here.
+          dmg="Yo-${VERSION}-arm64.dmg"
           cat > notes.md <<EOF
+          **Download [${dmg}](https://github.com/${REPO}/releases/download/${TAG}/${dmg})** — that's the app (Macs with Apple silicon).
+
           ## Install
 
-          1. Download **Yo-${VERSION}-arm64.dmg** below (Apple silicon Macs), open it and drag **Yo** into **Applications**.
-          2. **First open:** this build isn't notarized by Apple (there's no paid Developer ID yet), so macOS warns
-             the first time. On **macOS 15 Sequoia and later**: open Yo and click **Done** on the warning, then
-             **System Settings → Privacy & Security**, scroll to "Yo was blocked…", click **Open Anyway**, then
-             **Open Anyway** again and enter your Mac password. On **macOS 13 or 14**: in Applications,
-             **right-click Yo → Open**, then **Open** again. Or, on any version (and if macOS says Yo "is
-             damaged"), run this once in Terminal and open Yo normally:
+          1. **Open** ${dmg} from your Downloads.
+          2. **Drag Yo into Applications.**
+          3. **First open:** macOS asks once, because Yo isn't notarized by Apple. Open Yo and click **Done**, then go to **System Settings → Privacy & Security**, click **Open Anyway** next to "Yo was blocked", and enter your Mac password. (On macOS 13 or 14: right-click Yo in Applications → **Open**.)
 
-             \`\`\`
-             xattr -dr com.apple.quarantine /Applications/Yo.app
-             \`\`\`
+          If macOS still refuses (or says Yo "is damaged"), run this once in Terminal, then open Yo:
 
-          Updating: Yo tells you when a newer release is out (the update button, bottom left). Download it here and
-          replace the app in Applications; your agents and settings stay. After updating, macOS may ask about
-          **"Yo Safe Storage"** (Yo's saved login in your Keychain): enter your Mac password and click **Always Allow**.
+          \`\`\`
+          xattr -dr com.apple.quarantine /Applications/Yo.app
+          \`\`\`
 
-          The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it starts it).
+          **Which file?**
+          - **.dmg** — the app, recommended
+          - **.zip** — the same app, used by Set up with your agent
+          - **Source code** — for developers
+          - **sha256** — a fingerprint GitHub shows so careful people can verify the file; you can ignore it
+
+          **Updating:** Yo tells you when a new version is out (the update button, bottom left). Install it the same way; your agents and settings stay. If macOS then asks about **"Yo Safe Storage"**, enter your Mac password and click **Always Allow**.
+
+          <sub>The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it needs it).</sub>
           EOF
           files=(dist/*.dmg dist/*.zip)
           if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then

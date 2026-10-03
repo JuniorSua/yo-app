@@ -33,7 +33,10 @@ export function latestReleaseApiUrl(repo: string) {
 }
 
 export type GithubCheck =
-  /** A newer release: offer "Download" (opens `url`, the release page). */
+  /**
+   * A newer release: offer "Download". `url` is what it opens: the release's .dmg (the browser downloads it
+   * straight away) when the release has one, else the release page.
+   */
   | { kind: "newer"; version: string; url: string }
   /** Nothing newer (or no release published yet). */
   | { kind: "none" }
@@ -60,6 +63,25 @@ export function isReleasePageUrl(url: unknown, repo: string): url is string {
   return u.pathname.toLowerCase().startsWith(prefix) && !u.pathname.includes("..");
 }
 
+/** True only for an https://github.com/<repo>/releases/download/<tag>/<file> asset link. */
+export function isReleaseAssetUrl(url: unknown, repo: string): url is string {
+  if (!isReleasePageUrl(url, repo)) return false;
+  return new URL(url).pathname.toLowerCase().startsWith(`/${repo}/releases/download/`.toLowerCase());
+}
+
+/**
+ * The release's Yo-<version>-arm64.dmg download link (what everyday people should get), or null when the
+ * release has none or its link isn't a download from this repo's releases.
+ */
+export function releaseDmgUrl(assets: unknown, repo: string): string | null {
+  if (!Array.isArray(assets)) return null;
+  for (const a of assets as Array<{ name?: unknown; browser_download_url?: unknown } | null>) {
+    if (typeof a?.name !== "string" || !/^Yo-.+-arm64\.dmg$/.test(a.name)) continue;
+    if (isReleaseAssetUrl(a.browser_download_url, repo)) return a.browser_download_url;
+  }
+  return null;
+}
+
 /** Interprets GET /repos/<repo>/releases/latest (`status` 0 = the request itself failed). */
 export function readLatestRelease(
   status: number,
@@ -70,11 +92,17 @@ export function readLatestRelease(
   if (status === 404) return { kind: "none" }; // no published release yet (drafts and pre-releases don't count)
   if (status === 403 || status === 429) return { kind: "quiet", reason: `rate limited (${status})` };
   if (status !== 200) return { kind: "quiet", reason: status ? `HTTP ${status}` : "offline" };
-  const r = (body ?? {}) as { tag_name?: unknown; html_url?: unknown; draft?: unknown; prerelease?: unknown };
+  const r = (body ?? {}) as {
+    tag_name?: unknown;
+    html_url?: unknown;
+    draft?: unknown;
+    prerelease?: unknown;
+    assets?: unknown;
+  };
   if (r.draft === true || r.prerelease === true) return { kind: "none" };
   const version = releaseVersion(r.tag_name);
   if (!version) return { kind: "quiet", reason: `unexpected tag ${JSON.stringify(r.tag_name)}` };
   if (compareVersions(version, currentVersion) <= 0) return { kind: "none" };
   if (!isReleasePageUrl(r.html_url, repo)) return { kind: "quiet", reason: "unexpected release URL" };
-  return { kind: "newer", version, url: r.html_url };
+  return { kind: "newer", version, url: releaseDmgUrl(r.assets, repo) ?? r.html_url };
 }

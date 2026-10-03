@@ -52,9 +52,9 @@ Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app
 
 **Or by hand:**
 
-1. Download **Yo-&lt;version&gt;-arm64.dmg** from the
-   [latest release](https://github.com/JuniorSua/yo-app/releases/latest), open it and drag **Yo** into
-   **Applications**.
+1. On the [latest release](https://github.com/JuniorSua/yo-app/releases/latest), download the file ending in
+   **.dmg** (Yo-&lt;version&gt;-arm64.dmg: that's the app; you can ignore the other files). Open it and drag
+   **Yo** into **Applications**.
 2. **The first open.** Yo is open source and signed ad hoc, not notarized by Apple (that needs a paid Apple
    Developer ID), so macOS warns the first time ("Apple could not verify “Yo” is free of malware…").
    - **macOS 15 Sequoia and later:** open Yo and click **Done** on the warning. Then open
@@ -120,8 +120,8 @@ computer."* It offers three places to run it:
 ## Updates
 
 Yo checks GitHub Releases for a newer version. When there is one, the update button (bottom left) says
-**"Yo 0.1.N is available: Download"** and opens the release page: download it and replace the app in
-Applications. Your agents, their memory and your settings stay. (Ad-hoc signed apps can't update themselves in
+**"Yo 0.1.N is available: Download"**, which downloads the new .dmg in your browser: open it and replace the
+app in Applications. Your agents, their memory and your settings stay. (Ad-hoc signed apps can't update themselves in
 place on macOS, so Yo only points you at the download.)
 
 ## Build it from source

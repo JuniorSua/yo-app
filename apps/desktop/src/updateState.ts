@@ -10,8 +10,9 @@
  *            ↑            ↓
  *            └── error (canRetry) ←┘
  *
- * The github channel (public, ad-hoc signed builds) never downloads: "available" carries the release page
- * (`releaseUrl`) and the UI offers Download, which opens it. A check that can't reach GitHub (offline, rate
+ * The github channel (public, ad-hoc signed builds) never downloads in the app: "available" carries the
+ * release's .dmg link, or its page if it has no .dmg (`releaseUrl`), and the UI offers Download, which opens it
+ * in the browser. A check that can't reach GitHub (offline, rate
  * limited) is "quiet": it goes back to what was known, with a note, instead of an error.
  */
 
@@ -40,7 +41,7 @@ export interface DesktopUpdateState {
   message: string | null;
   errorContext: "check" | "download" | "install" | null;
   canRetry: boolean;
-  /** github channel: the release page Download opens (validated in the main process before opening). */
+  /** github channel: the .dmg (or release page) Download opens (validated in the main process before opening). */
   releaseUrl: string | null;
 }
 

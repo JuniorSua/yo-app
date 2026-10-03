@@ -57,7 +57,7 @@
             <span class="sr-only">Yo on GitHub</span>
             <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
           </a>
-          <a class="btn btn-ink btn-sm" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
+          <a class="btn btn-ink btn-sm" href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>Download</a>
           <button class="nav-menu" aria-label="Open menu" aria-expanded="false" data-menu>
             <span></span><span></span>
           </button>
@@ -70,7 +70,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
         <a href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
-        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
+        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>Download</a>
       </div>
     </header>
 
@@ -104,7 +104,7 @@
             <input class="setup-fallback" data-setup-fallback readonly hidden aria-label="Setup prompt to copy" />
           </div>
           <div class="hero-actions reveal">
-            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app/releases/latest">
+            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
               Download
             </a>
@@ -176,7 +176,7 @@
               <li data-tour-step="message"><i></i>Send it a message</li>
             </ul>
             <p class="tour-done" data-tour-done hidden>
-              That's the whole loop. <a href="https://github.com/JuniorSua/yo-app/releases/latest">Download Yo →</a>
+              That's the whole loop. <a href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>Download Yo →</a>
             </p>
           </div>
         </header>
@@ -501,7 +501,7 @@
             <div class="plan-actions">
               <a class="btn btn-ink" href="#pricing" data-pay hidden rel="noopener">Support Yo · $10</a>
               <span class="soon-pill" data-pay-soon>Payments coming soon</span>
-              <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
+              <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>Download</a>
               <a class="btn btn-ghost" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
             </div>
             <p class="plan-foot" data-pay-soon>
@@ -579,8 +579,8 @@
           <details>
             <summary>How does it update?</summary>
             <p>
-              Yo checks GitHub for new releases. When one is out, it tells you and a Download button opens the release
-              page.
+              Yo checks GitHub for new releases. When one is out, it tells you, and its Download button downloads the new
+              version. Install it the same way; your agents and settings stay.
             </p>
           </details>
           <details>
@@ -606,7 +606,7 @@
               </button>
             </form>
             <div class="final-actions">
-              <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
+              <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest" data-download>Download</a>
               <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
             </div>
           </div>
@@ -631,5 +631,53 @@
       </nav>
       <span class="footer-copy">© 2026 Yo · Apache-2.0</span>
     </footer>
+
+    <!-- After a Download click (site.js): what to do with the .dmg, or "Mac-only for now" on other computers. -->
+    <div class="dl-panel" role="dialog" aria-modal="false" aria-labelledby="dl-title-mac" tabindex="-1" data-dl-panel hidden>
+      <button class="dl-close" type="button" aria-label="Close" data-dl-close>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+      <div data-dl-mac>
+        <div class="dl-head">
+          <span class="dl-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span>
+          <div>
+            <h2 class="dl-title" id="dl-title-mac">Your download has started</h2>
+            <p class="dl-sub">Yo for Macs with Apple silicon</p>
+          </div>
+        </div>
+        <ol class="dl-steps">
+          <li><span>Open “<b data-dl-name>Yo.dmg</b>” from your Downloads.</span></li>
+          <li><span>Drag <b>Yo</b> into <b>Applications</b>.</span></li>
+          <li>
+            <span>
+              First open: macOS asks once. Open Yo, click <b>Done</b>, then System Settings → Privacy &amp; Security →
+              <b>Open Anyway</b>. <a class="dl-help" href="#first-open">Need help?</a>
+            </span>
+          </li>
+        </ol>
+        <div class="dl-foot">
+          <p>Prefer the easy way? <button class="dl-link" type="button" data-dl-setup>Use Set up with your agent</button>.</p>
+          <p>Didn't start? <a href="https://github.com/JuniorSua/yo-app/releases/latest" data-dl-direct>Download it here</a>.</p>
+        </div>
+      </div>
+      <div data-dl-other hidden>
+        <div class="dl-head">
+          <span class="dl-icon dl-icon-soon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg></span>
+          <div>
+            <h2 class="dl-title" id="dl-title-other">Yo is Mac-only for now</h2>
+            <p class="dl-sub">Windows and Linux are coming soon.</p>
+          </div>
+        </div>
+        <p class="dl-text">
+          Yo runs on Macs with Apple silicon today. You can read every line of it on GitHub in the meantime.
+        </p>
+        <div class="dl-actions">
+          <a class="btn btn-line btn-sm" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
+        </div>
+        <div class="dl-foot">
+          <p>Downloading it for a Mac? <a href="https://github.com/JuniorSua/yo-app/releases/latest" data-dl-direct>Get the Mac app</a>.</p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

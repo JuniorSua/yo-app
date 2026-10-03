@@ -7,16 +7,18 @@ import { AlertCircle, ArrowDownToLine, Check, RefreshCw, Sparkles } from "lucide
 import { type ReactNode, useState } from "react";
 import { isGithubDownload } from "../lib/updates";
 import { cn } from "../lib/utils";
-import { updates, useUpdates } from "../stores/updates";
+import { type Applying, updates, useUpdates } from "../stores/updates";
 import { useLocalAgentsWorking } from "./UpdateNotice";
+import { ApplyBar, applyCopy, useApplyFill, useApplyLate } from "./UpdateProgress";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/controls";
 import { Popover, Tip } from "./ui/overlay";
 
-type View = "idle" | "checking" | "available" | "downloading" | "ready" | "refresh" | "error";
+type View = "idle" | "checking" | "available" | "downloading" | "ready" | "refresh" | "applying" | "error";
 
 function useView(checking: boolean): View {
   return useUpdates((s) => {
+    if (s.applying) return "applying";
     const d = s.desktop?.status;
     if (d === "downloaded") return "ready";
     if (s.refresh) return "refresh";
@@ -35,12 +37,14 @@ const TIP: Record<View, string> = {
   downloading: "Downloading update",
   ready: "Update ready: restart Yo",
   refresh: "Yo was updated: refresh",
+  applying: "Installing the update…",
   error: "Update problem",
 };
 
 export function UpdateButton() {
   const ownBuild = useUpdates((s) => s.ownBuild);
   const percent = useUpdates((s) => Math.round(s.desktop?.percent ?? 0));
+  const applying = useUpdates((s) => s.applying);
   const [open, setOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const view = useView(checking);
@@ -76,7 +80,7 @@ export function UpdateButton() {
           aria-label={TIP[view]}
           className={cn(
             "relative grid size-[38px] shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-fg data-[popup-open]:bg-active",
-            (dot || view === "downloading") && "text-fg",
+            (dot || view === "downloading" || view === "applying") && "text-fg",
           )}
         >
           <Tip label={TIP[view]}>
@@ -91,6 +95,7 @@ export function UpdateButton() {
             </span>
           </Tip>
           {view === "downloading" && <ProgressRing percent={percent} />}
+          {applying && <ApplyRing applying={applying} />}
           {dot && (
             <span
               data-testid="update-dot"
@@ -107,6 +112,30 @@ export function UpdateButton() {
         <UpdatePanel view={view} onCheck={() => void check()} onDone={() => setOpen(false)} />
       </div>
     </Popover>
+  );
+}
+
+/** The button's ring while an update is applied: fills with the panel's bar. */
+function ApplyRing({ applying }: { applying: Applying }) {
+  const { fraction, transition } = useApplyFill(applying);
+  const r = 17;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg className="-rotate-90 pointer-events-none absolute inset-0" viewBox="0 0 38 38" aria-hidden>
+      <circle cx="19" cy="19" r={r} fill="none" strokeWidth="2" className="stroke-border" />
+      <circle
+        cx="19"
+        cy="19"
+        r={r}
+        fill="none"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - fraction)}
+        className="stroke-brand"
+        style={{ transition: transition === "none" ? "none" : `stroke-dashoffset ${transition}` }}
+      />
+    </svg>
   );
 }
 
@@ -135,9 +164,10 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
   const desktop = useUpdates((s) => s.desktop);
   const server = useUpdates((s) => s.server);
   const ownBuild = useUpdates((s) => s.ownBuild);
+  const applying = useUpdates((s) => s.applying);
+  const late = useApplyLate(applying);
   const busy = useLocalAgentsWorking();
   const [confirming, setConfirming] = useState(false);
-  const [restarting, setRestarting] = useState(false);
   const percent = Math.round(desktop?.percent ?? 0);
   const versions = [
     desktop ? `Yo app ${desktop.currentVersion}` : null,
@@ -148,11 +178,20 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
 
   const install = () => {
     if (busy && !confirming) return setConfirming(true);
-    setRestarting(true);
-    void updates.install().catch(() => setRestarting(false));
+    void updates.apply("restart").catch(() => undefined);
   };
 
   switch (view) {
+    case "applying": {
+      if (!applying) return null;
+      const copy = applyCopy(applying, late);
+      return (
+        <div>
+          <Row icon={<Sparkles />} tone="brand" title={copy.title} line={copy.line} />
+          <ApplyBar applying={applying} className="mt-3" />
+        </div>
+      );
+    }
     case "checking":
       return <Row icon={<Spinner className="size-4" />} title="Checking for updates…" line={versions} />;
     case "available":
@@ -241,14 +280,8 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
               >
                 {confirming ? "Wait" : "Later"}
               </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                data-testid="update-restart"
-                disabled={restarting}
-                onClick={install}
-              >
-                {restarting ? "Restarting…" : confirming ? "Restart anyway" : "Restart"}
+              <Button size="sm" variant="primary" data-testid="update-restart" onClick={install}>
+                {confirming ? "Restart anyway" : "Restart"}
               </Button>
             </>
           }
@@ -266,7 +299,12 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
               <Button size="sm" variant="ghost" onClick={onDone}>
                 Later
               </Button>
-              <Button size="sm" variant="primary" data-testid="update-refresh" onClick={updates.refresh}>
+              <Button
+                size="sm"
+                variant="primary"
+                data-testid="update-refresh"
+                onClick={() => void updates.apply("refresh")}
+              >
                 Refresh
               </Button>
             </>

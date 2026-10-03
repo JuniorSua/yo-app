@@ -2139,6 +2139,178 @@ code.cmd {
   border-color: rgb(29 30 27 / 0.15);
 }
 
+/* Download panel: site.js shows it next to the Download link that was clicked (a bottom sheet on phones). */
+.dl-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: min(384px, 100vw - 32px);
+  padding: 20px 20px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow:
+    var(--shadow-2),
+    0 30px 70px -30px rgb(29 30 27 / 0.35);
+}
+.dl-panel[hidden] {
+  display: none;
+}
+.dl-panel:focus {
+  outline: none;
+}
+.dl-panel.is-in {
+  animation: dl-in 0.35s var(--ease);
+}
+@keyframes dl-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+.dl-panel.is-sheet {
+  top: auto;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 16px;
+  width: auto;
+}
+.dl-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  transition: background-color 0.2s;
+}
+.dl-close:hover {
+  background: rgb(29 30 27 / 0.05);
+  color: var(--ink);
+}
+.dl-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 32px;
+}
+.dl-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgb(47 158 95 / 0.1);
+  color: var(--green);
+}
+.dl-icon-soon {
+  background: var(--bg-2);
+  color: var(--fg-2);
+}
+.dl-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+.dl-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.dl-steps {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: dl;
+}
+.dl-steps li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  color: var(--fg-2);
+  font-size: 14.5px;
+  line-height: 1.5;
+  counter-increment: dl;
+}
+.dl-steps li::before {
+  content: counter(dl);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dl-steps b {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.dl-panel a:not(.btn),
+.dl-link {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--yellow-2);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.dl-help {
+  white-space: nowrap;
+}
+.dl-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+}
+.dl-text {
+  margin: 14px 0 0;
+  color: var(--fg-2);
+  font-size: 14.5px;
+}
+.dl-actions {
+  margin-top: 16px;
+}
+.dl-foot {
+  display: grid;
+  gap: 4px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.dl-foot p {
+  margin: 0;
+}
+/* "Use Set up with your agent" in the panel scrolls here and gives the chip a short glow. */
+.setup-copy.is-nudged {
+  animation: nudge 1.4s var(--ease);
+}
+@keyframes nudge {
+  30% {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.5) inset,
+      0 0 0 6px rgb(255 212 59 / 0.45);
+  }
+}
+
 /* Scroll reveal (site.js adds .is-in; without JS everything is visible). */
 .js .reveal {
   opacity: 0;
