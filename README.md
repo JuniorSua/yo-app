@@ -126,7 +126,7 @@ place on macOS, so Yo only points you at the download.)
 
 ## Build it from source
 
-Free, and the same app. You need a Mac with Apple silicon, Node 22 (see `.nvmrc`), pnpm 9 (`corepack enable`
+For contributors. You need a Mac with Apple silicon, Node 22 (see `.nvmrc`), pnpm 9 (`corepack enable`
 picks the right version), and Xcode's command line tools for the small Swift helper.
 
 ```bash
@@ -185,10 +185,9 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md
 
 ## Support Yo ($10)
 
-Build it yourself from source for free, or support it for $10 and get the ready-made app. Paying supports Yo's
-development and updates: **[support Yo on the website](https://yo-app-five.vercel.app)**. Payments aren't open
-yet, so for now the ready-made app is a free download from
-[Releases](https://github.com/JuniorSua/yo-app/releases/latest).
+Yo is $10. Your $10 supports Yo's ongoing development and updates:
+**[get Yo on the website](https://yo-app-five.vercel.app)**. Payments open soon; until then, download Yo from
+[Releases](https://github.com/JuniorSua/yo-app/releases/latest) or set it up with your agent.
 
 ## License
 

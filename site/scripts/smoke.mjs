@@ -67,8 +67,9 @@ async function open(width, { config, init, clipboard } = {}) {
   const missing = hrefs.filter((h) => h.startsWith("#") && !ids.has(h.slice(1)));
   check("every in-page link has a target", missing.length === 0, missing.join(", "));
   check(
-    "Download for macOS links to the latest release",
-    (await page.locator(`a[href="${RELEASES}"]`, { hasText: "Download for macOS" }).count()) >= 2,
+    "Download links to the latest release (and never says macOS)",
+    (await page.locator(`a[href="${RELEASES}"]`, { hasText: /^\s*Download\s*$/ }).count()) >= 3 &&
+      (await page.locator("a", { hasText: "Download for macOS" }).count()) === 0,
   );
   check(
     "View on GitHub links to the repo",
@@ -76,7 +77,7 @@ async function open(width, { config, init, clipboard } = {}) {
   );
   check(
     "hero Download is visible",
-    await page.locator(".hero-actions a", { hasText: "Download for macOS" }).isVisible(),
+    await page.locator(".hero-actions a", { hasText: "Download" }).isVisible(),
   );
   check(
     "hero View on GitHub is visible",
@@ -91,7 +92,7 @@ async function open(width, { config, init, clipboard } = {}) {
     "agents",
     "requirements",
     "privacy",
-    "open-source",
+    "pricing",
     "faq",
     "download",
   ])
@@ -130,17 +131,28 @@ async function open(width, { config, init, clipboard } = {}) {
     "Memory (RAM) 16 GB 32 GB",
     "Memory for the agent's computer",
     "2 GB 4 GB",
-    "Apple silicon, 4 cores 8+ cores (every M-series chip)",
+    "Apple M1, or a 64-bit Intel or AMD chip with 4 cores",
     "Free disk space 10 GB 20 GB",
-    "13 Ventura 15 Sequoia or newer",
+    "macOS 13 Ventura",
+    "Windows and Linux: coming soon",
   ])
     check(`requirements say "${want}"`, req.includes(want), req);
-  const os = (await page.locator("#open-source").innerText()).replace(/\s+/g, " ");
+  const pricing = (await page.locator("#pricing").innerText()).replace(/\s+/g, " ");
+  check("$10 line", pricing.includes("Your $10 supports Yo's ongoing development and updates."));
+  check("pricing says Apache-2.0", pricing.includes("Apache-2.0"));
+  const body = (await page.locator("main").innerText()).replace(/\s+/g, " ");
   check(
-    "open-source section says it plainly",
-    os.includes("Build it yourself from source for free, or support it for $10 and get the ready-made app."),
+    "no free version is offered",
+    !/build it yourself|free download|for free/i.test(body) && !/\bfree\b/i.test(pricing),
+    body.match(/.{40}(build it yourself|free download|for free).{40}/i)?.[0],
   );
-  check("$10 line", os.includes("Yo is $10, to support its development and updates."));
+  // The setup chip is the hero's first and highlighted action.
+  const heroOrder = await page.locator(".hero-copy").evaluate((h) => {
+    const chip = h.querySelector(".setup-copy");
+    const dl = h.querySelector(".hero-actions a");
+    return chip && dl ? chip.compareDocumentPosition(dl) & Node.DOCUMENT_POSITION_FOLLOWING : 0;
+  });
+  check("setup chip comes before Download in the hero", heroOrder !== 0);
 
   // First-open help
   await page.locator("[data-first-open]").click();

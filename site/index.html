@@ -6,13 +6,13 @@
     <title>Yo: say yo, it does the rest</title>
     <meta
       name="description"
-      content="Yo is an open-source personal AI agent for macOS with a computer of its own. It runs on the Claude or ChatGPT plan you already pay for, does the work end to end, and asks before anything that matters."
+      content="Yo is an open-source personal AI agent with a computer of its own. It runs on the Claude or ChatGPT plan you already pay for, does the work end to end, and asks before anything that matters."
     />
     <meta name="theme-color" content="#faf9f6" />
     <meta property="og:title" content="Yo: say yo, it does the rest" />
     <meta
       property="og:description"
-      content="An open-source personal AI agent with its own computer, running on the subscription you already have. Download for macOS."
+      content="An open-source personal AI agent with its own computer, running on the subscription you already have."
     />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Yo" />
@@ -49,7 +49,7 @@
           <a href="#demo">Demo</a>
           <a href="#how">How it works</a>
           <a href="#requirements">Requirements</a>
-          <a href="#open-source">Open source</a>
+          <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div class="nav-end">
@@ -67,10 +67,10 @@
         <a href="#demo">Demo</a>
         <a href="#how">How it works</a>
         <a href="#requirements">Requirements</a>
-        <a href="#open-source">Open source</a>
+        <a href="#pricing">Pricing</a>
         <a href="#faq">FAQ</a>
         <a href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
-        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download for macOS</a>
+        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
       </div>
     </header>
 
@@ -78,22 +78,12 @@
       <!-- Hero -->
       <section class="hero" id="top">
         <div class="hero-copy">
-          <a class="status-chip reveal" href="#open-source"><b>Apache-2.0</b>Open source · macOS</a>
+          <a class="status-chip reveal" href="#pricing"><b>Apache-2.0</b>Open source</a>
           <h1 class="reveal">Say yo.<br /><span>It does the rest.</span></h1>
           <p class="lede reveal">
             Yo is a personal AI agent with a computer of its own. It runs on the Claude or ChatGPT plan you already
             pay for, works the task end to end, and checks with you before anything that matters.
           </p>
-          <div class="hero-actions reveal">
-            <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/latest">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
-              Download for macOS
-            </a>
-            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
-              View on GitHub
-            </a>
-          </div>
           <div class="setup-copy-wrap reveal">
             <button
               class="setup-copy"
@@ -105,14 +95,26 @@
             >
               <span class="setup-copy-prefix" aria-hidden="true">$</span>
               <span>Set up with your agent</span>
+              <span class="setup-copy-tag" aria-hidden="true">Recommended</span>
               <svg class="i-copy" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
               <svg class="i-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
             </button>
+            <p class="setup-hint">Copy one line, paste it into Claude Code or Codex, and your agent installs Yo for you.</p>
             <p class="setup-note" id="setup-copy-note" role="status" aria-live="polite" data-setup-note></p>
             <input class="setup-fallback" data-setup-fallback readonly hidden aria-label="Setup prompt to copy" />
           </div>
+          <div class="hero-actions reveal">
+            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app/releases/latest">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+              Download
+            </a>
+            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+              View on GitHub
+            </a>
+          </div>
           <p class="hero-meta reveal">
-            Free download on GitHub · macOS 13 or newer · Apple silicon ·
+            Runs on Macs with Apple silicon today · Windows and Linux coming soon ·
             <a href="#first-open" data-first-open>First open: one quick OK</a>
           </p>
         </div>
@@ -174,7 +176,7 @@
               <li data-tour-step="message"><i></i>Send it a message</li>
             </ul>
             <p class="tour-done" data-tour-done hidden>
-              That's the whole loop. <a href="https://github.com/JuniorSua/yo-app/releases/latest">Download for macOS →</a>
+              That's the whole loop. <a href="https://github.com/JuniorSua/yo-app/releases/latest">Download Yo →</a>
             </p>
           </div>
         </header>
@@ -212,11 +214,11 @@
         <ol class="steps steps-4">
           <li class="step reveal">
             <div class="step-viz" aria-hidden="true">
-              <span class="sv-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>Yo.dmg</span>
+              <span class="sv-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>Download</span>
             </div>
             <span class="step-n">Step 1</span>
             <h3>Download Yo</h3>
-            <p>Get the Mac app from GitHub and drag it to Applications. The first time, macOS asks you to confirm it once (see the FAQ).</p>
+            <p>Get Yo from GitHub and install it, or let your coding agent do it for you. The first time, your computer asks you to confirm it once (see the FAQ).</p>
           </li>
           <li class="step reveal">
             <div class="step-viz" aria-hidden="true">
@@ -235,7 +237,7 @@
           <li class="step reveal">
             <div class="step-viz" aria-hidden="true">
               <div class="sv-where">
-                <span class="is-on">This Mac</span>
+                <span class="is-on">This computer</span>
                 <span>Home server<small>Advanced</small></span>
                 <span class="is-off">Cloud<small>Soon</small></span>
               </div>
@@ -243,8 +245,8 @@
             <span class="step-n">Step 3</span>
             <h3>It sets up its own computer</h3>
             <p>
-              Your first agent says “Let's set up my computer”: on this Mac, or on a home server (advanced). It
-              checks your Mac and guides the free installs. Cloud is coming soon.
+              Your first agent says “Let's set up my computer”: on this computer, or on a home server (advanced). It
+              checks your computer and guides the installs. Cloud is coming soon.
             </p>
           </li>
           <li class="step reveal">
@@ -383,15 +385,15 @@
       <section class="section" id="requirements">
         <div class="section-head reveal">
           <p class="kicker"><span>05</span>Requirements</p>
-          <h2>What your Mac needs.</h2>
+          <h2>What your computer needs.</h2>
           <p class="sub">
-            Yo runs on Macs with Apple silicon. On first run it checks your Mac against this list and
-            tells you, in plain words, what passes and what could be better.
+            On first run Yo checks your computer against this list and tells you, in plain words, what passes and
+            what could be better.
           </p>
         </div>
         <div class="reqs reveal">
           <table class="req-table">
-            <caption class="sr-only">Yo's requirements for running the agent's computer on this Mac</caption>
+            <caption class="sr-only">Yo's requirements for running the agent's computer on your computer</caption>
             <thead>
               <tr>
                 <th scope="col"></th>
@@ -406,14 +408,14 @@
                 <td><b>32 GB</b></td>
               </tr>
               <tr>
-                <th scope="row">Memory for the agent's computer<small>What's left after macOS and your apps</small></th>
+                <th scope="row">Memory for the agent's computer<small>What's left after the system and your apps</small></th>
                 <td>2 GB</td>
                 <td><b>4 GB</b></td>
               </tr>
               <tr>
-                <th scope="row">Processor<small>The download is for Apple silicon. Intel Macs can build from source.</small></th>
-                <td>Apple silicon, 4 cores</td>
-                <td><b>8+ cores (every M-series chip)</b></td>
+                <th scope="row">Processor<small>On a PC, virtualization turned on (most are)</small></th>
+                <td>Apple M1, or a 64-bit Intel or AMD chip with 4 cores</td>
+                <td><b>8+ cores: any Apple M-series, or a recent Intel Core or AMD Ryzen</b></td>
               </tr>
               <tr>
                 <th scope="row">Free disk space</th>
@@ -421,9 +423,9 @@
                 <td><b>20 GB</b></td>
               </tr>
               <tr>
-                <th scope="row">macOS</th>
-                <td>13 Ventura</td>
-                <td><b>15 Sequoia or newer</b></td>
+                <th scope="row">Operating system<small>Windows and Linux: coming soon</small></th>
+                <td>macOS 13 Ventura · Windows 11 · Ubuntu 22.04</td>
+                <td><b>macOS 15 or newer · Windows 11 · Ubuntu 24.04</b></td>
               </tr>
             </tbody>
           </table>
@@ -432,8 +434,8 @@
               <b>A model plan</b>Claude Pro or Max, or ChatGPT Plus, Pro, Business or Enterprise (through Codex).
             </li>
             <li>
-              <b>Free tools</b>Colima and the Docker CLI, from Homebrew. Yo checks for them and gives you the
-              copy-paste commands.
+              <b>Its computer</b>A small virtual machine with Docker (free tools). Yo checks for them and gives you the
+              copy-paste commands, or your coding agent installs them for you.
             </li>
             <li>
               <b>Home server (advanced)</b>An always-on Linux PC, or Windows with WSL 2, with the same memory, cores
@@ -453,14 +455,14 @@
         <div class="map reveal">
           <div class="node">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5" /><path d="M2 19h20" /></svg>
-            <b>Your Mac</b>
-            <span>The Yo app: your chats and approvals. Passwords stay in Keychain.</span>
+            <b>Your computer</b>
+            <span>The Yo app: your chats and approvals. Passwords stay in your system’s secure storage.</span>
           </div>
           <div class="link" aria-hidden="true"><i></i><small>private connection</small></div>
           <div class="node">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="1.5" /><path d="M10 7h4M10 10h4M12 17h.01" /></svg>
             <b>Its computer</b>
-            <span>On your Mac, or on a home PC that stays on, so it works while your laptop is closed.</span>
+            <span>On your computer, or on a home PC that stays on, so it works while your laptop is closed.</span>
           </div>
           <div class="link link-out" aria-hidden="true"><i></i><small>model calls only</small></div>
           <div class="node node-out">
@@ -471,56 +473,40 @@
         </div>
         <ul class="facts reveal">
           <li><b>Off until you say so</b>Calendar, Reminders, Notes, and Mail stay off until you turn each one on.</li>
-          <li><b>Secrets stay secret</b>Passwords live in Keychain and on its computer, never in logs.</li>
+          <li><b>Secrets stay secret</b>Passwords live in your system’s secure storage and on its computer, never in logs.</li>
           <li><b>No extra bill</b>It runs on your own plan, and its computer runs on free tools. No seats, no usage fees.</li>
         </ul>
       </section>
 
-      <!-- Open source -->
-      <section class="section" id="open-source">
+      <!-- Pricing -->
+      <section class="section" id="pricing">
         <div class="section-head reveal">
-          <p class="kicker"><span>07</span>Open source</p>
-          <h2>The source is open.</h2>
-          <p class="sub">
-            Yo is Apache-2.0 licensed. Build it yourself from source for free, or support it for $10 and get the
-            ready-made app.
-          </p>
+          <p class="kicker"><span>07</span>Pricing</p>
+          <h2>One price. $10.</h2>
+          <p class="sub">Your $10 supports Yo's ongoing development and updates.</p>
         </div>
-        <div class="plans">
-          <article class="plan reveal">
-            <div class="plan-head">
-              <h3>Build from source</h3>
-              <span class="plan-price">Free</span>
-            </div>
-            <p class="plan-meta">Everything is in the repo. Nothing is gated.</p>
-            <ul>
-              <li>The full app, its core and the agent's computer</li>
-              <li>Apache-2.0: read it, change it, run it</li>
-              <li>Build with Node 22 and pnpm</li>
-              <li>Bug reports and ideas in GitHub Issues</li>
-            </ul>
-            <div class="plan-actions">
-              <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
-              <a class="btn btn-ghost" href="https://github.com/JuniorSua/yo-app#build-it-from-source">How to build it</a>
-            </div>
-          </article>
+        <div class="plans plans-one">
           <article class="plan plan-pro reveal">
             <div class="plan-head">
-              <h3>Ready-made app</h3>
+              <h3>Yo</h3>
               <span class="plan-price">$10</span>
             </div>
-            <p class="plan-meta">Yo is $10, to support its development and updates.</p>
+            <p class="plan-meta">Supports Yo's ongoing development and updates.</p>
             <ul>
-              <li>The built Mac app, ready to open</li>
+              <li>The ready-made app, ready to open</li>
               <li>The app tells you when a new version is out</li>
-              <li>Helps keep Yo going</li>
+              <li>Runs on the Claude or ChatGPT plan you already have</li>
+              <li>Open source under Apache-2.0: read every line on GitHub</li>
             </ul>
             <div class="plan-actions">
-              <a class="btn btn-ink" href="#open-source" data-pay hidden rel="noopener">Support Yo · $10</a>
+              <a class="btn btn-ink" href="#pricing" data-pay hidden rel="noopener">Support Yo · $10</a>
               <span class="soon-pill" data-pay-soon>Payments coming soon</span>
-              <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app/releases/latest">Download for macOS</a>
+              <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
+              <a class="btn btn-ghost" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
             </div>
-            <p class="plan-foot" data-pay-soon>Until payments open, the app is a free download on GitHub.</p>
+            <p class="plan-foot" data-pay-soon>
+              Payments open soon. Until then, download Yo, view it on GitHub, or set up with your agent.
+            </p>
           </article>
         </div>
       </section>
@@ -535,10 +521,10 @@
           <details>
             <summary>How much does it cost?</summary>
             <p>
-              Yo is $10, to support its development and updates. It's also open source, so you can build it yourself
-              from source for free. <span data-pay-soon>Payments aren't open yet, so for now the app is a free download.</span>
-              Either way it runs on the Claude or ChatGPT plan you already pay for, so there's no model bill and no
-              API key to manage.
+              Yo is $10, to support its ongoing development and updates.
+              <span data-pay-soon>Payments open soon; until then you can download it right away.</span>
+              It runs on the Claude or ChatGPT plan you already pay for, so there's no model bill and no API key to
+              manage.
             </p>
           </details>
           <details id="first-open">
@@ -572,7 +558,7 @@
           <details>
             <summary>Where does its computer run?</summary>
             <p>
-              On this Mac, in a small virtual machine (Colima, free), or on an always-on PC at home if you're up for
+              On your computer, in a small virtual machine (free tools), or on an always-on PC at home if you're up for
               the advanced setup. Your first agent walks you through either one. A cloud option is coming soon.
             </p>
           </details>
@@ -599,7 +585,7 @@
           </details>
           <details>
             <summary>Does it keep working when my laptop is closed?</summary>
-            <p>Yes, if its computer runs on a home server. Your Mac becomes a window into the agent wherever you are.</p>
+            <p>Yes, if its computer runs on a home server. Your laptop becomes a window into the agent wherever you are.</p>
           </details>
         </div>
       </section>
@@ -620,7 +606,7 @@
               </button>
             </form>
             <div class="final-actions">
-              <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download for macOS</a>
+              <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/latest">Download</a>
               <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
             </div>
           </div>

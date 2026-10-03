@@ -1788,32 +1788,59 @@ a.status-chip {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 14px;
-  margin-top: 16px;
+  margin-top: 32px;
 }
+/* The way we want most people to install Yo: the hero's first, brightest action. */
 .setup-copy {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  height: 40px;
-  padding: 0 14px;
-  border: 1px dashed var(--line-2);
-  border-radius: 10px;
-  background: var(--bg-2);
-  color: var(--fg-2);
+  gap: 12px;
+  height: 58px;
+  padding: 0 20px;
+  border: 1px solid var(--yellow-2);
+  border-radius: 14px;
+  background: var(--yellow);
+  color: var(--ink);
   font-family: var(--mono);
-  font-size: 13.5px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 10px 24px -10px rgb(245 184 0 / 0.65);
   transition:
     border-color 0.2s,
     background-color 0.2s,
-    color 0.2s;
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 .setup-copy:hover {
-  border-color: var(--faint);
-  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 14px 28px -10px rgb(245 184 0 / 0.75);
+}
+.setup-copy-tag {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(29 30 27 / 0.1);
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.setup-hint {
+  flex: 1 1 100%;
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.setup-copy-wrap + .hero-actions {
+  margin-top: 18px;
 }
 .setup-copy-prefix {
   color: var(--yellow-ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 .setup-copy .i-check,
 .setup-copy.is-copied .i-copy {
@@ -2024,6 +2051,9 @@ code.cmd {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 48px;
+}
+.plans-one {
+  grid-template-columns: minmax(0, 620px);
 }
 .plan {
   display: flex;
@@ -2355,6 +2385,17 @@ code.cmd {
 }
 
 @media (max-width: 520px) {
+  .setup-copy {
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 14px;
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .setup-copy-tag {
+    display: none;
+  }
   .hero-actions .btn {
     flex: 1 1 100%;
   }
