@@ -117,6 +117,11 @@ If it's quarantined, explain the two options and let the person choose:
 
 Only run `xattr` after the person says yes.
 
+**Keychain prompt.** A fresh install doesn't ask. After a later manual update, macOS may ask whether Yo can use
+its confidential information stored in **"Yo Safe Storage"** (Yo's saved login in the Keychain; each ad-hoc
+signed version has a new signature). Tell the person this is expected: enter the Mac password and click
+**Always Allow**. Yo shows "Waiting for macOS Keychain…" until they answer.
+
 ## 4. Install Colima and the Docker CLI (this Mac only)
 
 Skip this for a home server, and skip any tool the preflight already found. These are the commands Yo's setup
@@ -240,6 +245,8 @@ above, and anything left to do.
 - **"Yo is damaged and can't be opened" / "cannot be opened because the developer cannot be verified":** the
   quarantine flag from a browser download. Use right-click → Open, or (with the person's OK)
   `xattr -dr com.apple.quarantine "<install dir>/Yo.app"`.
+- **macOS asks about "Yo Safe Storage" / Yo says "Waiting for macOS Keychain…":** expected after an update.
+  Enter the Mac password and click **Always Allow** (not Deny), and Yo continues.
 - **Yo opens, but the window stays blank or says core didn't start:** quit Yo (⌘Q) and open it again. If it
   persists, look at the end of `~/Library/Application Support/Yo/logs/core.log` and report the error lines
   (check them for anything secret before sharing).

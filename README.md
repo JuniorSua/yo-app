@@ -64,6 +64,11 @@ Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app
    xattr -dr com.apple.quarantine /Applications/Yo.app
    ```
 
+**After an update**, macOS may ask whether Yo can use its confidential information stored in
+**“Yo Safe Storage”** (Yo's saved login in your Keychain). Each ad-hoc signed version has a new signature, so
+macOS checks once per update. Enter your Mac password and click **Always Allow**; Yo waits on a "Waiting for
+macOS Keychain…" page until you do.
+
 Yo lives in the menu bar: closing the window keeps your agents running. ⌘Q quits.
 
 ## Connect your model

@@ -2,7 +2,7 @@ import { AVATAR_ACCESSORIES, AVATAR_EYES, AVATAR_SHAPES } from "@yo/contracts";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AGENT_TEMPLATES, Avatar, colorById, randomAvatar, YoLogo } from "./index";
+import { AGENT_TEMPLATES, Avatar, colorById, creatureAvatar, randomAvatar, YoLogo } from "./index";
 
 describe("avatar", () => {
   it("renders every shape × eyes × accessory as SVG", () => {
@@ -23,6 +23,15 @@ describe("avatar", () => {
     );
     expect(html).toContain("yo-av--sleeping");
     expect(html).toContain(">z<");
+  });
+
+  it("a creature first paints its drawn fallback (the 3D renderer loads on demand)", () => {
+    const html = renderToStaticMarkup(
+      createElement(Avatar, { avatar: creatureAvatar("mimi"), state: "working", size: 40, live: true }),
+    );
+    expect(html).toContain("<svg");
+    expect(html).toContain('data-finish="dimensional"');
+    expect(html).not.toContain("NaN");
   });
 
   it("resolves palette ids and raw hex colors", () => {

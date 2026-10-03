@@ -135,6 +135,8 @@ test.describe("update notices", () => {
     const panel = page.getByTestId("update-panel");
     await expect(panel).toContainText("Yo 0.1.313 is available");
     await expect(panel).toContainText("Download the new version from GitHub");
+    // Ad-hoc builds: the Keychain asks again after each update (#74).
+    await expect(panel.getByTestId("update-note")).toContainText("Yo Safe Storage");
     await expect(panel.getByRole("button", { name: "Restart" })).toHaveCount(0);
     await page.getByTestId("update-download").click();
     await expect.poll(() => mock(page, "updates.downloads")).toBe(1);

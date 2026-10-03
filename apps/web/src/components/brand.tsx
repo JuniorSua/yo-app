@@ -1,6 +1,8 @@
-import { Avatar } from "@yo/avatar";
+import { Avatar, type TurnInfo, turnInfo } from "@yo/avatar";
 import type { Account, AgentActivity, AgentView, ProviderKind } from "@yo/contracts";
+import { useMemo } from "react";
 import { cn } from "../lib/utils";
+import { useTimeline } from "../stores/timeline";
 
 export { PROVIDER_NAME } from "../lib/accounts";
 
@@ -88,6 +90,7 @@ export function AgentAvatar({
   ground,
   state,
   quiet,
+  live,
 }: {
   agent: Pick<AgentView, "avatar" | "name"> & Partial<AgentView>;
   size?: number;
@@ -96,11 +99,29 @@ export function AgentAvatar({
   state?: AgentActivity;
   /** Decorative (lists, headers): living characters stay awake instead of showing the idle "asleep" look. */
   quiet?: boolean;
+  /**
+   * The agent you're viewing (chat header, empty-state hero): a creature avatar animates on the one shared
+   * renderer and shows "thinking" from the agent's timeline. Lists leave this off (cached still pictures).
+   */
+  live?: boolean;
 }) {
   const s = state ?? (agent.activity ? agentState(agent as AgentView) : "idle");
+  const creatureLive = !!live && !!agent.avatar.creature;
+  // A primitive key, so streaming deltas don't re-render the avatar unless the pose would change.
+  const turnKey = useTimeline((t) => {
+    const info = creatureLive && agent.id ? turnInfo(t.byAgent[agent.id]) : undefined;
+    return info ? `${info.toolRunning ? 1 : 0}:${info.lastKind ?? ""}` : "";
+  });
+  const turn = useMemo<TurnInfo | undefined>(() => {
+    if (!turnKey) return undefined;
+    const [tool, kind] = turnKey.split(":");
+    return { toolRunning: tool === "1", lastKind: (kind || null) as TurnInfo["lastKind"] };
+  }, [turnKey]);
   return (
     <Avatar
       avatar={agent.avatar}
+      live={live}
+      turn={turn}
       size={size}
       state={s}
       className={className}

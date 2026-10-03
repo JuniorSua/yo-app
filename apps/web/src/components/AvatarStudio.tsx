@@ -1,8 +1,12 @@
 import {
   AVATAR_PRESETS,
   Avatar,
+  CREATURE_ORDER,
+  type CreatureId,
   CUPCAT_VARIANTS,
   type CupCatVariant,
+  creatureAvatar,
+  creatureInfo,
   cupCatVariant,
   EYE_LABELS,
   LIVING_CHARACTERS_INFO,
@@ -14,22 +18,28 @@ import {
   randomAvatar,
   rollCupCat,
   SHAPE_LABELS,
+  type TurnInfo,
 } from "@yo/avatar";
 import type { AgentActivity, Avatar as AvatarData } from "@yo/contracts";
 import { AVATAR_COLORS, AVATAR_EYES, AVATAR_SHAPES } from "@yo/contracts";
 import { Box, ChevronDown, Dices, ImageUp, Lock, Sparkles, Square, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn, readFileDataUrl } from "../lib/utils";
+import { editDrawn, pickCreature } from "./avatarEdit";
 import { Button } from "./ui/button";
 import { Tip } from "./ui/overlay";
 
-const STATES: { value: AgentActivity; label: string }[] = [
+type Preview = AgentActivity | "thinking";
+const STATES: { value: Preview; label: string; creatureOnly?: boolean }[] = [
   { value: "idle", label: "Idle" },
   { value: "working", label: "Working" },
+  { value: "thinking", label: "Thinking", creatureOnly: true },
   { value: "waiting", label: "Needs you" },
   { value: "done", label: "Done" },
   { value: "sleeping", label: "Asleep" },
 ];
+/** The studio's "Thinking" preview: a turn that's reasoning, with no tool running. */
+const THINKING_TURN: TurnInfo = { toolRunning: false, lastKind: "reasoning" };
 
 /** Copilot-style shapes (CupCats are rolled, not shaped). */
 const COPILOT_SHAPES = AVATAR_SHAPES.filter((s) => s !== "cupcat");
@@ -219,28 +229,47 @@ function LivingEditor({
   );
 }
 
+/** About the chosen creature (no colours to edit: it moves with what the agent is doing). */
+function CreatureCard({ kind }: { kind: CreatureId }) {
+  const c = creatureInfo(kind);
+  return (
+    <div className="rounded-2xl border border-border bg-bg/40 p-4" data-testid="creature-card">
+      <div className="font-semibold">
+        {c.name} <span className="font-normal text-muted text-sm">· {c.species}</span>
+      </div>
+      <p className="mt-1 text-muted text-xs leading-relaxed">{c.description}</p>
+      <p className="mt-2 text-muted text-xs leading-relaxed">
+        Breathes when idle, gets its laptop out while working, thinks with a little cloud, glows yellow when
+        it needs you, polishes the laptop when it's done, and dozes off when asleep.
+      </p>
+    </div>
+  );
+}
+
 export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange: (a: AvatarData) => void }) {
-  const [preview, setPreview] = useState<AgentActivity>("idle");
+  const [preview, setPreview] = useState<Preview>("idle");
   const [anim, setAnim] = useState(0);
   const [rolling, setRolling] = useState<AvatarData | null>(null);
   const timer = useRef<number | null>(null);
   const file = useRef<HTMLInputElement>(null);
   const isCat = value.shape === "cupcat" && !value.image;
-  const isLiving = !!value.living && !value.image;
+  const isCreature = !!value.creature && !value.image;
+  const isLiving = !!value.living && !value.image && !isCreature;
   // Every Yo worker wears the headset (they're listening), so edits always keep it on. A rolled CupCat is
   // remembered (variant) so switching away and back brings the same cat — you only roll once per agent.
-  const set = (patch: Partial<AvatarData>) =>
-    onChange({ ...value, living: undefined, ...patch, accessory: "headset" });
+  const set = (patch: Partial<AvatarData>) => onChange(editDrawn(value, patch));
   const mini = (patch: Partial<AvatarData>): AvatarData => ({
     ...value,
     ...(value.shape === "cupcat" ? { shape: "squircle" as const } : {}),
     image: undefined,
     living: undefined,
+    creature: undefined,
     accessory: "headset",
     ...patch,
   });
   const pickLiving = (id: LivingCharacterId, body?: string, headset?: string) =>
     onChange({ ...livingAvatar(id, body, headset), variant: value.variant });
+  const choose = (kind: CreatureId) => onChange(pickCreature(value, kind));
   const pickCat = () => {
     const kept = value.variant ? CUPCAT_VARIANTS.find((c) => c.id === value.variant) : undefined;
     if (kept) onChange(cupcatAvatar(kept));
@@ -285,6 +314,7 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
   const copilotActive =
     !value.image &&
     !value.living &&
+    !value.creature &&
     value.shape === AVATAR_PRESETS[0]!.avatar.shape &&
     value.color === AVATAR_PRESETS[0]!.avatar.color &&
     value.finish === "dimensional";
@@ -296,9 +326,11 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
           <Avatar
             key={`${preview}-${anim}`}
             avatar={shown}
-            size={isCat || rolling || isLiving ? 150 : 132}
-            state={rolling ? "idle" : preview}
+            size={isCat || rolling || isLiving || isCreature ? 150 : 132}
+            state={rolling ? "idle" : preview === "thinking" ? "working" : preview}
+            turn={preview === "thinking" ? THINKING_TURN : undefined}
             animated={!rolling}
+            live
             ground
           />
           {value.image && (
@@ -312,7 +344,7 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
           )}
         </div>
         <div className="mt-2.5 flex flex-wrap justify-center gap-1">
-          {STATES.map((s) => (
+          {STATES.filter((s) => !s.creatureOnly || isCreature).map((s) => (
             <button
               key={s.value}
               onClick={() => {
@@ -335,7 +367,10 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
             className="flex-1"
             disabled={isCat}
             onClick={() => {
-              if (isLiving) {
+              if (isCreature) {
+                const others = CREATURE_ORDER.filter((k) => k !== value.creature?.kind);
+                choose(others[Math.floor(Math.random() * others.length)]!);
+              } else if (isLiving) {
                 const id = LIVING_ORDER[Math.floor(Math.random() * LIVING_ORDER.length)]!;
                 const c = LIVING_CHARACTERS_INFO[id];
                 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)]!;
@@ -377,6 +412,25 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
 
       <div className="min-w-0 flex-1 space-y-4">
         <div className="flex flex-wrap items-start gap-5">
+          <Group title="Creatures">
+            <div className="grid grid-cols-3 gap-1.5">
+              {CREATURE_ORDER.map((kind) => {
+                const c = creatureInfo(kind);
+                return (
+                  <Tile
+                    key={kind}
+                    label={`${c.name}: ${c.species.toLowerCase()}. Moves with what the agent is doing.`}
+                    active={isCreature && value.creature?.kind === kind}
+                    onClick={() => choose(kind)}
+                    testId={`creature-${kind}`}
+                    className="w-[64px]"
+                  >
+                    <Avatar avatar={creatureAvatar(kind)} size={52} animated={false} title={c.name} />
+                  </Tile>
+                );
+              })}
+            </div>
+          </Group>
           <Group title="Living characters">
             <div className="grid grid-cols-3 gap-1.5">
               {LIVING_ORDER.map((id) => {
@@ -442,8 +496,9 @@ export function AvatarStudio({ value, onChange }: { value: AvatarData; onChange:
           </Group>
         </div>
 
+        {isCreature && value.creature ? <CreatureCard kind={value.creature.kind} /> : null}
         {isLiving ? <LivingEditor value={value} onPick={pickLiving} /> : null}
-        {isLiving ? null : isCat || rolling ? (
+        {isLiving || isCreature ? null : isCat || rolling ? (
           <CupCatCard value={value} rolling={!!rolling} />
         ) : (
           <>

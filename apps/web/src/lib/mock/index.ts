@@ -26,6 +26,7 @@
  * red bug-report draft that waits for "Report it" (filed as an issue) or "Not now", anything else ->
  * research-style run with todos + tools.
  */
+import { CREATURE_ORDER, creatureAvatar } from "@yo/avatar";
 import {
   type Account,
   type ActivityEvent,
@@ -54,6 +55,7 @@ import {
   type TodoEntry,
 } from "@yo/contracts";
 import type { ConnectionStatus, PtyConnection, YoClient } from "../api";
+import { isCreatureKind } from "../creatureHue";
 import { nextRun } from "../cron";
 import type { DeviceStatusView, WindowLease, YoDesktopBridge } from "../desktop";
 import { applyConnectScenario, MockConnect, markConnected, mockConnectScenario } from "./connect";
@@ -140,6 +142,16 @@ export class MockClient implements YoClient {
     const theme = q.get("theme");
     if (theme === "light" || theme === "dark" || theme === "system") this.s.settings.theme = theme;
     if (q.get("legacyGrok") === "1") this.seedLegacyGrok();
+    // `&mockCreatures=1`: every agent gets a creature avatar (Sprout, Pebble, Mimi in turn). Perf runs and
+    // screenshots only; the default mock data (and its e2e screenshots) stay as they are.
+    if (q.get("mockCreatures") === "1")
+      this.s.agents.forEach((a, i) => {
+        a.avatar = creatureAvatar(CREATURE_ORDER[i % CREATURE_ORDER.length]!);
+      });
+    // Dev/demo only (`&hue=sprout|pebble|mimi`): Yo is that creature, so light mode shows its hue.
+    const hue = q.get("hue");
+    const primary = this.s.agents.find((a) => a.isPrimary);
+    if (primary && isCreatureKind(hue)) primary.avatar = { ...primary.avatar, creature: { kind: hue } };
     (window as any).__yoMock = this;
     if (q.get("mockDesktop") === "1") {
       this.mac = { paired: onboarded, paused: false, connected: onboarded };

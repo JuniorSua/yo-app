@@ -16,6 +16,12 @@
         } catch (_e) {}
         if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
         document.documentElement.className = t;
+        // Yo's character hue (light mode only), cached by App.tsx.
+        try {
+          const h = localStorage.getItem("yo.hue");
+          if (t === "light" && (h === "sprout" || h === "pebble" || h === "mimi"))
+            document.documentElement.setAttribute("data-hue", h);
+        } catch (_e) {}
       })();
     </script>
   </head>

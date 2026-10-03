@@ -31,8 +31,9 @@ import {
 import { useState } from "react";
 import { accountDetail, accountIdentity, isUsable } from "../../lib/accounts";
 import { api } from "../../lib/api";
+import { CREATURE_NAMES, isCreatureKind, setHuePref, useHuePref } from "../../lib/creatureHue";
 import { cn } from "../../lib/utils";
-import { useApp } from "../../stores/app";
+import { primaryAgent, useApp } from "../../stores/app";
 import { run } from "../../stores/sync";
 import { type SettingsSection, ui, useUI } from "../../stores/ui";
 import { useUpdates } from "../../stores/updates";
@@ -489,6 +490,9 @@ function Notifications() {
 function Appearance() {
   const settings = useApp((s) => s.settings);
   const [name, setName] = useState(settings.userName);
+  const matchHue = useHuePref((s) => s.on);
+  const kind = useApp((s) => primaryAgent(s.agents)?.avatar?.creature?.kind);
+  const yoCreature = isCreatureKind(kind) ? kind : null;
   const themes = [
     { value: "dark" as const, label: "Dark", icon: Moon, bg: "#1C1D20", side: "#17181B", fg: "#F1F0EB" },
     { value: "light" as const, label: "Light", icon: Sun, bg: "#FAF9F6", side: "#F0EFEB", fg: "#222420" },
@@ -534,6 +538,21 @@ function Appearance() {
         ))}
       </div>
       <div className="mt-6 divide-y divide-border">
+        <Row
+          title="Match Yo's character colors in light mode"
+          desc={
+            yoCreature
+              ? `Yo is ${CREATURE_NAMES[yoCreature]}, so light mode takes its colors. Dark mode never changes.`
+              : "When Yo is Sprout, Pebble or Mimi, light mode takes its colors. Dark mode never changes."
+          }
+        >
+          <Switch
+            checked={matchHue}
+            label="Match Yo's character colors in light mode"
+            testId="match-hue"
+            onCheckedChange={setHuePref}
+          />
+        </Row>
         <Row title="Your name" desc="How your agents address you.">
           <Input
             value={name}

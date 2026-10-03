@@ -1,7 +1,9 @@
 import type { AgentActivity, Avatar as AvatarData } from "@yo/contracts";
-import { type CSSProperties, lazy, Suspense, useId } from "react";
+import { Component, type CSSProperties, lazy, type ReactNode, Suspense, useId } from "react";
 import { Accessory } from "./accessories";
 import { colorById } from "./colors";
+import { creatureFallback } from "./creatures/meta";
+import type { TurnInfo } from "./creatures/state";
 import { CupCatFigure } from "./cupcat";
 import {
   DIM_SHAPES,
@@ -21,6 +23,22 @@ import { AVATAR_CSS } from "./styles";
 
 // Living characters load their engine + textures on demand (keeps node scripts and first paint light).
 const LivingAvatar = lazy(() => import("./living/LivingAvatar"));
+// Creatures bring in three.js: it loads only once a creature avatar is on screen (never in the main bundle).
+const CreatureAvatar = lazy(() => import("./creatures/CreatureAvatar"));
+
+/** A creature that fails to load or render shows its drawn fallback instead of blanking the app. */
+class CreatureBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn("[yo] creature avatar fell back to its drawn look:", error);
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
 
 export interface AvatarProps {
   avatar: AvatarData;
@@ -33,6 +51,13 @@ export interface AvatarProps {
   ground?: boolean;
   /** Decorative use (chat headers, lists): living characters look awake instead of asleep when idle. */
   quiet?: boolean;
+  /**
+   * Creatures only: animate on a live canvas (the agent you're viewing). Otherwise a creature is a shared,
+   * cached still picture of its current pose (lists, pickers).
+   */
+  live?: boolean;
+  /** Creatures only: the agent's current turn, when known ("thinking" vs "working"). */
+  turn?: TurnInfo;
   className?: string;
   style?: CSSProperties;
   title?: string;
@@ -73,8 +98,42 @@ export function Avatar({
   style,
   title,
   quiet,
+  live,
+  turn,
 }: AvatarProps) {
   const rid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  if (avatar.creature && !avatar.image) {
+    const creature = avatar.creature;
+    const drawn = (
+      <Avatar
+        avatar={creatureFallback(avatar)}
+        size={size}
+        state={state}
+        animated={false}
+        className={className}
+        style={style}
+        title={title}
+      />
+    );
+    return (
+      <CreatureBoundary key={creature.kind} fallback={drawn}>
+        <Suspense fallback={drawn}>
+          <CreatureAvatar
+            avatar={{ ...avatar, creature }}
+            size={size}
+            state={state}
+            turn={turn}
+            live={live}
+            animated={animated}
+            className={className}
+            style={style}
+            title={title}
+            fallback={drawn}
+          />
+        </Suspense>
+      </CreatureBoundary>
+    );
+  }
   if (avatar.living && !avatar.image) {
     const living = avatar.living;
     const drawn = { ...avatar, living: undefined };

@@ -1,6 +1,28 @@
 export { Avatar, type AvatarProps, AvatarStyles } from "./Avatar";
 export { type AccessoryId, HAT_ACCESSORIES } from "./accessories";
 export { type AvatarColor, colorById, onColor, randomAvatar, YO_AVATAR, YO_YELLOW } from "./colors";
+// Creatures: names, picking and the activity mapping only. The three.js renderer is loaded on demand by
+// <Avatar> (and the workshop imports "@yo/avatar/creatures").
+export {
+  CREATURE_FALLBACK,
+  CREATURE_ORDER,
+  CREATURE_POSES,
+  CREATURES,
+  type CreatureId,
+  type CreaturePose,
+  creatureAvatar,
+  creatureFallback,
+  creatureInfo,
+} from "./creatures/meta";
+export {
+  type CreatureView,
+  creatureState,
+  SNAPSHOT_BUCKETS,
+  snapshotKey,
+  snapshotPx,
+  type TurnInfo,
+  turnInfo,
+} from "./creatures/state";
 export { CupCatFigure } from "./cupcat";
 export {
   CUPCAT_VARIANTS,

@@ -23,7 +23,8 @@ import {
 } from "electron";
 import WebSocket from "ws";
 import { DeviceService } from "./device/DeviceService";
-import { DesktopUpdates } from "./updates";
+import { keychainHint, readKeychainState, rememberSignedInVersion } from "./keychainWait";
+import { DesktopUpdates, UPDATE_CHANNEL } from "./updates";
 
 const CORE_PORT = Number(process.env.YO_PORT ?? 7777);
 const CORE_URL = `http://127.0.0.1:${CORE_PORT}`;
@@ -248,17 +249,43 @@ font:14px -apple-system,system-ui;background:${dark ? "#0B0C0E" : "#FAFAF8"};col
 Connecting to Yo on your ${label}…<br><small>Make sure the PC is on and you're online.</small></div>`;
 }
 
+/**
+ * Show the local "Starting Yo…" page and wait until it's on screen. Signing in reads Yo's saved login
+ * (safeStorage → the "Yo Safe Storage" Keychain item); on an updated ad-hoc build macOS asks for the password
+ * first and main's thread is blocked until it's answered, so this must be painted before that (#74).
+ */
+async function showStartingPage() {
+  const w = win;
+  if (!w || w.isDestroyed()) return;
+  const hint = keychainHint({
+    platform: process.platform,
+    channel: UPDATE_CHANNEL,
+    version: app.getVersion(),
+    ...readKeychainState(app.getPath("userData")),
+  });
+  const shown = w.isVisible() ? null : new Promise<void>((r) => w.once("show", () => r()));
+  await w
+    .loadFile(path.join(__dirname, "starting.html"), { query: { keychain: hint } })
+    .catch(() => undefined);
+  if (shown) await Promise.race([shown, new Promise((r) => setTimeout(r, 2000))]);
+  await new Promise((r) => setTimeout(r, 150)); // let the window server present the frame
+}
+
 /** Load the UI; in Home PC mode show a small waiting screen until the tunnel answers. */
 async function loadUi() {
+  await showStartingPage();
+  if (!updates?.needsSignIn) updates?.start(); // github channel: no need to wait for core
   if (remote && !(await coreHealthy())) {
     void win?.loadURL(
       `data:text/html;charset=utf-8,${encodeURIComponent(waitingPage(remote.label ?? "Home PC"))}`,
     );
     while (win && !win.isDestroyed() && !(await coreHealthy())) await new Promise((r) => setTimeout(r, 2000));
+    await showStartingPage();
   }
   // Sign in before the UI loads so its first request already carries the session cookie, and before
   // main's own connection to core (notifications, tray) so it doesn't race the sign-in.
   const state = await signInWithRetry();
+  if (state === "signed-in") rememberSignedInVersion(app.getPath("userData"), app.getVersion());
   if (!watching) {
     watching = true;
     watchCore();
@@ -545,7 +572,6 @@ if (!gotLock) {
       abortRestart: abortUpdateRestart,
     });
     updates.registerIpc();
-    if (!updates.needsSignIn) updates.start(); // github channel: no need to wait for core
     devices.onChanged(() => updateTray());
     tray = new Tray(trayIcon());
     tray.on("click", () => createWindow());

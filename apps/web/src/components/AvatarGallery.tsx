@@ -1,14 +1,76 @@
-import { AGENT_TEMPLATES, Avatar, YoLogo, YoWordmark } from "@yo/avatar";
+import {
+  AGENT_TEMPLATES,
+  Avatar,
+  CREATURE_ORDER,
+  type CreatureId,
+  creatureAvatar,
+  creatureInfo,
+  type TurnInfo,
+  YoLogo,
+  YoWordmark,
+} from "@yo/avatar";
 import type { AgentActivity } from "@yo/contracts";
 import { AVATAR_ACCESSORIES, AVATAR_COLORS, AVATAR_EYES, AVATAR_SHAPES } from "@yo/contracts";
 
 const STATES: AgentActivity[] = ["idle", "working", "waiting", "done", "error", "sleeping"];
 
+/** The creature poses in activity order; "thinking" is a working turn that isn't using a tool. */
+const CREATURE_SHEET: { label: string; state: AgentActivity; turn?: TurnInfo }[] = [
+  { label: "Idle", state: "idle" },
+  { label: "Working", state: "working" },
+  { label: "Thinking", state: "working", turn: { toolRunning: false, lastKind: "reasoning" } },
+  { label: "Needs you", state: "waiting" },
+  { label: "Done", state: "done" },
+  { label: "Asleep", state: "sleeping" },
+  { label: "Error", state: "error" },
+];
+
+/** Every pose of one creature, as the app's still pictures (/?gallery=1&creature=sprout). */
+function CreatureSheet({ kind, size = 132 }: { kind: CreatureId; size?: number }) {
+  return (
+    <div
+      data-testid={`creature-sheet-${kind}`}
+      className="w-fit rounded-2xl border border-border bg-card p-6"
+    >
+      <div className="mb-4 font-semibold text-lg">
+        {creatureInfo(kind).name}{" "}
+        <span className="font-normal text-muted text-sm">· {creatureInfo(kind).species}</span>
+      </div>
+      <div className="flex gap-5">
+        {CREATURE_SHEET.map((s) => (
+          <div key={s.label} className="flex flex-col items-center gap-2 text-muted text-sm">
+            <div className="grid place-items-center p-3">
+              <Avatar avatar={creatureAvatar(kind)} size={size} state={s.state} turn={s.turn} />
+            </div>
+            {s.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Dev-only visual QA sheet for every avatar shape, eye, accessory and state (/?gallery=1). */
 export function AvatarGallery() {
   const colors = AVATAR_COLORS.map((c) => c.id);
+  const q = new URLSearchParams(location.search);
+  const theme = q.get("theme");
+  if (theme === "light" || theme === "dark") document.documentElement.className = theme;
+  const only = q.get("creature");
+  if (only && (CREATURE_ORDER as string[]).includes(only))
+    return (
+      <div className="h-full bg-bg p-8 text-fg">
+        <CreatureSheet kind={only as CreatureId} />
+      </div>
+    );
   return (
     <div className="scroll-fade h-full overflow-y-auto p-10 text-fg" data-testid="avatar-gallery">
+      <h2 className="mb-3 font-semibold">Creatures</h2>
+      <div className="mb-8 flex flex-col gap-4">
+        {CREATURE_ORDER.map((kind) => (
+          <CreatureSheet key={kind} kind={kind} size={88} />
+        ))}
+      </div>
       <div className="mb-8 flex items-center gap-8">
         <YoWordmark size={40} animated />
         <YoLogo size={96} animated />

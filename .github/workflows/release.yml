@@ -238,7 +238,8 @@ jobs:
              \`\`\`
 
           Updating: Yo tells you when a newer release is out (the update button, bottom left). Download it here and
-          replace the app in Applications; your agents and settings stay.
+          replace the app in Applications; your agents and settings stay. After updating, macOS may ask about
+          **"Yo Safe Storage"** (Yo's saved login in your Keychain): enter your Mac password and click **Always Allow**.
 
           The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it starts it).
           EOF

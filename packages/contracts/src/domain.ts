@@ -23,6 +23,9 @@ export const AVATAR_EYES = ["capsule", "round", "sleepy", "happy"] as const;
 export const AVATAR_FINISHES = ["flat", "dimensional"] as const;
 /** "Living" characters: the original 3D renders, animated (see packages/avatar/src/living). */
 export const LIVING_CHARACTERS = ["violet", "lagoon", "coral"] as const;
+/** Procedural Three.js creatures (round 2, from the ?creature-lab=1 workshop). */
+export const CREATURE_KINDS = ["sprout", "pebble", "mimi"] as const;
+export type CreatureKind = (typeof CREATURE_KINDS)[number];
 
 export const AVATAR_ACCESSORIES = [
   "none",
@@ -82,6 +85,12 @@ export const Avatar = z.object({
   living: z
     .object({ character: z.enum(LIVING_CHARACTERS), body: z.string(), headset: z.string() })
     .optional(),
+  /**
+   * Creature (opt-in): Sprout, Pebble or Mimi, animated from the agent's activity. Like `living`, the other
+   * fields stay filled with a close drawn fallback (shape/colour) for anything that can't show it. In light
+   * mode the primary agent's creature can also tint the whole UI (its hue).
+   */
+  creature: z.object({ kind: z.enum(CREATURE_KINDS) }).optional(),
 });
 export type Avatar = z.infer<typeof Avatar>;
 

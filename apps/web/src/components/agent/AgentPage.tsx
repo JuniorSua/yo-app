@@ -59,7 +59,7 @@ function AgentHeader({ agent }: { agent: AgentView }) {
   return (
     <PageHeader>
       <div className="flex min-w-0 items-center gap-2.5">
-        <AgentAvatar agent={agent} size={30} />
+        <AgentAvatar agent={agent} size={30} live />
         <div className="min-w-0 leading-tight">
           <div className="flex items-center gap-2">
             <span className="truncate font-semibold" data-testid="agent-title">
@@ -146,7 +146,7 @@ function EmptyState({ agent }: { agent: AgentView }) {
       <div className="flex max-w-[620px] flex-col items-center text-center animate-rise">
         <div className="relative">
           <div className="-inset-10 absolute rounded-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--brand)_14%,transparent),transparent)] blur-xl" />
-          <AgentAvatar agent={agent} size={128} ground className="relative" />
+          <AgentAvatar agent={agent} size={128} ground live className="relative" />
         </div>
         <h2 className="mt-5 font-semibold text-3xl tracking-[-0.025em]">
           {userName ? `Hey ${userName}, I'm ${agent.name}.` : `Hi, I'm ${agent.name}.`}

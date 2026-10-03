@@ -75,6 +75,82 @@
   color-scheme: dark;
 }
 
+/* --------------------- Light-mode hue from Yo's character --------------------- */
+/* Round 2, milestone 3. When Yo (the primary agent) is Sprout, Pebble or Mimi, the light theme takes that
+   character's colors. App.tsx sets `data-hue` on <html> only in light mode with Settings → Appearance →
+   "Match Yo's character colors" on; the selectors also require `.light`, so dark mode can't be affected.
+   Generated from apps/web/src/lib/creatureHue.ts (`hueTokens`): edit the palettes there, then copy the values
+   here. creatureHue.test.ts fails if this block and the module disagree, and checks every pair for WCAG AA. */
+
+html.light[data-hue="sprout"] {
+  --bg: #fafbf5;
+  --sidebar: #f1f4e7;
+  --card: #fdfdfb;
+  --elevated: #fdfdfb;
+  --bubble: #edf2e2;
+  --border: #dde4ce;
+  --border-strong: #d0d7c1;
+  --fg: #35432d;
+  --fg-2: #49563e;
+  --muted: #5d684f;
+  --faint: #868e7b;
+  --hover: rgb(119 149 84 / 0.09);
+  --active: rgb(119 149 84 / 0.15);
+  --brand: #779554;
+  --brand-ink: #566c41;
+  --brand-fg: #1f281b;
+  --link: #566c41;
+  --focus: #566c41;
+  --scrim: rgb(27 34 23 / 0.28);
+  --screen-bg: #e6e9dc;
+}
+
+html.light[data-hue="pebble"] {
+  --bg: #fffaf7;
+  --sidebar: #faf0e8;
+  --card: #fffdfc;
+  --elevated: #fffdfc;
+  --bubble: #f7e8df;
+  --border: #ecdcd0;
+  --border-strong: #e0cfc4;
+  --fg: #543e34;
+  --fg-2: #664d40;
+  --muted: #785b4c;
+  --faint: #9d867a;
+  --hover: rgb(178 120 93 / 0.09);
+  --active: rgb(178 120 93 / 0.15);
+  --brand: #b2785d;
+  --brand-ink: #835b49;
+  --brand-fg: #271c18;
+  --link: #835b49;
+  --focus: #835b49;
+  --scrim: rgb(42 31 26 / 0.28);
+  --screen-bg: #f0e5dd;
+}
+
+html.light[data-hue="mimi"] {
+  --bg: #fcfaff;
+  --sidebar: #f2eef8;
+  --card: #fefdff;
+  --elevated: #fefdff;
+  --bubble: #eee6f6;
+  --border: #e5dced;
+  --border-strong: #d9d0e2;
+  --fg: #4b405f;
+  --fg-2: #5a4c6b;
+  --muted: #685777;
+  --faint: #92849d;
+  --hover: rgb(150 128 177 / 0.09);
+  --active: rgb(150 128 177 / 0.15);
+  --brand: #9680b1;
+  --brand-ink: #6c5c83;
+  --brand-fg: #25202f;
+  --link: #6c5c83;
+  --focus: #6c5c83;
+  --scrim: rgb(38 32 48 / 0.28);
+  --screen-bg: #e8e4ef;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-sidebar: var(--sidebar);

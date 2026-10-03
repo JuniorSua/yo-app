@@ -164,6 +164,12 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
             tone="brand"
             title={`Yo ${desktop?.availableVersion} is available`}
             line="Download the new version from GitHub and replace Yo in Applications."
+            note={
+              // Ad-hoc signed builds get a new signature each version, so macOS asks again (#74).
+              window.yoDesktop?.platform === "darwin"
+                ? "After updating, macOS may ask about “Yo Safe Storage”: click Always Allow."
+                : undefined
+            }
             action={
               <>
                 <Button size="sm" variant="ghost" onClick={onDone}>
@@ -302,12 +308,15 @@ function Row({
   icon,
   title,
   line,
+  note,
   action,
   tone,
 }: {
   icon: ReactNode;
   title: string;
   line: string;
+  /** A smaller second line under `line`. */
+  note?: string;
   action?: ReactNode;
   tone?: "brand";
 }) {
@@ -325,6 +334,11 @@ function Row({
         <div className="min-w-0 flex-1">
           <div className="font-medium text-base">{title}</div>
           <div className="text-muted text-sm">{line}</div>
+          {note && (
+            <div data-testid="update-note" className="mt-1.5 text-faint text-xs">
+              {note}
+            </div>
+          )}
         </div>
       </div>
       {action && <div className="mt-2.5 flex justify-end gap-1.5">{action}</div>}

@@ -8,7 +8,11 @@ import "./styles.css";
 
 const root = createRoot(document.getElementById("root")!);
 
-if (new URLSearchParams(location.search).has("gallery")) {
+if (new URLSearchParams(location.search).has("creature-lab")) {
+  // Isolated character exploration: /?creature-lab=1. No API or agent data mutations.
+  document.title = "Yo — Character workshop";
+  import("./components/creature-lab/CreatureLab").then(({ CreatureLab }) => root.render(<CreatureLab />));
+} else if (new URLSearchParams(location.search).has("gallery")) {
   // Visual QA page for the avatar system: /?gallery=1
   import("./components/AvatarGallery").then(({ AvatarGallery }) => root.render(<AvatarGallery />));
 } else

@@ -16,23 +16,31 @@ import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { UpdateNotice } from "./components/UpdateNotice";
 import { TooltipProvider } from "./components/ui/overlay";
 import { WindowSessionBanner } from "./components/WindowSessionBanner";
+import { cacheHue, hueBackground, resolveHue, useHuePref } from "./lib/creatureHue";
 import { desktop } from "./lib/desktop";
 import { useShortcuts } from "./lib/useShortcuts";
-import { useApp } from "./stores/app";
+import { primaryAgent, useApp } from "./stores/app";
 import { ui, useUI } from "./stores/ui";
 
 function useTheme() {
   const theme = useApp((s) => s.settings.theme);
   const booted = useApp((s) => s.booted);
+  // Light-mode hue: Yo's (the primary agent's) creature, unless turned off in Settings → Appearance.
+  const creature = useApp((s) => primaryAgent(s.agents)?.avatar?.creature?.kind);
+  const matchHue = useHuePref((s) => s.on);
   useEffect(() => {
     if (!booted) return;
     const mq = matchMedia("(prefers-color-scheme: light)");
     const apply = () => {
       const t = theme === "system" ? (mq.matches ? "light" : "dark") : theme;
-      document.documentElement.className = t;
+      const root = document.documentElement;
+      root.className = t;
+      const hue = resolveHue({ creature, theme: t, enabled: matchHue });
+      if (hue) root.dataset.hue = hue;
+      else delete root.dataset.hue;
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute("content", t === "dark" ? "#1C1D20" : "#FAF9F6");
+        ?.setAttribute("content", t === "dark" ? "#1C1D20" : (hueBackground(hue) ?? "#FAF9F6"));
     };
     apply();
     try {
@@ -40,9 +48,10 @@ function useTheme() {
     } catch {
       /* ignore */
     }
+    cacheHue(resolveHue({ creature, theme: "light", enabled: matchHue }));
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
-  }, [theme, booted]);
+  }, [theme, booted, creature, matchHue]);
 }
 
 function Splash() {
