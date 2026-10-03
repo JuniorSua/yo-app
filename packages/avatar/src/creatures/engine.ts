@@ -79,9 +79,10 @@ export class CreatureEngine {
     this.renderer.setPixelRatio(1);
     this.renderer.setClearColor(0x000000, 0);
     this.stage = createStage(this.renderer, { shadowMap: false, environment: false });
-    this.camera = new THREE.PerspectiveCamera(24, 1, 0.1, 50);
-    this.camera.position.set(0.25, 2.55, 8.6);
-    this.camera.lookAt(0, 1.96, 0);
+    // Head to toe with a little room below the feet (they stand at y = 0) and above for the thought cloud.
+    this.camera = new THREE.PerspectiveCamera(26, 1, 0.1, 50);
+    this.camera.position.set(0.25, 2.42, 8.6);
+    this.camera.lookAt(0, 1.83, 0);
     this.canvas.addEventListener("webglcontextlost", this.onLost);
     document.addEventListener("visibilitychange", this.wake);
     this.reduced.addEventListener("change", this.onReduced);
