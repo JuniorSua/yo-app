@@ -105,7 +105,7 @@
           </div>
           <p class="hero-meta reveal">
             Free download on GitHub · macOS 13 or newer · Apple silicon ·
-            <a href="#first-open" data-first-open>First open: right-click → Open</a>
+            <a href="#first-open" data-first-open>First open: one extra click</a>
           </p>
         </div>
 
@@ -208,7 +208,7 @@
             </div>
             <span class="step-n">Step 1</span>
             <h3>Download Yo</h3>
-            <p>Get the Mac app from GitHub and drag it to Applications. The first time, right-click it and choose Open.</p>
+            <p>Get the Mac app from GitHub and drag it to Applications. The first time, macOS asks you to confirm it once (see the FAQ).</p>
           </li>
           <li class="step reveal">
             <div class="step-viz" aria-hidden="true">
@@ -536,8 +536,9 @@
           <details id="first-open">
             <summary>macOS says it can't check Yo. How do I open it?</summary>
             <p>
-              Yo's builds aren't notarized by Apple, so the first time you open it, right-click Yo in Applications,
-              choose Open, then Open again. Or run this once in Terminal:
+              Yo's builds aren't notarized by Apple, so macOS asks you to confirm it once. Open Yo, close the warning,
+              then go to System Settings → Privacy &amp; Security, scroll down and click Open Anyway (macOS 15 and later).
+              On macOS 14, right-click Yo in Applications, choose Open, then Open again. Or run this once in Terminal:
               <code class="cmd">xattr -dr com.apple.quarantine /Applications/Yo.app</code>
               After that it opens like any other app.
             </p>
