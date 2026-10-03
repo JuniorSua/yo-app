@@ -1,0 +1,68 @@
+name: Issues
+
+# Bug-report housekeeping in the public repo JuniorSua/yo-app (every job checks, so it never runs, or bills
+# minutes, anywhere else):
+#  - A report someone filed from inside Yo (their agent drafted it, they pressed Submit on GitHub) starts with
+#    an invisible "<!-- yo:bug-report -->" line. Labels in Yo's prefilled link only stick for people who can
+#    triage the repo, so this adds `bug` and `from-yo` itself.
+#  - When the maintainer labels an issue `accepted`, the reporter gets one comment saying a fix is coming.
+# Closing an issue once its fix is released is release.yml's job ("Close the issues this release fixes").
+#
+# Issue text is untrusted: it's only ever tested with contains() here, never put into a shell command.
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions: {}
+
+jobs:
+  from-yo:
+    name: Label reports filed from Yo
+    if: >-
+      github.repository == 'JuniorSua/yo-app' && github.event.action == 'opened' &&
+      contains(github.event.issue.body, '<!-- yo:bug-report -->')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Add bug and from-yo
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue edit "$NUMBER" -R "$REPO" --add-label bug --add-label from-yo
+
+  accepted:
+    name: Tell the reporter it's accepted
+    if: >-
+      github.repository == 'JuniorSua/yo-app' && github.event.action == 'labeled' &&
+      github.event.label.name == 'accepted' && github.event.issue.state == 'open'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Comment once
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          marker="<!-- yo:accepted -->"
+          # Taking the label off and on again doesn't comment twice.
+          seen="$(gh issue view "$NUMBER" -R "$REPO" --json comments \
+            --jq "[.comments[].body | select(contains(\"$marker\"))] | length")"
+          if [ "$seen" != "0" ]; then echo "Already told them."; exit 0; fi
+          cat > comment.md <<EOF
+          Thanks for reporting this! It's accepted and a fix is on the way.
+
+          This issue closes by itself with a "Fixed in Yo 0.1.N" comment as soon as a release has the fix. Yo then
+          offers the update: click **Download** on the update button (bottom left), or get it from
+          [the latest release](https://github.com/${REPO}/releases/latest).
+
+          ${marker}
+          EOF
+          gh issue comment "$NUMBER" -R "$REPO" --body-file comment.md

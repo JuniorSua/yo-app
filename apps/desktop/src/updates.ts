@@ -33,8 +33,9 @@ import {
 import { type AppUpdater, autoUpdater } from "electron-updater";
 import { DEFAULT_UPDATE_REPO } from "../scripts/channel.mjs";
 import {
-  GITHUB_CHECK_INTERVAL_MS,
   GITHUB_MIN_CHECK_GAP_MS,
+  GITHUB_TICK_MS,
+  githubCheckDue,
   isReleasePageUrl,
   latestReleaseApiUrl,
   readLatestRelease,
@@ -81,6 +82,8 @@ export class DesktopUpdates {
   private readonly logFile: string;
   private githubStarted = false;
   private githubLastCheck = 0;
+  /** When GitHub last answered (newer or nothing newer); 0 = not yet. */
+  private githubLastAnswer = 0;
   private githubInFlight: Promise<DesktopUpdateState> | null = null;
 
   constructor(private readonly o: DesktopUpdatesOptions) {
@@ -226,7 +229,10 @@ export class DesktopUpdates {
     const background = () =>
       void this.checkGithub().catch((err) => this.log("warn", `github check: ${String(err).slice(0, 200)}`));
     background();
-    this.timer = setInterval(background, GITHUB_CHECK_INTERVAL_MS);
+    // Every 6 hours of real time (sleep included), and again soon after a check that got no answer.
+    this.timer = setInterval(() => {
+      if (githubCheckDue(Date.now(), this.githubLastCheck, this.githubLastAnswer)) background();
+    }, GITHUB_TICK_MS);
     this.timer.unref();
   }
 
@@ -254,6 +260,7 @@ export class DesktopUpdates {
         this.log("warn", `github check failed: ${String((err as Error)?.message ?? err).slice(0, 200)}`);
       }
       const r = readLatestRelease(status, body, this.state.currentVersion, UPDATE_REPO);
+      if (r.kind !== "quiet") this.githubLastAnswer = Date.now();
       if (r.kind === "newer")
         this.apply({ type: "available", version: r.version, url: r.url, at: Date.now() });
       else if (r.kind === "none") this.apply({ type: "none", at: Date.now() });

@@ -7,6 +7,10 @@ Keep the PR small and about one thing. Title in plain words, like the recent his
 ## What changes for the user
 <!-- What someone using Yo will notice. For internal-only changes, say what gets better and for whom. -->
 
+## Fixes a public issue?
+<!-- Fixing a bug someone reported on JuniorSua/yo-app? Write "Fixes yo-app#N" here AND as a line in one of the
+commit messages (that's what the release reads). Never "JuniorSua/yo-app#N": GitHub would close it too early. -->
+
 ## Lane / branch
 <!-- The branch, and the area or lane it belongs to, e.g. "UI polish (ui/polish)". -->
 

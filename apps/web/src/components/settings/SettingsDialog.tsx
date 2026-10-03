@@ -39,6 +39,7 @@ import { type SettingsSection, ui, useUI } from "../../stores/ui";
 import { useUpdates } from "../../stores/updates";
 import { accountTone, PROVIDER_NAME, PROVIDER_VENDOR, ProviderIcon, StatusDot } from "../brand";
 import { ConnectModel } from "../connect/ConnectModel";
+import { setComputerSetup } from "../setup/SetupChat";
 import { Button } from "../ui/button";
 import { Badge, Input, Select, Switch } from "../ui/controls";
 import { DialogClose, DialogTitle, Menu, MenuItem, MenuSeparator, Modal } from "../ui/overlay";
@@ -270,9 +271,12 @@ function Accounts() {
 function Computer() {
   const computer = useApp((s) => s.computer);
   const settings = useApp((s) => s.settings);
+  const hasModel = useApp((s) => s.accounts.some(isUsable));
+  const primary = useApp((s) => primaryAgent(s.agents));
   if (!computer) return null;
   const pct = computer.memMB && computer.memLimitMB ? computer.memMB / computer.memLimitMB : 0;
   const running = computer.runtime === "running";
+  const notSetUp = computer.host.kind === "local" && (settings.computerSetup ?? "done") !== "done";
   return (
     <div>
       <H desc="Where your agents' computers run.">Computer</H>
@@ -327,6 +331,22 @@ function Computer() {
           {running ? (
             <Button variant="secondary" size="sm" onClick={() => run(api().call("computer.stop", {}))}>
               Stop
+            </Button>
+          ) : notSetUp ? (
+            // Never set up on this Mac: go through the setup chat (it checks the Mac and the tools first),
+            // not straight to a VM this Mac may not have room for.
+            <Button
+              variant="primary"
+              size="sm"
+              data-testid="computer-setup"
+              onClick={() => {
+                if (!hasModel) return ui.openSettings("accounts");
+                void setComputerSetup("pending");
+                if (primary) ui.openAgent(primary.id);
+                useUI.setState({ settingsOpen: false });
+              }}
+            >
+              {hasModel ? "Set it up" : "Connect a model first"}
             </Button>
           ) : (
             <Button

@@ -11,7 +11,14 @@ import { openMemoryDb } from "../src/db/db";
 import { Store } from "../src/db/store";
 import { Hub } from "../src/hub";
 import { MemorySecretStore } from "../src/secrets/SecretStore";
-import { BugReports, consentOf, DEFAULT_ISSUE_REPO, newIssueUrl, redact } from "../src/tools/bugReports";
+import {
+  BugReports,
+  consentOf,
+  DEFAULT_ISSUE_REPO,
+  newIssueUrl,
+  REPORT_MARKER,
+  redact,
+} from "../src/tools/bugReports";
 
 const HOME = "/Users/alice";
 
@@ -235,6 +242,9 @@ describe("report_bug", () => {
     expect(url.searchParams.get("labels")).toBe("bug,from-yo");
     expect(url.searchParams.get("body")).toContain("## Suggested fix");
     expect(url.searchParams.get("body")).not.toContain("abcdefghijklmnop1234");
+    // GitHub drops the link's labels for people who can't triage; the public repo's workflow labels by this.
+    expect(url.searchParams.get("body")!.startsWith(`${REPORT_MARKER}\nReported by Yo`)).toBe(true);
+    expect(url.searchParams.get("body")).toContain("- Yo 0.1.0");
   });
 
   it("falls back to the link when GitHub refuses, and retries without labels on 422", async () => {

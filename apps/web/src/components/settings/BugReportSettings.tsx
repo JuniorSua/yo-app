@@ -2,12 +2,17 @@
  * Settings → Bug reports: where the reports your agent submits (after you say yes) go. With a GitHub token
  * they're filed as issues automatically; without one, each report card has an "Open on GitHub" button.
  * The token is write-only: core stores it (Keychain on a Mac) and only ever says whether one is set.
+ * "Report a problem" opens GitHub's bug form directly, for when the agent can't help.
  */
 import type { BugReportFiling } from "@yo/contracts";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../lib/api";
+import { bugFormUrl } from "../../lib/bugForm";
+import { WEB_BUILD } from "../../lib/updates";
 import { run } from "../../stores/sync";
+import { useUpdates } from "../../stores/updates";
 import { Button } from "../ui/button";
 import { Badge, Input } from "../ui/controls";
 import { Group, H, Row } from "./parts";
@@ -17,6 +22,9 @@ export function BugReportSettings() {
   const [token, setToken] = useState("");
   const [repo, setRepo] = useState("");
   const [busy, setBusy] = useState(false);
+  // Yo.app's version ("0.1.313"); in a browser, the web build ("313-abc1234") is the closest thing.
+  const version = useUpdates((s) => s.desktop?.currentVersion) ?? WEB_BUILD;
+  const formUrl = status ? bugFormUrl(status.repo, version) : null;
 
   useEffect(() => {
     void run(api().call("bugReports.status", {}), "Couldn't load bug report settings").then((s) => {
@@ -44,11 +52,28 @@ export function BugReportSettings() {
       </H>
       <div className="divide-y divide-border">
         <Row
+          title="Report a problem yourself"
+          desc="Opens the bug form on GitHub with your Yo version filled in. You need a free GitHub account. Or ask your agent to “report this bug”: it looks into it for you first."
+        >
+          {formUrl && (
+            <a
+              href={formUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-testid="bug-report-form"
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border-strong/70 bg-elevated px-2.5 font-medium text-sm shadow-soft transition-colors hover:border-border-strong hover:bg-hover"
+            >
+              Report a problem
+              <ExternalLink className="size-3.5" />
+            </a>
+          )}
+        </Row>
+        <Row
           title="Filing on GitHub"
           desc={
             status?.configured
               ? `Reports you approve are filed as issues in ${status.repo}.`
-              : "No token: each report gets an “Open on GitHub” button so you can file it with your own account."
+              : "No token: each report your agent writes gets an “Open on GitHub” button, and you send it with your own GitHub account."
           }
         >
           {status && (

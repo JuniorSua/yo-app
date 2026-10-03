@@ -23,6 +23,12 @@ export const PUBLIC_ISSUE_REPO = "JuniorSua/yo-app";
 export const DEFAULT_ISSUE_REPO =
   typeof __YO_PUBLIC__ === "boolean" && __YO_PUBLIC__ ? PUBLIC_ISSUE_REPO : "JuniorSua/yo";
 export const ISSUE_LABELS = ["bug", "from-yo"];
+/**
+ * First line of every report's body (invisible on GitHub). The labels in a prefilled link only stick for people
+ * who can triage the repo, so the public repo's issues workflow (.github/workflows/issues.yml) looks for this
+ * marker to label a report a user filed with their own account `bug` + `from-yo`.
+ */
+export const REPORT_MARKER = "<!-- yo:bug-report -->";
 const TOKEN_KEY = "github-issues-token";
 const REPO_KEY = "bugReportRepo";
 const REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
@@ -121,6 +127,7 @@ export function bugReportBody(f: Fields, meta: { agentName: string; when: Date; 
     .filter(Boolean)
     .join(" · ");
   return [
+    REPORT_MARKER,
     `Reported by ${meta.agentName} (Yo's agent) on ${meta.when.toISOString()}, after the user approved it.${tags ? `\n${tags}` : ""}\n`,
     section("What happened", f.what_happened),
     section("Expected", f.expected),

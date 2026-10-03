@@ -38,10 +38,11 @@ Links point at the public repo `https://github.com/JuniorSua/yo-app`: `/releases
 | `demo.css` | The demo window (`.app`, `.a-*`), using Yo's own light and dark tokens from `apps/web/src/styles.css` |
 | `demo.js` | The interactive demo: the first run (connect your model, then the setup chat), agents, scripted chats, approvals, take over and hand back, model switching, routines, appearance, the checklist, and `window.yoDemo` (`open(id)`, `ask(text)`) for the rest of the page |
 | `site.js` | Reveal on scroll, nav, menu, the copy chip, the $10 button, mascot eyes and blinking, the typing "Yo, …" boxes, and the small animation loops |
-| `assets/` | `logo.svg`, `avatars/*.svg` (exported from `packages/avatar` on one padded 112-unit canvas so nothing is cropped and every character shares a ground line), and `og.png` (social preview) |
+| `assets/` | `logo.svg`, `avatars/*.svg` (exported from `packages/avatar` on one padded 112-unit canvas so nothing is cropped and every character shares a ground line), `og.png` (social preview, 1200x630, made by `scripts/export-og.mjs`), `apple-touch-icon.png` and `favicon-32.png` |
 | `fonts/` | Geist and Geist Mono woff2, copied from `@fontsource-variable` |
 | `scripts/export-art.tsx` | Re-exports the logo and avatars from `packages/avatar`. Not deployed |
 | `scripts/smoke.mjs` | Playwright smoke test (links, copy chip, $10 button, 375px, the demo's first run, no personal data). Not deployed |
+| `scripts/export-og.mjs` | Re-renders `assets/og.png` (the link preview) from the hero, and the PNG icons from `logo.svg`. Run it after changing the hero's words. Not deployed |
 | `scripts/shots.mjs` | Full-page, per-section and state screenshots at 1280 and 375. Not deployed |
 
 ## Run locally
@@ -77,6 +78,19 @@ While it's empty (the default), the button stays hidden and the page says "Payme
 a free download for now. Only `https://buy.stripe.com/<id>` URLs are accepted; anything else is ignored and the
 page behaves as if it were empty. **Never put a Stripe secret or publishable key in this folder**: it's all public.
 
+## Link preview (`og.png`)
+
+Messages, Slack and X show `assets/og.png` when someone shares the link. It's a picture of the hero, so after
+changing the hero's words, re-render it (and the PNG icons) with the site served locally:
+
+```bash
+python3 -m http.server 5471 -d site &
+node site/scripts/export-og.mjs http://localhost:5471
+```
+
+`og:image` in `index.html` is an absolute URL (previews need one). When the custom domain is added, change it
+there to the new domain.
+
 ## Re-export the art (after avatar changes)
 
 From the repo root, with `node_modules` installed:
@@ -98,8 +112,6 @@ yet, so pushing to `main` does not deploy.
 
 ## Known gaps
 
-- Links to `JuniorSua/yo-app` (releases, `SETUP_PROMPT.md`, the README's build section) only work once that public
-  repo and its first release exist.
 - The demo's free-typed replies are canned and match on keywords. The demo says so after the first one. Its first
   run is scripted too: it doesn't check the visitor's Mac.
 - Restaurant, store, bank, and product names in the demo are made up.

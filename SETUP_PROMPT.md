@@ -34,8 +34,8 @@ Safety rules:
 
 Before changing anything, ask these short questions (offer the defaults):
 
-1. **Which model?** Claude (a Pro or Max plan, through Claude Code) or ChatGPT (a Plus/Pro plan, through
-   Codex). Those are the only two.
+1. **Which model?** Claude (a Pro or Max plan, through Claude Code) or ChatGPT (a Plus, Pro, Business or
+   Enterprise plan, through Codex). Those are the only two.
 2. **Where should the agent's computer run?**
    - **This Mac** (default, free): in a small VM on this Mac.
    - **Home server** (advanced): an always-on PC at home (Linux, or Windows with WSL 2), reached over SSH.
@@ -111,8 +111,10 @@ xattr -p com.apple.quarantine "<install dir>/Yo.app" 2>/dev/null && echo quarant
 
 If it's quarantined, explain the two options and let the person choose:
 
-- In Finder: **right-click Yo → Open**, then **Open** again (on macOS 15 and later: open it once, then
-  **System Settings → Privacy & Security → Open Anyway**), or
+- By hand. On **macOS 15 Sequoia and later**: open Yo and click **Done** on the warning, then
+  **System Settings → Privacy & Security**, scroll to "Yo was blocked…", click **Open Anyway**, then
+  **Open Anyway** again and enter the Mac password (right-click → Open no longer skips the warning there).
+  On **macOS 13 or 14**: in Finder, **right-click Yo → Open**, then **Open** again. Or
 - with their OK, run: `xattr -dr com.apple.quarantine "<install dir>/Yo.app"`
 
 Only run `xattr` after the person says yes.
@@ -243,8 +245,9 @@ above, and anything left to do.
 ## Troubleshooting
 
 - **"Yo is damaged and can't be opened" / "cannot be opened because the developer cannot be verified":** the
-  quarantine flag from a browser download. Use right-click → Open, or (with the person's OK)
-  `xattr -dr com.apple.quarantine "<install dir>/Yo.app"`.
+  quarantine flag from a browser download. Use **Open Anyway** in System Settings → Privacy & Security
+  (macOS 15+; right-click → Open on macOS 13 or 14), or (with the person's OK)
+  `xattr -dr com.apple.quarantine "<install dir>/Yo.app"`. For "is damaged", only `xattr` helps.
 - **macOS asks about "Yo Safe Storage" / Yo says "Waiting for macOS Keychain…":** expected after an update.
   Enter the Mac password and click **Always Allow** (not Deny), and Yo continues.
 - **Yo opens, but the window stays blank or says core didn't start:** quit Yo (⌘Q) and open it again. If it

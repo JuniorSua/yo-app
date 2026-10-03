@@ -425,6 +425,16 @@ function DoneRow({
   );
 }
 
+/** The installers put the CLI in ~/.local/bin, which the Terminal window that ran them may not know yet. */
+function NotFoundHint({ name, command, testId }: { name: string; command: string; testId: string }) {
+  return (
+    <>
+      <div className="mt-2 text-xs">If Terminal says “command not found: {name}”, run this instead:</div>
+      <CopyBox command={command} testId={testId} />
+    </>
+  );
+}
+
 const terminalHint = (d: ConnectDetection | null) =>
   d && d.host.platform !== "darwin"
     ? `Run these in a terminal on ${d.host.name}, the computer Yo runs on.`
@@ -517,6 +527,11 @@ function ClaudeSteps({
               account that has your plan. Terminal then prints a long token that starts with{" "}
               <code className="font-mono text-fg-2">sk-ant-oat</code>.
               <CopyBox command={CONNECT_COMMANDS.claudeToken} testId="cmd-claude-token" />
+              <NotFoundHint
+                name="claude"
+                command={CONNECT_COMMANDS.claudeTokenDirect}
+                testId="cmd-claude-token-direct"
+              />
             </Step>
             <Step n={3} title="Paste the token here">
               Copy the whole token from Terminal. Yo stores it securely and never shows it again.
@@ -697,11 +712,12 @@ function CodexSteps({
                 "Found it, so you can skip this step."
               ) : (
                 <>
-                  Copy this, paste it in Terminal and press Return.
+                  Copy this, paste it in Terminal and press Return. If it asks to start Codex now, press
+                  Return for no.
                   <CopyBox command={CONNECT_COMMANDS.codexInstall} testId="cmd-codex-install" />
                   <div className="mt-1.5 text-xs">
-                    No npm? With Homebrew:{" "}
-                    <code className="font-mono">{CONNECT_COMMANDS.codexInstallBrew}</code>
+                    Or with npm: <code className="font-mono">{CONNECT_COMMANDS.codexInstallNpm}</code>, or
+                    Homebrew: <code className="font-mono">{CONNECT_COMMANDS.codexInstallBrew}</code>
                   </div>
                 </>
               )}
@@ -710,6 +726,11 @@ function CodexSteps({
               Copy this, paste it in Terminal and press Return. Your browser opens: sign in with ChatGPT. It's
               a separate sign-in kept in its own folder, so the Codex sign-in you already use keeps working.
               <CopyBox command={CONNECT_COMMANDS.codexLogin} testId="cmd-codex-login" />
+              <NotFoundHint
+                name="codex"
+                command={CONNECT_COMMANDS.codexLoginDirect}
+                testId="cmd-codex-login-direct"
+              />
             </Step>
             <Step n={3} title="Yo connects on its own" done={connected}>
               When the browser says you're signed in, come back here. This turns green by itself.

@@ -281,6 +281,23 @@ export const Settings = z.object({
 });
 export type Settings = z.infer<typeof Settings>;
 
+/**
+ * This machine's IANA time zone ("Europe/Lisbon"), or null when the runtime can't tell. Onboarding saves the
+ * user's (DEFAULT_SETTINGS' New York is only a placeholder), and the agent's computer runs on the Mac's.
+ */
+export function localTimeZone(
+  read: () => string | undefined = () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+): string | null {
+  try {
+    const tz = read();
+    if (!tz || !/^[A-Za-z][A-Za-z0-9_+/-]*$/.test(tz)) return null;
+    new Intl.DateTimeFormat("en-US", { timeZone: tz }); // throws on a zone this runtime doesn't know
+    return tz;
+  } catch {
+    return null;
+  }
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   userName: "",
   timezone: "America/New_York",

@@ -619,6 +619,44 @@ describe("yo-core", () => {
     fs.rmSync(web, { recursive: true, force: true });
   });
 
+  it("no model: the message says where to connect one, and connecting clears the error", async () => {
+    mock.requireLogin = true; // nothing signed in
+    const core = await boot();
+    await until(() => core.store.listAccounts().every((a) => a.status === "unauthenticated"), 5000, "probe");
+    const agent = primary(core);
+    await core.api["chat.send"]({ agentId: agent.id, text: "hi" });
+    await until(() => core.orchestrator.activityOf(agent.id) === "error", 5000, "refused");
+    const texts = () => core.store.listTimeline(agent.id).map((e) => e.item.text ?? "");
+    expect(texts().some((t) => /isn't connected yet\. Connect .* in Settings → Accounts/.test(t))).toBe(true);
+    expect(mock.count("turn.send")).toBe(0);
+
+    await core.api["connect.claudeToken"]({ token: `sk-ant-oat01-${"FAKE_core_token-".repeat(6)}` });
+    await until(() => core.orchestrator.activityOf(agent.id) !== "error", 5000, "error cleared");
+    expect(texts().some((t) => /A model is connected now/.test(t))).toBe(true);
+  });
+
+  it("a permission change reaches the running session before the next message", async () => {
+    const core = await boot();
+    await until(() => core.store.listAccounts().some((a) => a.status === "authenticated"));
+    const agent = primary(core);
+    await core.api["chat.send"]({ agentId: agent.id, text: "hi" });
+    await until(() => core.orchestrator.activityOf(agent.id) === "done", 5000, "first turn");
+    const started = mock.last("session.start")!;
+    expect(started.runtimeMode).toBe("full-access");
+    await core.api["agent.update"]({ id: agent.id, patch: { runtimeMode: "approval-required" } });
+    await core.api["chat.send"]({ agentId: agent.id, text: "again" });
+    await until(() => mock.count("turn.send") === 2, 5000, "second turn");
+    expect(mock.last("session.set")).toMatchObject({
+      sessionKey: started.sessionKey,
+      runtimeMode: "approval-required",
+    });
+    // Once is enough: the session now runs in that mode.
+    await until(() => core.orchestrator.activityOf(agent.id) === "done", 5000, "second turn done");
+    await core.api["chat.send"]({ agentId: agent.id, text: "third" });
+    await until(() => mock.count("turn.send") === 3, 5000, "third turn");
+    expect(mock.count("session.set")).toBe(1);
+  });
+
   describe("after agentd reconnects", () => {
     const lostNotice = (core: Awaited<ReturnType<typeof startCore>>, agentId: string) =>
       core.store.listTimeline(agentId).some((e) => /lost connection to my computer/.test(e.item.text ?? ""));
@@ -658,6 +696,36 @@ describe("yo-core", () => {
       expect(lostNotice(core, agent.id)).toBe(false);
       expect(core.orchestrator.activityOf(agent.id)).toBe("working");
     });
+
+    it('a computer that comes up after "Do this later" counts as set up', async () => {
+      const core = await boot();
+      core.store.updateSettings({ computerSetup: "later" });
+      const pushes = capture(core);
+      mock.drop(); // e.g. the first message woke it
+      await until(() => core.store.getSettings().computerSetup === "done", 8000, "set up");
+      expect(pushes.some((p) => p.channel === "settings.updated" && p.data.computerSetup === "done")).toBe(
+        true,
+      );
+    });
+
+    for (const reportsLive of [true, false]) {
+      it(`keeps a long turn that had to wake the computer first (${reportsLive ? "agentd lists live sessions" : "older agentd"})`, async () => {
+        mock.reportLiveSessions = reportsLive;
+        const core = await boot({ lostTurnGraceMs: 300 });
+        await until(() => core.store.listAccounts().some((a) => a.status === "authenticated"));
+        const agent = primary(core);
+        await core.api["chat.send"]({ agentId: agent.id, text: "hi" });
+        await until(() => core.orchestrator.activityOf(agent.id) === "done", 5000, "first turn");
+        // The computer went to sleep (auto-sleep): its sessions are gone. The next message wakes it.
+        mock.restart();
+        await until(() => !core.agentd.connected, 5000, "disconnect");
+        await core.api["chat.send"]({ agentId: agent.id, text: "slow" }); // a long task, quiet for a while
+        await until(() => mock.count("turn.send") === 2, 8000, "sent after the wake-up");
+        await new Promise((r) => setTimeout(r, 900));
+        expect(lostNotice(core, agent.id)).toBe(false);
+        expect(core.orchestrator.activityOf(agent.id)).toBe("working");
+      });
+    }
 
     it("ends a turn whose session didn't survive an agentd restart", async () => {
       const core = await boot({ lostTurnGraceMs: 300 });

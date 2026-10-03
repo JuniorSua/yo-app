@@ -52,12 +52,16 @@ interface AgentRuntime {
   sessionKey: string | null;
   runningTurn: string | null;
   turnStartedAt: number;
+  /** When the running turn was handed to agentd (0 = not yet: still waking the computer or starting a session). */
+  turnSentAt: number;
   lastEventAt: number;
   queue: QueuedInput[];
   /** assistant item id -> accumulated text */
   buffers: Map<string, string>;
   todos: TodoEntry[];
   lastError: string | null;
+  /** The last turn failed for want of a connected model (cleared once one is connected). */
+  needsModel: boolean;
   computer: ComputerState;
   lease: LeaseHolder;
   lastUsedAt: number;
@@ -108,6 +112,8 @@ export class Orchestrator {
   private sessionToAgent = new Map<string, string>();
   /** sessionKeys started on the current agentd connection. */
   private liveSessions = new Set<string>();
+  /** The permission mode each live session was started (or last set) with. */
+  private sessionModes = new Map<string, "approval-required" | "auto" | "full-access">();
   private toolCalls = new Map<string, PendingToolCall>();
   /** Tool calls being handled. agentd re-sends unanswered ones after a reconnect; those are ignored. */
   private inFlightCalls = new Set<string>();
@@ -131,6 +137,10 @@ export class Orchestrator {
   constructor(private d: OrchestratorDeps) {
     d.agentd.on("push", (p) => this.onPush(p));
     d.agentd.on("connected", () => this.onConnected());
+    d.hub.subscribe((channel, data) => {
+      const status = channel === "account.updated" ? (data as { status?: string }).status : null;
+      if (status === "authenticated" || status === "unverified") this.modelConnected();
+    });
     d.agentd.on("disconnected", () => {
       this.liveSessions.clear();
       for (const rt of this.runtimes.values()) rt.computer = "off";
@@ -182,11 +192,13 @@ export class Orchestrator {
         sessionKey: s && !s.endedAt ? s.id : null,
         runningTurn: null,
         turnStartedAt: 0,
+        turnSentAt: 0,
         lastEventAt: 0,
         queue: [],
         buffers: new Map(),
         todos: [],
         lastError: null,
+        needsModel: false,
         computer: "off",
         lease: "agent",
         lastUsedAt: 0,
@@ -291,6 +303,7 @@ export class Orchestrator {
     this.d.onActivity();
     const r = this.rt(agentId);
     r.lastError = null;
+    r.needsModel = false;
 
     const userItem: Item = {
       id: newId("itm"),
@@ -321,6 +334,7 @@ export class Orchestrator {
     r.runningTurn = turnId;
     r.input = input;
     r.turnStartedAt = Date.now();
+    r.turnSentAt = 0;
     r.lastEventAt = Date.now();
     r.lastUsedAt = Date.now();
     this.broadcast(agentId);
@@ -328,10 +342,10 @@ export class Orchestrator {
       const agent = this.d.store.getAgent(agentId)!;
       let account = this.d.accounts.resolveFor(agent.accountId);
       if (!account || (account.status !== "authenticated" && account.status !== "unverified")) {
-        throw new UserFacingError(
+        throw new NeedsModelError(
           account
-            ? `${account.label} isn't signed in. Open Settings → Accounts to connect your subscription.`
-            : "No subscription connected. Open Settings → Accounts to connect one.",
+            ? `${account.label} isn't connected yet. Connect your subscription in Settings → Accounts, then send this again.`
+            : "No model is connected yet. Connect your Claude or ChatGPT plan in Settings → Accounts, then send this again.",
         );
       }
 
@@ -346,7 +360,7 @@ export class Orchestrator {
         await this.d.accounts.configure(account.id);
         account = await this.d.accounts.refresh(account.id);
         if (account.status !== "authenticated")
-          throw new UserFacingError(
+          throw new NeedsModelError(
             `${account.label} didn't accept the saved sign-in. Open Settings → Accounts to connect it again.`,
           );
       }
@@ -402,13 +416,17 @@ export class Orchestrator {
     } catch (err: any) {
       const msg =
         err instanceof UserFacingError ? err.message : `Something went wrong: ${err?.message ?? err}`;
-      log.warn(`turn ${turnId} failed to start`, err);
+      // Something the user can fix (no model connected, say) isn't a fault: no stack in the log.
+      if (err instanceof UserFacingError) log.info(`turn ${turnId} not started: ${err.message}`);
+      else log.warn(`turn ${turnId} failed to start`, err);
       this.notice(agentId, msg, { turnId, error: true });
       this.finishTurn(agentId, turnId, "failed", undefined, msg);
+      if (err instanceof NeedsModelError) r.needsModel = true;
     }
   }
 
   private async sendTurnWithRetry(agentId: string, sessionKey: string, turnId: string, parts: InputPart[]) {
+    this.rt(agentId).turnSentAt = Date.now();
     try {
       await this.d.agentd.request("turn.send", { sessionKey, turnId, input: parts });
     } catch (err: any) {
@@ -490,6 +508,21 @@ export class Orchestrator {
         .catch(() => {});
       this.d.store.updateSession(s.id, { model });
     }
+    const mode = this.sessionModes.get(s.id);
+    if (this.liveSessions.has(s.id) && mode && mode !== runtimeMode) {
+      // The agent's permissions changed (say Full access -> Ask first): the running session must follow now,
+      // not when it next restarts. If the computer can't switch it, restart the session in the new mode.
+      const switched = await this.d.agentd.request("session.set", { sessionKey: s.id, runtimeMode }).then(
+        () => true,
+        () => false,
+      );
+      if (switched) this.sessionModes.set(s.id, runtimeMode);
+      else {
+        await this.d.agentd.request("session.stop", { sessionKey: s.id }).catch(() => {});
+        this.liveSessions.delete(s.id);
+        await this.startNative(agentId, s.id, accountId, runtimeMode, effort, model);
+      }
+    }
     return s.id;
   }
 
@@ -550,6 +583,7 @@ export class Orchestrator {
       120000,
     );
     this.liveSessions.add(sessionKey);
+    this.sessionModes.set(sessionKey, runtimeMode);
     this.sessionToAgent.set(sessionKey, agentId);
   }
 
@@ -815,6 +849,18 @@ export class Orchestrator {
     this.notice(agentId, "Started a fresh session. I still have my memory and notes.");
   }
 
+  /** A model was just connected: agents stuck on "connect a model" leave their error state. */
+  private modelConnected() {
+    if (this.disposed) return;
+    for (const r of this.runtimes.values()) {
+      if (!r.needsModel || r.runningTurn) continue;
+      r.needsModel = false;
+      r.lastError = null;
+      this.notice(r.agentId, "A model is connected now. Send your message again and I'll get started.");
+      this.broadcast(r.agentId);
+    }
+  }
+
   /* ------------------------------ agentd events ---------------------------- */
 
   private onConnected() {
@@ -844,12 +890,14 @@ export class Orchestrator {
     const live = this.d.agentd.info?.liveSessions;
     const lost = (r: AgentRuntime) => {
       if (live) return !r.sessionKey || !live.includes(r.sessionKey);
-      return r.lastEventAt < reconnectAt && r.turnStartedAt < reconnectAt && !this.hasPending(r.agentId);
+      return r.lastEventAt < reconnectAt && !this.hasPending(r.agentId);
     };
     this.later(this.d.lostTurnGraceMs ?? 20000, () => {
       if (this.disposed) return;
       for (const r of this.runtimes.values()) {
-        if (r.runningTurn && r.turnStartedAt < reconnectAt && lost(r)) {
+        // Only turns agentd already had: one that woke the computer (or was still starting its session) when
+        // this connection came up is sent afterwards, on a session the reconnect's list can't include.
+        if (r.runningTurn && r.turnSentAt && r.turnSentAt < reconnectAt && lost(r)) {
           this.notice(
             r.agentId,
             "I lost connection to my computer during this task. Ask me to pick it back up.",
@@ -1509,3 +1557,5 @@ export class Orchestrator {
 }
 
 export class UserFacingError extends Error {}
+/** A turn that couldn't start because no usable model is connected. */
+class NeedsModelError extends UserFacingError {}

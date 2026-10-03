@@ -150,6 +150,25 @@ async function open(width, { config, init, clipboard } = {}) {
     (await page.locator("#first-open code").textContent()) ===
       "xattr -dr com.apple.quarantine /Applications/Yo.app",
   );
+  const firstOpen = await page.locator("#first-open").textContent();
+  check(
+    "first-open leads with Open Anyway (right-click → Open no longer works on macOS 15+)",
+    firstOpen.indexOf("Open Anyway") !== -1 &&
+      firstOpen.indexOf("Open Anyway") < firstOpen.indexOf("right-click"),
+  );
+
+  // Link previews and icons
+  const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
+  check("og:image is an absolute https URL", /^https:\/\/[^/]+\/assets\/og\.png$/.test(ogImage), ogImage);
+  for (const icon of [
+    "/assets/og.png",
+    "/assets/apple-touch-icon.png",
+    "/assets/favicon-32.png",
+    "/assets/logo.svg",
+  ]) {
+    const r = await page.request.get(new URL(icon, base).href);
+    check(`${icon} is served`, r.ok(), String(r.status()));
+  }
 
   // Demo: first run end to end
   const demo = page.locator("[data-demo]");

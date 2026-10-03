@@ -37,6 +37,9 @@ export function initComputerSetup(db: DatabaseSync, store: Store, cfg: CoreConfi
     const s = store.getSettings();
     if (cfg.computerMode === "remote" ? s.computerSetup !== "done" : !saved && s.onboarded)
       store.updateSettings({ computerSetup: "done" });
+    // A fresh install: save "pending" now, so quitting after onboarding but before the setup chat is done
+    // doesn't make the next launch take it for an install from before the chat (and skip the setup).
+    else if (cfg.computerMode === "local" && !saved) store.updateSettings({ computerSetup: "pending" });
   } catch (err) {
     log.warn("couldn't read the computer setup state", err);
   }

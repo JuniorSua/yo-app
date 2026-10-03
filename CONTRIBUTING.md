@@ -62,4 +62,5 @@ addresses, or machine-specific paths. To report a vulnerability, see [SECURITY.m
 ## Bugs and ideas
 
 Use the issue forms (Bug report, Feature request). Yo agents can file bug reports themselves; those carry the
-`from-yo` label.
+`from-yo` label. The maintainer labels the ones that will be fixed `accepted`, and when a release has the fix
+the issue is closed with a "Fixed in Yo 0.1.N" comment.

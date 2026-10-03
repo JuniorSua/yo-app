@@ -45,6 +45,7 @@ describe("parseClaudeToken", () => {
       expect(r.ok).toBe(false);
       if (r.ok) continue;
       expect(r.error).toMatch(msg);
+      expect(r.error).not.toContain("`"); // plain text in the UI: Markdown backticks would show literally
       if (paste.trim()) expect(r.error).not.toContain(paste.trim());
     }
   });
@@ -82,5 +83,15 @@ describe("CONNECT_COMMANDS", () => {
   it("sign Codex in to Yo's own folder, never the user's ~/.codex", () => {
     expect(CONNECT_COMMANDS.codexLogin).toBe("mkdir -p ~/.yo/codex && CODEX_HOME=~/.yo/codex codex login");
     expect(CONNECT_COMMANDS.claudeToken).toBe("claude setup-token");
+  });
+
+  it("install without npm or Homebrew, and work before ~/.local/bin is on PATH", () => {
+    // A fresh Mac has neither; both standalone installers put the CLI in ~/.local/bin.
+    expect(CONNECT_COMMANDS.claudeInstall).not.toMatch(/\b(npm|brew)\b/);
+    expect(CONNECT_COMMANDS.codexInstall).not.toMatch(/\b(npm|brew)\b/);
+    expect(CONNECT_COMMANDS.claudeTokenDirect).toBe(`~/.local/bin/${CONNECT_COMMANDS.claudeToken}`);
+    expect(CONNECT_COMMANDS.codexLoginDirect).toBe(
+      CONNECT_COMMANDS.codexLogin.replace(/ codex login$/, " ~/.local/bin/codex login"),
+    );
   });
 });

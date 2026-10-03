@@ -74,6 +74,8 @@ test.describe("light-mode hue", () => {
   });
 
   test("dark mode is unchanged by a creature", async ({ browser }) => {
+    // Four pages, each drawing a creature with software WebGL: past 45s on a busy CI runner.
+    test.slow();
     const plain = await browser.newPage();
     await open(plain, { theme: "dark" });
     const base = await tokens(plain);

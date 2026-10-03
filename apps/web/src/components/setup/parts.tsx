@@ -44,7 +44,7 @@ export function CopyBox({ command }: { command: string }) {
   return (
     <div className="group flex items-start gap-2 rounded-xl border border-border bg-bg py-2 pr-2 pl-3.5">
       <code
-        className="min-w-0 flex-1 select-all whitespace-pre-wrap break-all py-1 font-mono text-[12.5px] leading-relaxed"
+        className="min-w-0 flex-1 select-all whitespace-pre-wrap py-1 font-mono text-[12.5px] leading-relaxed [overflow-wrap:anywhere]"
         data-testid="copy-command"
       >
         {command}

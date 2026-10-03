@@ -5,8 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! You can also ask your Yo agent to "report this bug": it investigates and files the
-        same report for you (labelled `from-yo`). One problem per issue, please.
+        Thanks for reporting! You can also ask your Yo agent to "report this bug": it investigates and writes the
+        same report for you (labelled `from-yo`). One problem per issue, please. When it's fixed, this issue is
+        closed with a "Fixed in Yo 0.1.N" comment, and Yo offers that version as an update.
         Security problems go to [a private advisory](https://github.com/JuniorSua/yo-app/security/advisories/new) instead.
 
   - type: textarea
@@ -63,8 +64,8 @@ body:
     id: version
     attributes:
       label: Yo version
-      description: Shown in Settings, or the git commit if you run from source.
-      placeholder: "0.1.0"
+      description: Settings → About shows it (Yo fills it in when you open this form from Settings → Bug reports). The git commit if you run from source.
+      placeholder: "0.1.313"
     validations:
       required: false
 

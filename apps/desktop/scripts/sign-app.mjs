@@ -6,8 +6,8 @@
 // login keychain (free with an Apple ID), else ad-hoc as a last resort. Only the name is printed.
 //
 // Ad-hoc on purpose: YO_ADHOC_SIGN=1 (or YO_SIGN_IDENTITY=-). The public builds on GitHub Releases are made
-// this way (.github/workflows/release.yml): there is no paid Developer ID, so users open them once with
-// right-click → Open, and they update by downloading (the github update channel), not through Squirrel.
+// this way (.github/workflows/release.yml): there is no paid Developer ID, so users OK them once (Open Anyway
+// in Privacy & Security), and they update by downloading (the github update channel), not through Squirrel.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";

@@ -1,5 +1,5 @@
 import { YoLogo, YoWordmark } from "@yo/avatar";
-import type { Avatar as AvatarData } from "@yo/contracts";
+import { type Avatar as AvatarData, localTimeZone } from "@yo/contracts";
 import {
   ArrowLeft,
   ArrowRight,
@@ -232,7 +232,9 @@ function Meet() {
     setBusy(true);
     if (primary)
       await run(api().call("agent.update", { id: primary.id, patch: { name: name.trim() || "Yo", avatar } }));
-    await run(api().call("settings.update", { userName: you.trim(), onboarded: true }));
+    // The user's own time zone (the default is New York): the agent's clock, routines and calendar use it.
+    const timezone = localTimeZone() ?? settings.timezone;
+    await run(api().call("settings.update", { userName: you.trim(), timezone, onboarded: true }));
     setBusy(false);
   };
 

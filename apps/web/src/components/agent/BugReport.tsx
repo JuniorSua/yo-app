@@ -251,7 +251,7 @@ function Submitted({ entry, bug }: { entry: TimelineEntry; bug: BugInfo }) {
             {number
               ? "The developer has it. A copy is in Artifacts."
               : url
-                ? "Open it on GitHub to submit it. A copy is in Artifacts."
+                ? "Open it on GitHub and send it from there (needs a free GitHub account). A copy is in Artifacts."
                 : "A copy is in Artifacts."}
           </div>
         </div>

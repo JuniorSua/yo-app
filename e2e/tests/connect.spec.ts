@@ -81,6 +81,9 @@ test.describe("connect your model: onboarding", () => {
       "curl -fsSL https://claude.ai/install.sh | bash",
     );
     await expect(page.getByTestId("cmd-claude-token")).toContainText("claude setup-token");
+    await expect(page.getByTestId("cmd-claude-token-direct")).toContainText(
+      "~/.local/bin/claude setup-token",
+    );
     await page.getByTestId("cmd-claude-token-copy").click();
     await expect(page.getByTestId("cmd-claude-token-copy")).toHaveText("Copied");
     await expect(status(page)).toHaveAttribute("data-state", "idle");
@@ -150,8 +153,16 @@ test.describe("connect your model: onboarding", () => {
   test("connect ChatGPT: Yo detects the sign-in by polling", async ({ page }) => {
     await firstRun(page);
     await page.getByTestId("connect-pick-codex").click();
-    await expect(page.getByTestId("cmd-codex-install")).toContainText("npm install -g @openai/codex");
+    // A fresh Mac has no npm or Homebrew: OpenAI's own installer first, and the full path when the
+    // Terminal that ran it can't find codex yet.
+    await expect(page.getByTestId("cmd-codex-install")).toContainText(
+      "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+    );
+    await expect(page.getByTestId("connect-steps-codex")).toContainText("npm install -g @openai/codex");
     await expect(page.getByTestId("cmd-codex-login")).toContainText("CODEX_HOME=~/.yo/codex codex login");
+    await expect(page.getByTestId("cmd-codex-login-direct")).toContainText(
+      "CODEX_HOME=~/.yo/codex ~/.local/bin/codex login",
+    );
     await expect(status(page)).toHaveAttribute("data-state", "waiting");
     await expect(status(page)).toContainText("Waiting for you to sign in");
     // Still waiting after a few polls...

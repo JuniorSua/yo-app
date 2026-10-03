@@ -202,3 +202,63 @@ test("fresh user: connect Claude with a token, then the first agent offers to se
     "Looks like we have a model connected. Let's set up my computer.",
   );
 });
+
+test("skipped the model: the chat says so and points to Accounts; connecting one later leads to the setup", async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.removeItem("yo.ui"));
+  await page.goto("/?mock=1&fast=1&mockConnect=none");
+  await page.getByTestId("onboarding-start").click();
+  await page.getByTestId("onboarding-next").click(); // Skip for now
+  await page.getByTestId("access-skip").click();
+  await page.getByTestId("onboarding-finish").click();
+  await expect(page.getByTestId("setup-chat")).toHaveCount(0);
+  await expect(page.getByTestId("composer-footer")).toContainText("no model connected");
+  await expect(page.getByTestId("composer-footer")).not.toContainText("subscription");
+
+  // Settings → Computer doesn't start a VM this Mac was never checked for.
+  await page.getByTestId("profile-trigger").click();
+  await page.getByTestId("open-settings").click();
+  await page.getByTestId("settings-computer").click();
+  await expect(page.getByTestId("computer-setup")).toHaveText("Connect a model first");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("settings-dialog")).toHaveCount(0);
+
+  await send(page, "Find me a cheap flight");
+  const error = page.getByTestId("error-row");
+  await expect(error).toContainText("Settings → Accounts");
+  const errorPill = page.getByTestId("status-pill").filter({ hasText: "Error" });
+  await expect(errorPill.first()).toBeVisible();
+  await error.getByTestId("error-connect").click();
+  await expect(page.getByTestId("settings-dialog")).toBeVisible();
+  await page.getByTestId("connect-claude").click();
+  await page.getByTestId("claude-token-input").fill(`sk-ant-oat01-${"FAKE_e2e_token-".repeat(7)}`);
+  await page.getByTestId("claude-token-submit").click();
+  await page.getByTestId("connect-claude-done").click();
+  await page.keyboard.press("Escape");
+
+  // Connected: the error clears and the first agent offers to set up its computer.
+  await expect(errorPill).toHaveCount(0);
+  await expect(page.getByTestId("setup-greeting")).toContainText("Let's set up my computer");
+});
+
+test("Settings → Computer sends a Mac that was never set up through the setup chat", async ({ page }) => {
+  await firstChat(page);
+  await page.getByTestId("setup-later").click();
+  await page.getByTestId("profile-trigger").click();
+  await page.getByTestId("open-settings").click();
+  await page.getByTestId("settings-computer").click();
+  await page.getByTestId("computer-setup").click();
+  await expect(page.getByTestId("settings-dialog")).toHaveCount(0);
+  await expect(page.getByTestId("setup-chat")).toBeVisible();
+  expect((await mockSettings(page)).computerSetup).toBe("pending");
+});
+
+test.describe("a user outside New York", () => {
+  test.use({ timezoneId: "Europe/Lisbon" });
+
+  test("onboarding saves their own time zone (the agent's clock and routines use it)", async ({ page }) => {
+    await firstChat(page);
+    expect((await mockSettings(page)).timezone).toBe("Europe/Lisbon");
+  });
+});

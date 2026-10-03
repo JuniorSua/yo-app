@@ -8,8 +8,12 @@ name: Release
 # maintainer's publish script does, right after it publishes a snapshot), or from the Actions tab with an
 # existing tag. The tag must match the snapshot's VERSION file when there is one.
 #
-# The app is ad-hoc signed (no paid Apple Developer ID): users open it once with right-click → Open, and it
+# The app is ad-hoc signed (no paid Apple Developer ID): users OK it once (Open Anyway in Privacy & Security), and it
 # updates through the "github" channel (it offers Download for newer releases; see apps/desktop/src/updates.ts).
+#
+# Once the release exists, the last job comments "Fixed in Yo <version>" on the issues the snapshot commit lists
+# in its "Yo-Fixed-Issues:" trailer (written by the publish script from "Fixes yo-app#N" commit messages) and
+# closes them, then adds them to the release notes.
 
 on:
   push:
@@ -38,6 +42,7 @@ jobs:
       tag: ${{ steps.v.outputs.tag }}
       version: ${{ steps.v.outputs.version }}
       image: ${{ steps.v.outputs.image }}
+      fixed: ${{ steps.v.outputs.fixed }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,10 +61,13 @@ jobs:
           if [ -f VERSION ] && [ "$(tr -d '[:space:]' < VERSION)" != "$version" ]; then
             echo "::error::Tag $TAG doesn't match VERSION ($(cat VERSION))"; exit 1
           fi
+          # "Yo-Fixed-Issues: 12 15" in the snapshot commit: digits and spaces only.
+          fixed="$(git log -1 --format=%B | sed -n 's/^Yo-Fixed-Issues:[[:space:]]*//p' | tr -cs '0-9' ' ' | xargs)"
           {
             echo "tag=$TAG"
             echo "version=$version"
             echo "image=ghcr.io/${OWNER,,}/yo-computer"
+            echo "fixed=$fixed"
           } >> "$GITHUB_OUTPUT"
           echo "Releasing Yo $version"
 
@@ -229,9 +237,11 @@ jobs:
 
           1. Download **Yo-${VERSION}-arm64.dmg** below (Apple silicon Macs), open it and drag **Yo** into **Applications**.
           2. **First open:** this build isn't notarized by Apple (there's no paid Developer ID yet), so macOS warns
-             the first time. In Applications, **right-click Yo → Open**, then **Open** again (on macOS 15 and
-             later: open it once, then **System Settings → Privacy & Security → Open Anyway**). If macOS says
-             Yo "is damaged" or still refuses, run this once in Terminal and open Yo normally:
+             the first time. On **macOS 15 Sequoia and later**: open Yo and click **Done** on the warning, then
+             **System Settings → Privacy & Security**, scroll to "Yo was blocked…", click **Open Anyway**, then
+             **Open Anyway** again and enter your Mac password. On **macOS 13 or 14**: in Applications,
+             **right-click Yo → Open**, then **Open** again. Or, on any version (and if macOS says Yo "is
+             damaged"), run this once in Terminal and open Yo normally:
 
              \`\`\`
              xattr -dr com.apple.quarantine /Applications/Yo.app
@@ -249,4 +259,69 @@ jobs:
             gh release edit "$TAG" -R "$REPO" --notes-file notes.md
           else
             gh release create "$TAG" "${files[@]}" -R "$REPO" --verify-tag --title "Yo $VERSION" --notes-file notes.md
+          fi
+
+  fixed-issues:
+    name: Close the issues this release fixes
+    needs: [version, release]
+    if: github.repository == 'JuniorSua/yo-app' && needs.version.outputs.fixed != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # the release notes
+      issues: write
+    steps:
+      - name: Comment, close, list them in the notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          FIXED: ${{ needs.version.outputs.fixed }}
+        run: |
+          set -euo pipefail
+          # The trailer lists every public issue ever fixed. Only an open issue without a "Fixed in" comment gets
+          # one (so a reopened regression stays open); a rerun of this release lists its own ones again.
+          this="<!-- yo:fixed-in ${TAG} -->"
+          list=""
+          for n in $FIXED; do
+            [[ "$n" =~ ^[0-9]+$ ]] || continue
+            if ! info="$(gh issue view "$n" -R "$REPO" --json state,url,comments 2>/dev/null)"; then
+              echo "#$n: no such issue, skipped"; continue
+            fi
+            if [[ "$(jq -r .url <<<"$info")" != */issues/* ]]; then
+              echo "#$n: a pull request, skipped"; continue
+            fi
+            state="$(jq -r .state <<<"$info")"
+            ours="$(jq --arg m "$this" '[.comments[].body | select(contains($m))] | length' <<<"$info")"
+            any="$(jq '[.comments[].body | select(contains("<!-- yo:fixed-in "))] | length' <<<"$info")"
+            if [ "$state" = "OPEN" ] && [ "$any" = "0" ]; then
+              cat > comment.md <<EOF
+          Fixed in **Yo ${VERSION}**. Thanks for reporting it!
+
+          To update: click **Download** on Yo's update button (bottom left), or get it from
+          [the release page](https://github.com/${REPO}/releases/tag/${TAG}). If it still happens after updating,
+          comment here.
+
+          ${this}
+          EOF
+              gh issue comment "$n" -R "$REPO" --body-file comment.md
+              gh issue close "$n" -R "$REPO" --reason completed
+              echo "#$n: closed"
+              list+="- #$n"$'\n'
+            elif [ "$ours" != "0" ]; then
+              # A rerun: commented by an earlier run of this release (close it if that run stopped halfway).
+              if [ "$state" = "OPEN" ]; then gh issue close "$n" -R "$REPO" --reason completed; fi
+              list+="- #$n"$'\n'
+            else
+              echo "#$n: $state, already handled by an earlier release, skipped"
+            fi
+          done
+          if [ -n "$list" ]; then
+            gh release view "$TAG" -R "$REPO" --json body --jq .body > old.md
+            # Drop the list a previous run added (it's always last) and trailing blank lines, then add this one.
+            awk '/^## Fixed in this version$/ { exit } { l[n++] = $0 }
+              END { while (n > 0 && l[n - 1] == "") n--; for (i = 0; i < n; i++) print l[i] }' old.md > notes.md
+            printf '\n## Fixed in this version\n\n%s' "$list" >> notes.md
+            gh release edit "$TAG" -R "$REPO" --notes-file notes.md
           fi

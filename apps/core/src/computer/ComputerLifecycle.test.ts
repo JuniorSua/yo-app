@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { loadConfig } from "../config";
 import {
   ComputerLifecycle,
+  computerDockerEnv,
   computerImagePlan,
   hasSourceCheckout,
   LOCAL_IMAGE,
@@ -60,5 +61,15 @@ describe("where the agent's computer image comes from", () => {
     expect(
       staleImageTags(GHCR, "0.1.313", ["0.1.313", "0.1.312", "latest", "<none>", "", "0.1.300"]),
     ).toEqual([`${GHCR}:0.1.312`, `${GHCR}:0.1.300`]);
+  });
+
+  it("runs the computer in the Mac's time zone, not New York's", () => {
+    const base = { colimaProfile: "yo", token: "t".repeat(64), image: `${GHCR}:0.1.313` };
+    const env = computerDockerEnv({ ...base, timeZone: "Europe/Lisbon" });
+    expect(env.YO_TZ).toBe("Europe/Lisbon");
+    expect(env.DOCKER_CONTEXT).toBe("colima-yo");
+    expect(env.YO_COMPUTER_IMAGE).toBe(`${GHCR}:0.1.313`);
+    // Can't tell: leave it to compose's default.
+    expect(computerDockerEnv({ ...base, timeZone: null }).YO_TZ).toBe(process.env.YO_TZ);
   });
 });

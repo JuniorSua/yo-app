@@ -77,6 +77,11 @@ test("without a GitHub token the report is saved with an Open on GitHub link", a
   await expect(settings).toContainText("Not set up");
   // Write-only: the field never shows a saved token.
   await expect(page.getByTestId("bug-token-input")).toHaveValue("");
+  // Reporting by hand, without the agent: GitHub's bug form on the same repo.
+  await expect(page.getByTestId("bug-report-form")).toHaveAttribute(
+    "href",
+    /^https:\/\/github\.com\/JuniorSua\/yo-app\/issues\/new\?template=bug_report\.yml/,
+  );
   await page.keyboard.press("Escape");
 
   await draftBug(page);

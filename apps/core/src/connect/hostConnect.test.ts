@@ -46,6 +46,12 @@ class FakeFs implements HostFs {
   async rm(p: string) {
     this.files.delete(p);
   }
+  async listDir(p: string) {
+    const names = [...this.files.keys()]
+      .filter((f) => f.startsWith(`${p}/`))
+      .map((f) => f.slice(p.length + 1).split("/")[0]!);
+    return [...new Set(names)];
+  }
 }
 
 const YO_AUTH = `${HOME}/.yo/codex/auth.json`;
@@ -80,6 +86,15 @@ describe("detectHost", () => {
     expect(fs.reads).not.toContain(`${HOME}/.codex/auth.json`);
     // And nothing it returns carries a path or the account.
     expect(JSON.stringify(d)).not.toMatch(/fake-user|example\.invalid|FAKE_/);
+  });
+
+  it("finds CLIs installed with npm under nvm, and with the standalone installers", async () => {
+    const fs = new FakeFs()
+      .add(`${HOME}/.nvm/versions/node/v22.11.0/bin/codex`, "", true)
+      .add(`${HOME}/.local/bin/claude`, "", true);
+    expect(await findCli("codex", env(), fs)).toBe(true);
+    expect(await findCli("claude", env(), fs)).toBe(true);
+    expect(await findCli("codex", env(), new FakeFs())).toBe(false);
   });
 
   it("knows Claude is signed in on Linux from its credentials file, without reading it", async () => {

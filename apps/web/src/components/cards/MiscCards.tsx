@@ -141,7 +141,19 @@ export function NoticeRow({ entry }: { entry: TimelineEntry }) {
         className="flex max-w-[560px] items-start gap-2.5 rounded-xl border border-danger/20 bg-danger/[0.06] px-3.5 py-2.5 text-sm animate-fade-in"
       >
         <AlertTriangle className="mt-px size-4 shrink-0 text-danger" />
-        <span className="text-fg-2">{text}</span>
+        <span className="min-w-0 flex-1 text-fg-2">{text}</span>
+        {/* "Connect your subscription in Settings → Accounts": take them there. */}
+        {/Settings → Accounts/.test(text) && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="-my-1 shrink-0"
+            onClick={() => ui.openSettings("accounts")}
+            data-testid="error-connect"
+          >
+            Connect a model
+          </Button>
+        )}
       </div>
     );
   return (

@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { type ComputerOverview, LOCAL_COMPUTER } from "@yo/contracts";
+import { type ComputerOverview, LOCAL_COMPUTER, localTimeZone } from "@yo/contracts";
 import type { CoreConfig } from "../config";
 import { logger } from "../log";
 import type { SecretStore } from "../secrets/SecretStore";
@@ -86,6 +86,26 @@ export async function colimaArch(
   }
 }
 
+/**
+ * Environment for `docker compose` on this Mac. compose.runtime.yaml runs ${YO_COMPUTER_IMAGE:-yo-computer:dev}
+ * with TZ=${YO_TZ:-America/New_York}: give the computer the Mac's own time zone, so its clock, browser and
+ * files agree with the user's.
+ */
+export function computerDockerEnv(o: {
+  colimaProfile: string;
+  token: string;
+  image: string;
+  timeZone?: string | null;
+}): NodeJS.ProcessEnv {
+  const tz = process.env.YO_TZ || (o.timeZone === undefined ? localTimeZone() : o.timeZone);
+  return hostEnv({
+    DOCKER_CONTEXT: `colima-${o.colimaProfile}`,
+    YO_AGENTD_TOKEN: o.token,
+    YO_COMPUTER_IMAGE: o.image,
+    ...(tz ? { YO_TZ: tz } : {}),
+  });
+}
+
 export async function getAgentdToken(secrets: SecretStore): Promise<string> {
   let token = await secrets.get("agentd-token");
   if (!token) {
@@ -118,11 +138,10 @@ export class ComputerLifecycle extends EventEmitter<{ changed: [] }> {
       computerImage: cfg.computerImage,
       hasSourceCheckout: cfg.computerMode === "local" && hasSourceCheckout(cfg.repoRoot),
     });
-    // compose.runtime.yaml runs ${YO_COMPUTER_IMAGE:-yo-computer:dev}.
-    this.dockerEnv = hostEnv({
-      DOCKER_CONTEXT: `colima-${cfg.colimaProfile}`,
-      YO_AGENTD_TOKEN: token,
-      YO_COMPUTER_IMAGE: this.plan.image,
+    this.dockerEnv = computerDockerEnv({
+      colimaProfile: cfg.colimaProfile,
+      token,
+      image: this.plan.image,
     });
   }
 
@@ -220,6 +239,8 @@ export class ComputerLifecycle extends EventEmitter<{ changed: [] }> {
 
   private async doStart() {
     try {
+      // "Try again" after a failure: drop the old error right away (the checks below can take a while).
+      if (this.runtime === "error") this.set("starting", "Starting Yo's computer…");
       if (!(await this.hasBinary("colima")))
         throw new Error("Colima is not installed. Run: brew install colima docker docker-compose");
       if (!(await this.vmRunning())) {
@@ -241,7 +262,8 @@ export class ComputerLifecycle extends EventEmitter<{ changed: [] }> {
             "--arch",
             await colimaArch(),
           ],
-          300000,
+          // The very first start downloads the VM's disk image (a few hundred MB): give slow connections time.
+          20 * 60 * 1000,
         );
       }
       this.imageReady = await this.imageExists();

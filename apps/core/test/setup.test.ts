@@ -110,6 +110,17 @@ describe("initComputerSetup", () => {
     db.close();
   });
 
+  it("a fresh install closed after onboarding still gets the setup chat on the next launch", () => {
+    const first = open();
+    initComputerSetup(first.db, first.store, cfgFor("local")); // first launch, before onboarding
+    first.store.updateSettings({ onboarded: true }); // onboarded; Yo is closed before the setup chat ends
+    first.db.close();
+    const next = open();
+    initComputerSetup(next.db, next.store, cfgFor("local"));
+    expect(next.store.getSettings().computerSetup).toBe("pending");
+    next.db.close();
+  });
+
   it("an install that finished onboarding before the setup chat counts as set up", () => {
     const { db, store } = open();
     store.updateSettings({ onboarded: true });

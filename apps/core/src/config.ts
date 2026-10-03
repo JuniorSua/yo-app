@@ -9,6 +9,13 @@ declare const __YO_BUILD__: string | null | undefined;
 /** "<commit count>-<sha>" baked in by build.mjs; null when running from source (tests, `pnpm dev`). */
 export const CORE_BUILD: string | null = typeof __YO_BUILD__ === "string" ? __YO_BUILD__ : null;
 
+declare const __YO_VERSION__: string | null | undefined;
+/**
+ * The Yo release this core belongs to ("0.1.312", the same number Yo.app and the GitHub Release carry), baked in by
+ * build.mjs; null when running from source. Bug reports say it, so a report can be matched to the release that fixes it.
+ */
+export const CORE_RELEASE: string | null = typeof __YO_VERSION__ === "string" ? __YO_VERSION__ : null;
+
 function defaultDataDir(): string {
   if (process.platform === "darwin") return path.join(os.homedir(), "Library", "Application Support", "Yo");
   return path.join(os.homedir(), ".yo");

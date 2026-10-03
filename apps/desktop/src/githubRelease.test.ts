@@ -4,7 +4,15 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { snapshotVersion } from "../../../scripts/build-info.mjs";
 import { DEFAULT_UPDATE_REPO, resolveUpdateChannel } from "../scripts/channel.mjs";
-import { isReleasePageUrl, latestReleaseApiUrl, readLatestRelease, releaseVersion } from "./githubRelease";
+import {
+  GITHUB_CHECK_INTERVAL_MS,
+  GITHUB_RETRY_MS,
+  githubCheckDue,
+  isReleasePageUrl,
+  latestReleaseApiUrl,
+  readLatestRelease,
+  releaseVersion,
+} from "./githubRelease";
 
 const REPO = "JuniorSua/yo-app";
 const page = (tag: string) => `https://github.com/${REPO}/releases/tag/${tag}`;
@@ -158,5 +166,27 @@ describe("update channel (build time)", () => {
     expect(() =>
       resolveUpdateChannel({ YO_COMPUTER_IMAGE_REPO: "ghcr.io/x/y:latest" }, { publicSnapshot: false }),
     ).toThrow();
+  });
+});
+
+describe("when the next background check is due", () => {
+  const MIN = 60 * 1000;
+  const t0 = 1_000_000_000_000;
+
+  it("waits 6 hours of real time after an answer, sleep included", () => {
+    expect(githubCheckDue(t0 + 5 * 60 * MIN, t0, t0 + 1000)).toBe(false);
+    // The Mac slept through most of it: a timer's clock barely moved, the wall clock did.
+    expect(githubCheckDue(t0 + GITHUB_CHECK_INTERVAL_MS + 1000, t0, t0 + 1000)).toBe(true);
+  });
+
+  it("retries soon after a check that got no answer (launched offline, rate limited)", () => {
+    expect(githubCheckDue(t0 + 5 * MIN, t0, 0)).toBe(false);
+    expect(githubCheckDue(t0 + GITHUB_RETRY_MS, t0, 0)).toBe(true);
+    // An earlier answer doesn't hold back the retry of a later attempt that failed.
+    expect(githubCheckDue(t0 + GITHUB_RETRY_MS, t0, t0 - 60 * MIN)).toBe(true);
+  });
+
+  it("never checks twice within a minute", () => {
+    expect(githubCheckDue(t0 + 30 * 1000, t0, 0)).toBe(false);
   });
 });

@@ -11,7 +11,8 @@ const TOKEN_RUN = /sk-ant-oat\d{2}-[A-Za-z0-9_-]*/g;
 const TOKEN_CHARS = /^[A-Za-z0-9_-]+$/;
 /** Real setup-token tokens carry ~95 characters after the prefix; much less means the copy was cut off. */
 export const MIN_CLAUDE_TOKEN_BODY = 60;
-const RUN_AGAIN = "Run `claude setup-token` again and copy the whole line it prints.";
+// Shown as plain text (no Markdown), so no backticks around the command.
+const RUN_AGAIN = "Run claude setup-token in Terminal again and copy the whole line it prints.";
 
 export type ClaudeTokenCheck = { ok: true; token: string } | { ok: false; error: string };
 
@@ -91,13 +92,20 @@ export function checkCodexAuthJson(raw: string): "ok" | "partial" | "invalid" {
 /**
  * The exact Terminal commands the walkthrough shows (one path per provider). Codex needs its CODEX_HOME
  * folder to exist, hence the `mkdir -p`.
+ *
+ * A fresh Mac has neither npm nor Homebrew, so both providers install with their own standalone installer,
+ * into ~/.local/bin. That folder usually isn't on the PATH of the Terminal window that just ran the installer
+ * ("command not found"), hence the `…Direct` variants that name it.
  */
 export const CONNECT_COMMANDS = {
   claudeInstall: "curl -fsSL https://claude.ai/install.sh | bash",
   claudeToken: "claude setup-token",
-  codexInstall: "npm install -g @openai/codex",
+  claudeTokenDirect: "~/.local/bin/claude setup-token",
+  codexInstall: "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
+  codexInstallNpm: "npm install -g @openai/codex",
   codexInstallBrew: "brew install --cask codex",
   codexLogin: `mkdir -p ~/${CODEX_YO_HOME} && CODEX_HOME=~/${CODEX_YO_HOME} codex login`,
+  codexLoginDirect: `mkdir -p ~/${CODEX_YO_HOME} && CODEX_HOME=~/${CODEX_YO_HOME} ~/.local/bin/codex login`,
 } as const;
 
 /** The providers the walkthrough connects. */

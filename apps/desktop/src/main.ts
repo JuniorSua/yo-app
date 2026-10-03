@@ -22,6 +22,7 @@ import {
   Tray,
 } from "electron";
 import WebSocket from "ws";
+import { coreHealthy as answers, coreTroubleHtml, portInUse } from "./coreCheck";
 import { DeviceService } from "./device/DeviceService";
 import { keychainHint, readKeychainState, rememberSignedInVersion } from "./keychainWait";
 import { DesktopUpdates, UPDATE_CHANNEL } from "./updates";
@@ -36,6 +37,8 @@ let win: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let core: ChildProcess | null = null;
 let coreOwned = false;
+/** Core exits in a row soon after starting (restart backoff). */
+let quickExits = 0;
 let quitting = false;
 let powerBlockId: number | null = null;
 let devices: DeviceService | null = null;
@@ -85,13 +88,12 @@ function resourcePath(...p: string[]) {
   return app.isPackaged ? path.join(process.resourcesPath, ...p) : path.join(__dirname, "..", "..", ...p);
 }
 
-async function coreHealthy(): Promise<boolean> {
-  try {
-    const res = await fetch(`${CORE_URL}/healthz`, { signal: AbortSignal.timeout(800) });
-    return res.ok;
-  } catch {
-    return false;
-  }
+function coreHealthy(): Promise<boolean> {
+  return answers(CORE_URL);
+}
+
+function coreLogFile() {
+  return path.join(app.getPath("userData"), "logs", "core.log");
 }
 
 async function startCore() {
@@ -105,9 +107,8 @@ async function startCore() {
     ? resourcePath("core", "core.mjs")
     : path.join(__dirname, "..", "..", "core", "dist", "core.mjs");
   const webDist = app.isPackaged ? resourcePath("web") : path.join(__dirname, "..", "..", "web", "dist");
-  const logDir = path.join(app.getPath("userData"), "logs");
-  fs.mkdirSync(logDir, { recursive: true });
-  const logFile = fs.openSync(path.join(logDir, "core.log"), "a");
+  fs.mkdirSync(path.dirname(coreLogFile()), { recursive: true });
+  const logFile = fs.openSync(coreLogFile(), "a");
   core = spawn(process.execPath, [coreEntry], {
     env: {
       ...process.env,
@@ -115,6 +116,8 @@ async function startCore() {
       YO_CORE_MAIN: "1",
       YO_PORT: String(CORE_PORT),
       YO_WEB_DIST: webDist,
+      // What bug reports name as the version (core's own CORE_VERSION is a fixed "0.1.0").
+      YO_APP_VERSION: app.getVersion(),
       YO_COMPOSE_FILE: app.isPackaged
         ? resourcePath("compose.runtime.yaml")
         : path.join(__dirname, "..", "..", "..", "computer", "compose.runtime.yaml"),
@@ -132,18 +135,22 @@ async function startCore() {
     stdio: ["ignore", logFile, logFile, "ipc"],
   });
   coreOwned = true;
+  const spawnedAt = Date.now();
   core.on("exit", (code) => {
     core = null;
     if (!quitting) {
-      console.error(`yo-core exited (${code}); restarting in 2s`);
-      setTimeout(() => void startCore(), 2000);
+      // A core that can't start (say another app holds its port) would otherwise restart every 2s forever.
+      quickExits = Date.now() - spawnedAt < 30_000 ? quickExits + 1 : 0;
+      const delay = Math.min(2000 * 2 ** Math.max(0, quickExits - 1), 30_000);
+      console.error(`yo-core exited (${code}); restarting in ${delay / 1000}s`);
+      setTimeout(() => void startCore().catch((err) => console.error(err)), delay);
     }
   });
   for (let i = 0; i < 150; i++) {
     if (await coreHealthy()) return;
     await new Promise((r) => setTimeout(r, 100));
   }
-  throw new Error("Yo core did not start. See ~/Library/Application Support/Yo/logs/core.log");
+  throw new Error(`Yo core did not start. See ${coreLogFile()}`);
 }
 
 function createWindow() {
@@ -249,6 +256,16 @@ font:14px -apple-system,system-ui;background:${dark ? "#0B0C0E" : "#FAFAF8"};col
 Connecting to Yo on your ${label}…<br><small>Make sure the PC is on and you're online.</small></div>`;
 }
 
+/** Core isn't answering (it didn't start, or keeps crashing): say so rather than leave the window blank. */
+function coreTroublePage(portTaken: boolean) {
+  return coreTroubleHtml({
+    portTaken,
+    port: CORE_PORT,
+    logFile: coreLogFile(),
+    dark: nativeTheme.shouldUseDarkColors,
+  });
+}
+
 /**
  * Show the local "Starting Yo…" page and wait until it's on screen. Signing in reads Yo's saved login
  * (safeStorage → the "Yo Safe Storage" Keychain item); on an updated ad-hoc build macOS asks for the password
@@ -280,6 +297,19 @@ async function loadUi() {
       `data:text/html;charset=utf-8,${encodeURIComponent(waitingPage(remote.label ?? "Home PC"))}`,
     );
     while (win && !win.isDestroyed() && !(await coreHealthy())) await new Promise((r) => setTimeout(r, 2000));
+    await showStartingPage();
+  }
+  // startCore gave up (15s) or core keeps exiting: explain, and carry on once it answers (main restarts it).
+  if (!remote && !(await coreHealthy())) {
+    let portTaken: boolean | null = null;
+    while (win && !win.isDestroyed() && !quitting && !(await coreHealthy())) {
+      const taken = await portInUse(CORE_PORT);
+      if (taken !== portTaken) {
+        portTaken = taken;
+        void win?.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(coreTroublePage(taken))}`);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
     await showStartingPage();
   }
   // Sign in before the UI loads so its first request already carries the session cookie, and before

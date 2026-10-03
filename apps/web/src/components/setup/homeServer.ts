@@ -72,7 +72,7 @@ export const HOME_SERVER_STEPS: GuideStep[] = [
   {
     title: "Point Yo on this Mac at the server",
     where: "mac",
-    body: "Quit Yo first (Yo menu → Quit Yo). Then tell the app to open the server, and give it a one-time sign-in token that works for 10 minutes.",
+    body: "Yo can stay open for this one. It tells the app to open the server from now on, and makes a one-time sign-in token that works for 10 minutes, so go straight on to the last step.",
     commands: [
       `echo '{"label":"Home server"}' > ${MAC_DATA}/remote.json`,
       `T=$(openssl rand -hex 32); ssh <you>@<your-server> "umask 077; echo $T > ~/yo/computer/core-data/enroll-token" && (umask 077; echo $T > ${MAC_DATA}/enroll-token)`,
@@ -81,7 +81,7 @@ export const HOME_SERVER_STEPS: GuideStep[] = [
   {
     title: "Open the tunnel and reopen Yo",
     where: "mac",
-    body: "Keep this running (leave the Terminal window open), then open Yo. It shows “Connecting to Yo on your Home server…” until the tunnel is up, then the server's Yo, where you connect your model once more.",
+    body: "Copy the command first: this guide closes when you quit Yo. Quit Yo (Yo menu → Quit Yo), paste the command in Terminal and leave that window open, then open Yo again. It shows “Connecting to Yo on your Home server…” until the tunnel is up, then the server's Yo, where you connect your model once more.",
     commands: ["ssh -N -L 7777:127.0.0.1:7777 <you>@<your-server>"],
     note: "To keep the tunnel up without a Terminal window: brew install autossh, then autossh -M 0 -f -N -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -L 7777:127.0.0.1:7777 <you>@<your-server> (run it again after restarting your Mac).",
   },

@@ -1,10 +1,12 @@
 import type { AgentView, Attachment } from "@yo/contracts";
 import { ArrowUp, FileText, Minimize2, Plus, Square, SquarePen, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { isUsable } from "../../lib/accounts";
 import { api } from "../../lib/api";
 import { cn, readFileBase64 } from "../../lib/utils";
 import { accountFor, useApp } from "../../stores/app";
 import { run } from "../../stores/sync";
+import { ui } from "../../stores/ui";
 import { PROVIDER_NAME } from "../brand";
 import { Tip } from "../ui/overlay";
 import { ModelPicker } from "./ModelPicker";
@@ -50,6 +52,8 @@ export function Composer({ agent }: { agent: AgentView }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const accounts = useApp((s) => s.accounts);
   const acc = accountFor(agent, accounts);
+  // What core will run on (AccountService.resolveFor): the agent's own account, or any connected one.
+  const using = acc && isUsable(acc) ? acc : agent.accountId ? undefined : accounts.find(isUsable);
   const showRoute = useApp((s) => routeChoiceAvailable(s.execution));
   const [route, setRoute] = useRoute(agent.id);
   const working = agent.activity === "working" || agent.activity === "waiting";
@@ -275,9 +279,23 @@ export function Composer({ agent }: { agent: AgentView }) {
             )}
           </div>
         </div>
-        <div className="mt-2 text-center text-2xs text-faint">
+        <div className="mt-2 text-center text-2xs text-faint" data-testid="composer-footer">
           {agent.name} works on its own computer
-          {acc ? ` · using your ${PROVIDER_NAME[acc.provider]} subscription` : ""}
+          {using ? (
+            ` · using your ${PROVIDER_NAME[using.provider]} subscription`
+          ) : (
+            <>
+              {" · no model connected · "}
+              <button
+                type="button"
+                onClick={() => ui.openSettings("accounts")}
+                className="text-fg-2 underline underline-offset-2 hover:text-fg"
+                data-testid="composer-connect"
+              >
+                Connect one
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

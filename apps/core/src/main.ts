@@ -7,7 +7,7 @@ import { ControllerAuth } from "./auth/ControllerAuth";
 import { TelegramChannel } from "./channels/telegram";
 import { snapshotChatImages } from "./chatImages";
 import { ComputerLifecycle, getAgentdToken } from "./computer/ComputerLifecycle";
-import { CORE_VERSION, type CoreConfig, loadConfig } from "./config";
+import { CORE_BUILD, CORE_RELEASE, CORE_VERSION, type CoreConfig, loadConfig } from "./config";
 import { ConnectService } from "./connect/ConnectService";
 import type { HostEnv, HostFs } from "./connect/hostConnect";
 import { openDb } from "./db/db";
@@ -116,7 +116,8 @@ export async function startCore(
       const provider = session?.provider ?? accounts.resolveFor(agent?.accountId ?? null)?.provider;
       const model = session?.model ?? agent?.model;
       return [
-        `Yo ${CORE_VERSION}${process.env.YO_BUILD ? ` (build ${process.env.YO_BUILD})` : ""}`,
+        // The release baked in at build; else the version Yo.app passes (a core built from source).
+        `Yo ${CORE_RELEASE ?? process.env.YO_APP_VERSION ?? `${CORE_VERSION} (from source)`}${CORE_BUILD ? ` (build ${CORE_BUILD})` : ""}`,
         `Yo core on ${os.type()} ${os.release()} (${process.platform}/${process.arch}), Node ${process.versions.node}`,
         `Agent computer: ${PLACEMENT_LABEL[execution.placements.runner]}`,
         `Agent: ${agent?.name ?? "Yo"} on ${provider ?? "an unknown provider"}${model ? ` (${model})` : ""}`,
@@ -208,6 +209,19 @@ export async function startCore(
     }
   });
   agentd.on("connected", pushOverview);
+  agentd.on("connected", () => {
+    // A computer that just came up isn't idle: after a first download longer than the auto-sleep time,
+    // the whole-VM auto-sleep would otherwise stop it within a minute of connecting.
+    onActivity();
+    // "Do this later", then the computer started anyway (a message woke it): it's set up now, so it starts
+    // with Yo again and the "isn't set up yet" banner goes away.
+    try {
+      if (store.getSettings().computerSetup === "later")
+        hub.push("settings.updated", store.updateSettings({ computerSetup: "done" }));
+    } catch (err) {
+      log.debug("couldn't mark the computer set up", err); // e.g. racing a shutdown (database closed)
+    }
+  });
   agentd.on("disconnected", pushOverview);
   lifecycle.on("changed", pushOverview);
 

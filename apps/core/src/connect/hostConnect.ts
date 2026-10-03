@@ -25,6 +25,8 @@ export interface HostFs {
   isExecutable(p: string): Promise<boolean>;
   readFile(p: string): Promise<string>;
   rm(p: string): Promise<void>;
+  /** Names in a folder ([] when it's missing). Never throws. */
+  listDir?(p: string): Promise<string[]>;
 }
 
 export interface HostEnv {
@@ -56,6 +58,7 @@ export const nodeHostFs: HostFs = {
   },
   readFile: (p) => fsp.readFile(p, "utf8"),
   rm: (p) => fsp.rm(p, { force: true }),
+  listDir: (p) => fsp.readdir(p).catch(() => []),
 };
 
 export function nodeHostEnv(): HostEnv {
@@ -83,8 +86,15 @@ export function cliDirs(env: HostEnv): string[] {
   return [...new Set([...fromPath, ...usual])];
 }
 
+/** `npm install -g` under nvm lands in ~/.nvm/versions/node/<version>/bin, which a GUI app's PATH never has. */
+async function nvmDirs(env: HostEnv, fs: HostFs): Promise<string[]> {
+  const root = path.join(env.home, ".nvm", "versions", "node");
+  const versions = (await fs.listDir?.(root).catch(() => [])) ?? [];
+  return versions.filter((v) => /^v\d/.test(v)).map((v) => path.join(root, v, "bin"));
+}
+
 export async function findCli(name: string, env: HostEnv, fs: HostFs): Promise<boolean> {
-  for (const dir of cliDirs(env)) {
+  for (const dir of [...cliDirs(env), ...(await nvmDirs(env, fs))]) {
     if (await fs.isExecutable(path.join(dir, name))) return true;
   }
   return false;

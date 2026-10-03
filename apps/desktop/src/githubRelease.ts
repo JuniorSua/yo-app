@@ -12,6 +12,21 @@ import { compareVersions } from "../scripts/feed.mjs";
 export const GITHUB_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 /** A click on "Check for updates" within this long of the last request reuses its answer. */
 export const GITHUB_MIN_CHECK_GAP_MS = 60 * 1000;
+/** After a check that got no answer (offline at launch, rate limited), try again this soon. */
+export const GITHUB_RETRY_MS = 15 * 60 * 1000;
+/** How often the app looks at the clock to see whether a check is due. */
+export const GITHUB_TICK_MS = 5 * 60 * 1000;
+
+/**
+ * Is a background check due? Judged by the wall clock (`Date.now()`), not a timer: a timer's clock stops while
+ * the Mac sleeps, so a laptop that's awake an hour a day would wait days between 6-hour checks.
+ * `lastAnswer`: when GitHub last answered (0 = never); `lastAttempt`: when the last request went out.
+ */
+export function githubCheckDue(now: number, lastAttempt: number, lastAnswer: number): boolean {
+  if (now - lastAttempt < GITHUB_MIN_CHECK_GAP_MS) return false;
+  if (lastAnswer < lastAttempt) return now - lastAttempt >= GITHUB_RETRY_MS; // the last try got no answer
+  return now - lastAnswer >= GITHUB_CHECK_INTERVAL_MS;
+}
 
 export function latestReleaseApiUrl(repo: string) {
   return `https://api.github.com/repos/${repo}/releases/latest`;

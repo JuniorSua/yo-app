@@ -56,9 +56,13 @@ Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app
    [latest release](https://github.com/JuniorSua/yo-app/releases/latest), open it and drag **Yo** into
    **Applications**.
 2. **The first open.** Yo is open source and signed ad hoc, not notarized by Apple (that needs a paid Apple
-   Developer ID), so macOS warns the first time. In Applications, **right-click Yo → Open**, then **Open**
-   again. On macOS 15 and later: open it once, then **System Settings → Privacy & Security → Open Anyway**.
-   If macOS says Yo "is damaged" or still refuses, run this once in Terminal, then open Yo normally:
+   Developer ID), so macOS warns the first time ("Apple could not verify “Yo” is free of malware…").
+   - **macOS 15 Sequoia and later:** open Yo and click **Done** on the warning. Then open
+     **System Settings → Privacy & Security**, scroll down to "Yo was blocked…", click **Open Anyway**, then
+     **Open Anyway** again and enter your Mac password. (Right-click → Open no longer skips the warning there.)
+   - **macOS 13 or 14:** in Applications, **right-click Yo → Open**, then **Open** again.
+
+   Or, on any version (and if macOS says Yo "is damaged"), run this once in Terminal, then open Yo normally:
 
    ```bash
    xattr -dr com.apple.quarantine /Applications/Yo.app
@@ -182,7 +186,9 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md
 ## Support Yo ($10)
 
 Build it yourself from source for free, or support it for $10 and get the ready-made app. Paying supports Yo's
-development and updates: **[support Yo on the website](https://yo-app-five.vercel.app)**.
+development and updates: **[support Yo on the website](https://yo-app-five.vercel.app)**. Payments aren't open
+yet, so for now the ready-made app is a free download from
+[Releases](https://github.com/JuniorSua/yo-app/releases/latest).
 
 ## License
 

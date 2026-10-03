@@ -54,6 +54,7 @@ import {
   type TimelineEntry,
   type TodoEntry,
 } from "@yo/contracts";
+import { isUsable } from "../accounts";
 import type { ConnectionStatus, PtyConnection, YoClient } from "../api";
 import { isCreatureKind } from "../creatureHue";
 import { nextRun } from "../cron";
@@ -282,10 +283,41 @@ export class MockClient implements YoClient {
   /* -------------------------------- Internals ------------------------------- */
 
   private emit<C extends ApiPushChannel>(channel: C, data: ApiPushes[C]) {
+    // Like core's Orchestrator: a model got connected, so agents stuck on "connect a model" leave the error.
+    if (channel === "account.updated" && isUsable(data as Account)) this.modelConnected();
     const set = this.listeners.get(channel);
     if (!set) return;
     const copy = structuredClone(data);
     for (const cb of set) cb(copy);
+  }
+
+  /** Agents whose last message was refused for want of a connected model. */
+  private needsModel = new Set<string>();
+
+  /** Core's runTurn refuses a message when no usable model is connected (AccountService.resolveFor). */
+  private refuseWithoutModel(agentId: string): boolean {
+    const a = this.agent(agentId);
+    const pinned = this.account(a?.accountId);
+    if (pinned ? isUsable(pinned) : this.s.accounts.some(isUsable)) return false;
+    const acc = pinned ?? this.defaultAccount();
+    this.notice(
+      agentId,
+      acc
+        ? `${acc.label} isn't connected yet. Connect your subscription in Settings → Accounts, then send this again.`
+        : "No model is connected yet. Connect your Claude or ChatGPT plan in Settings → Accounts, then send this again.",
+      true,
+    );
+    this.needsModel.add(agentId);
+    this.patchAgent(agentId, { activity: "error" });
+    return true;
+  }
+
+  private modelConnected() {
+    for (const id of this.needsModel) {
+      this.notice(id, "A model is connected now. Send your message again and I'll get started.");
+      this.patchAgent(id, { activity: "idle" });
+    }
+    this.needsModel.clear();
   }
 
   private sleep(ms: number, ctx?: RunCtx) {
@@ -1619,6 +1651,8 @@ export class MockClient implements YoClient {
         running.steer.push(text);
         return { turnId: running.turnId };
       }
+      this.needsModel.delete(agentId);
+      if (this.refuseWithoutModel(agentId)) return { turnId: "pending" };
       void this.run(agentId, text, undefined, route ?? "auto");
       return { turnId: "pending" };
     },

@@ -15,9 +15,17 @@
       content="An open-source personal AI agent with its own computer, running on the subscription you already have. Download for macOS."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/assets/og.png" />
+    <meta property="og:site_name" content="Yo" />
+    <!-- Link previews (Messages, Slack, X) need an absolute image URL. The vercel.app address keeps working
+         after a custom domain is added; switch it to the custom domain then. -->
+    <meta property="og:image" content="https://yo-app-five.vercel.app/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Yo: say yo, it does the rest. A personal AI agent with a computer of its own." />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/demo.css" />
@@ -105,7 +113,7 @@
           </div>
           <p class="hero-meta reveal">
             Free download on GitHub · macOS 13 or newer · Apple silicon ·
-            <a href="#first-open" data-first-open>First open: one extra click</a>
+            <a href="#first-open" data-first-open>First open: one quick OK</a>
           </p>
         </div>
 
@@ -489,7 +497,7 @@
               <li>The full app, its core and the agent's computer</li>
               <li>Apache-2.0: read it, change it, run it</li>
               <li>Build with Node 22 and pnpm</li>
-              <li>Issues and discussion on GitHub</li>
+              <li>Bug reports and ideas in GitHub Issues</li>
             </ul>
             <div class="plan-actions">
               <a class="btn btn-line" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
@@ -534,11 +542,13 @@
             </p>
           </details>
           <details id="first-open">
-            <summary>macOS says it can't check Yo. How do I open it?</summary>
+            <summary>macOS says it can't verify Yo. How do I open it?</summary>
             <p>
-              Yo's builds aren't notarized by Apple, so macOS asks you to confirm it once. Open Yo, close the warning,
-              then go to System Settings → Privacy &amp; Security, scroll down and click Open Anyway (macOS 15 and later).
-              On macOS 14, right-click Yo in Applications, choose Open, then Open again. Or run this once in Terminal:
+              Yo's builds aren't notarized by Apple, so macOS asks you to confirm it once. Open Yo and click Done on
+              the warning. Then open System Settings → Privacy &amp; Security, scroll down to “Yo was blocked” and click
+              Open Anyway, then Open Anyway again and enter your Mac password. That's macOS 15 Sequoia and later; on
+              macOS 13 or 14 you can instead right-click Yo in Applications, choose Open, then Open again. Or skip
+              all that and run this once in Terminal:
               <code class="cmd">xattr -dr com.apple.quarantine /Applications/Yo.app</code>
               After that it opens like any other app.
             </p>
