@@ -1,0 +1,6 @@
+# Keep blank issues on: the report a Yo agent writes opens as a prefilled blank issue (issues/new?title=…&body=…).
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/JuniorSua/yo-app/security/advisories/new
+    about: Please report security problems privately, not in a public issue. See SECURITY.md.

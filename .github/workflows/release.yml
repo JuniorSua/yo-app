@@ -1,0 +1,427 @@
+name: Release
+
+# Public builds of Yo, published as a GitHub Release with Yo-<version>-arm64.dmg/.zip and compose.server.yaml,
+# plus two images on GHCR that those builds pull: the agent's computer (ghcr.io/<owner>/yo-computer) and, for
+# home servers, Yo's core (ghcr.io/<owner>/yo-core), each :<version> and :latest.
+#
+# Runs ONLY in the public repo JuniorSua/yo-app (every job checks), where releases live and Actions minutes are
+# free. Yo's source is private: every build job checks out JuniorSua/yo at the `source` commit with a read-only
+# deploy key (secret YO_SOURCE_DEPLOY_KEY) and writes VERSION, which makes it a public build (license check,
+# "github" update channel, bug reports to yo-app). Nothing here prints the source.
+#
+# Started by the maintainer's release script, or from the Actions tab: tag
+# v0.1.N (N = the source commit's count on main), the source commit's full SHA, and the yo-app issue numbers it
+# fixes. The release's tag is made on yo-app's main.
+#
+# The app is ad-hoc signed (no paid Apple Developer ID): users OK it once (Open Anyway in Privacy & Security), and it
+# updates through the "github" channel (it offers Download for newer releases; see apps/desktop/src/updates.ts).
+#
+# Once the release exists, the last job comments "Fixed in Yo <version>" on the `fixed` issues and closes them,
+# then adds them to the release notes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v0.1.313"
+        required: true
+        type: string
+      source:
+        description: "Full SHA of the JuniorSua/yo commit to build"
+        required: true
+        type: string
+      fixed:
+        description: "yo-app issue numbers this release fixes, space separated (optional)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Version and source
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+      source: ${{ steps.v.outputs.source }}
+      image: ${{ steps.v.outputs.image }}
+      core_image: ${{ steps.v.outputs.core_image }}
+      fixed: ${{ steps.v.outputs.fixed }}
+    steps:
+      - id: v
+        env:
+          TAG: ${{ inputs.tag }}
+          SOURCE: ${{ inputs.source }}
+          FIXED: ${{ inputs.fixed }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tags look like v0.1.313, not $TAG"; exit 1
+          fi
+          if [[ ! "$SOURCE" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::source must be a full 40-character commit SHA"; exit 1
+          fi
+          # Digits and spaces only.
+          fixed="$(tr -cs '0-9' ' ' <<<"$FIXED" | xargs || true)"
+          {
+            echo "tag=$TAG"
+            echo "version=${TAG#v}"
+            echo "source=$SOURCE"
+            echo "image=ghcr.io/${OWNER,,}/yo-computer"
+            echo "core_image=ghcr.io/${OWNER,,}/yo-core"
+            echo "fixed=$fixed"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing Yo ${TAG#v}"
+
+  computer:
+    name: Computer image (${{ matrix.arch }})
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: arm64 # Apple silicon (Colima)
+            runner: ubuntu-24.04-arm
+          - arch: amd64 # home servers
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: JuniorSua/yo
+          ref: ${{ needs.version.outputs.source }}
+          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
+          persist-credentials: false
+      - name: Mark it a public build
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: echo "$VERSION" > VERSION
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Pushed by digest only; the manifest job below tags both architectures together.
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: computer/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.description=Yo agent's computer (agentd, desktop and browser)
+          outputs: type=image,name=${{ needs.version.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=computer-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=computer-${{ matrix.arch }}
+      - name: Save the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p digests
+          touch "digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  computer-manifest:
+    name: Computer image (tag both architectures)
+    needs: [version, computer]
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: digest-*
+          path: digests
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag <version> and latest
+        working-directory: digests
+        env:
+          IMAGE: ${{ needs.version.outputs.image }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          refs=()
+          for d in *; do refs+=("$IMAGE@sha256:$d"); done
+          [ "${#refs[@]}" -eq 2 ] || { echo "::error::expected 2 digests, got ${#refs[@]}"; exit 1; }
+          docker buildx imagetools create -t "$IMAGE:$VERSION" -t "$IMAGE:latest" "${refs[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+
+  core:
+    name: Core image (home servers)
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: JuniorSua/yo
+          ref: ${{ needs.version.outputs.source }}
+          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
+          persist-credentials: false
+      - name: Mark it a public build
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: echo "$VERSION" > VERSION
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile
+      - name: Build core and web
+        run: pnpm --filter @yo/core --filter @yo/web build
+      - name: Image folder (core.mjs + web), as in apps/core/Dockerfile
+        run: |
+          set -euo pipefail
+          mkdir -p core-image
+          cp apps/core/Dockerfile apps/core/dist/core.mjs core-image/
+          cp -r apps/web/dist core-image/web
+          mkdir -p server && cp computer/compose.server.yaml server/
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # No RUN steps in the Dockerfile, so both architectures build here without emulation.
+      - uses: docker/build-push-action@v7
+        with:
+          context: core-image
+          file: core-image/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.description=Yo's core for home servers
+          tags: |
+            ${{ needs.version.outputs.core_image }}:${{ needs.version.outputs.version }}
+            ${{ needs.version.outputs.core_image }}:latest
+          push: true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: yo-server
+          path: server/compose.server.yaml
+          if-no-files-found: error
+          retention-days: 7
+
+  mac:
+    name: Yo.app (macOS arm64, ad-hoc signed)
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    # Apple silicon. macos-15 like native.yml: the helper needs Swift 6 (swift-tools-version 6.0).
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: JuniorSua/yo
+          ref: ${{ needs.version.outputs.source }}
+          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
+          persist-credentials: false
+      - name: Mark it a public build
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: echo "$VERSION" > VERSION
+      - uses: pnpm/action-setup@v6 # pnpm version comes from "packageManager" in package.json
+      # No dependency cache on purpose: a release builds from a clean install (no cache poisoning).
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile
+      - name: Build core and web (bundled in the app)
+        run: pnpm --filter @yo/core --filter @yo/web build
+      # package = desktop build (channel baked in) + native helper + electron-builder + sign-app.mjs (ad-hoc).
+      - name: Package and sign Yo.app
+        env:
+          YO_APP_VERSION: ${{ needs.version.outputs.version }}
+          YO_UPDATE_CHANNEL: github
+          YO_UPDATE_REPO: ${{ github.repository }}
+          YO_ADHOC_SIGN: "1"
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm --filter @yo/desktop package
+      - name: Make the dmg and zip
+        run: node apps/desktop/scripts/make-dist.mjs
+      - name: Check the build
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          app=apps/desktop/release/mac-arm64/Yo.app
+          test "$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")" = "$VERSION"
+          codesign --verify --deep --strict "$app"
+          codesign -dv "$app" 2>&1 | grep -q 'Signature=adhoc'
+          grep -q '"computerImageRepo"' "$app/Contents/Resources/yo-config.json"
+          ls -la apps/desktop/release/dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: yo-mac
+          path: apps/desktop/release/dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish the GitHub Release
+    # Only once the app AND the computer image it pulls exist.
+    needs: [version, computer-manifest, core, mac]
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: yo-mac
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: yo-server
+          path: dist
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          IMAGE: ${{ needs.version.outputs.image }}
+        run: |
+          set -euo pipefail
+          # Written for everyday people: the top line is the one link they need. One line per paragraph or
+          # item (GitHub turns line breaks in release notes into real ones). The fixed-issues job below appends
+          # "## Fixed in this version" at the end, so keep that heading out of here.
+          dmg="Yo-${VERSION}-arm64.dmg"
+          cat > notes.md <<EOF
+          **Download [${dmg}](https://github.com/${REPO}/releases/download/${TAG}/${dmg})** — that's the app (Macs with Apple silicon).
+
+          ## Install
+
+          1. **Open** ${dmg} from your Downloads.
+          2. **Drag Yo into Applications.**
+          3. **First open:** macOS asks once, because Yo isn't notarized by Apple. Open Yo and click **Done**, then go to **System Settings → Privacy & Security**, click **Open Anyway** next to "Yo was blocked", and enter your Mac password. (On macOS 13 or 14: right-click Yo in Applications → **Open**.)
+          4. **Activate:** Yo asks for your license key. Subscribe at [theyoapp.com](https://theyoapp.com/#pricing) (\$10 a month, cancel any time); your key is on the page that opens after you pay.
+
+          If macOS still refuses (or says Yo "is damaged"), run this once in Terminal, then open Yo:
+
+          \`\`\`
+          xattr -dr com.apple.quarantine /Applications/Yo.app
+          \`\`\`
+
+          **Which file?**
+          - **.dmg** — the app, recommended
+          - **.zip** — the same app, used by Set up with your agent
+          - **compose.server.yaml** — for running Yo on an always-on home server (Yo's setup chat walks you through it)
+          - **sha256** — a fingerprint GitHub shows so careful people can verify the file; you can ignore it
+
+          **Updating:** Yo tells you when a new version is out (the update button, bottom left). First **quit Yo** (⌘Q, or **Quit Yo** in its menu-bar icon: closing the window keeps it running, and macOS won't replace an open app). Then install it the same way and choose **Replace**; your chats, memory and settings stay. If macOS then asks about **"Yo Safe Storage"**, enter your Mac password and click **Always Allow**. The first open after installing can take up to 30 seconds while macOS checks Yo.
+
+          **Need help?** In Yo, open **Settings → Bug reports → Report a problem**. To remove Yo completely, see [Uninstall](https://github.com/${REPO}#uninstall).
+
+          <sub>The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it needs it).</sub>
+          EOF
+          files=(dist/*.dmg dist/*.zip dist/compose.server.yaml)
+          if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" -R "$REPO" --clobber
+            gh release edit "$TAG" -R "$REPO" --notes-file notes.md
+          else
+            gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md
+          fi
+
+  fixed-issues:
+    name: Close the issues this release fixes
+    needs: [version, release]
+    if: github.repository == 'JuniorSua/yo-app' && needs.version.outputs.fixed != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # the release notes
+      issues: write
+    steps:
+      - name: Comment, close, list them in the notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          FIXED: ${{ needs.version.outputs.fixed }}
+        run: |
+          set -euo pipefail
+          # The trailer lists every public issue ever fixed. Only an open issue without a "Fixed in" comment gets
+          # one (so a reopened regression stays open); a rerun of this release lists its own ones again.
+          this="<!-- yo:fixed-in ${TAG} -->"
+          list=""
+          for n in $FIXED; do
+            [[ "$n" =~ ^[0-9]+$ ]] || continue
+            if ! info="$(gh issue view "$n" -R "$REPO" --json state,url,comments 2>/dev/null)"; then
+              echo "#$n: no such issue, skipped"; continue
+            fi
+            if [[ "$(jq -r .url <<<"$info")" != */issues/* ]]; then
+              echo "#$n: a pull request, skipped"; continue
+            fi
+            state="$(jq -r .state <<<"$info")"
+            ours="$(jq --arg m "$this" '[.comments[].body | select(contains($m))] | length' <<<"$info")"
+            any="$(jq '[.comments[].body | select(contains("<!-- yo:fixed-in "))] | length' <<<"$info")"
+            if [ "$state" = "OPEN" ] && [ "$any" = "0" ]; then
+              cat > comment.md <<EOF
+          Fixed in **Yo ${VERSION}**. Thanks for reporting it!
+
+          To update: click **Download** on Yo's update button (bottom left), or get it from
+          [the release page](https://github.com/${REPO}/releases/tag/${TAG}). If it still happens after updating,
+          comment here.
+
+          ${this}
+          EOF
+              gh issue comment "$n" -R "$REPO" --body-file comment.md
+              gh issue close "$n" -R "$REPO" --reason completed
+              echo "#$n: closed"
+              list+="- #$n"$'\n'
+            elif [ "$ours" != "0" ]; then
+              # A rerun: commented by an earlier run of this release (close it if that run stopped halfway).
+              if [ "$state" = "OPEN" ]; then gh issue close "$n" -R "$REPO" --reason completed; fi
+              list+="- #$n"$'\n'
+            else
+              echo "#$n: $state, already handled by an earlier release, skipped"
+            fi
+          done
+          if [ -n "$list" ]; then
+            gh release view "$TAG" -R "$REPO" --json body --jq .body > old.md
+            # Drop the list a previous run added (it's always last) and trailing blank lines, then add this one.
+            awk '/^## Fixed in this version$/ { exit } { l[n++] = $0 }
+              END { while (n > 0 && l[n - 1] == "") n--; for (i = 0; i < n; i++) print l[i] }' old.md > notes.md
+            printf '\n## Fixed in this version\n\n%s' "$list" >> notes.md
+            gh release edit "$TAG" -R "$REPO" --notes-file notes.md
+          fi
