@@ -2,7 +2,10 @@ name: Release
 
 # Public builds of Yo, published as a GitHub Release with Yo-<version>-arm64.dmg/.zip and compose.server.yaml,
 # plus two images on GHCR that those builds pull: the agent's computer (ghcr.io/<owner>/yo-computer) and, for
-# home servers, Yo's core (ghcr.io/<owner>/yo-core), each :<version> and :latest.
+# home servers and the PC edition, Yo's core (ghcr.io/<owner>/yo-core), each :<version> and :latest.
+# The PC edition (Yo in the browser on Windows and Linux, pc/) adds install.ps1, install.sh, the yo-app helper
+# (yo-app, yo-app.ps1, yo-app.cmd), yo-app-compose.yaml and yo.ico, with the version baked in; its one-line
+# installers use releases/latest/download/install.ps1 (or install.sh).
 #
 # Runs ONLY in the public repo JuniorSua/yo-app (every job checks), where releases live and Actions minutes are
 # free. Yo's source is private: every build job checks out JuniorSua/yo at the `source` commit with a read-only
@@ -209,7 +212,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p core-image
-          cp apps/core/Dockerfile apps/core/dist/core.mjs core-image/
+          cp apps/core/Dockerfile apps/core/dist/core.mjs apps/core/dist/onepassword-core.wasm.br core-image/
           cp -r apps/web/dist core-image/web
           mkdir -p server && cp computer/compose.server.yaml server/
       - uses: docker/setup-buildx-action@v4
@@ -236,6 +239,44 @@ jobs:
         with:
           name: yo-server
           path: server/compose.server.yaml
+          if-no-files-found: error
+          retention-days: 7
+
+  pc:
+    name: PC edition files (installers, yo-app helper)
+    needs: version
+    if: github.repository == 'JuniorSua/yo-app'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: JuniorSua/yo
+          ref: ${{ needs.version.outputs.source }}
+          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
+          persist-credentials: false
+      # The installers fetch the files of the release they came with: they say which one in __YO_VERSION__.
+      - name: Bake the version in
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p pc-dist
+          for f in install.sh install.ps1 yo-app yo-app.ps1 yo-app.cmd; do
+            sed "s/__YO_VERSION__/${VERSION}/g" "pc/$f" > "pc-dist/$f"
+          done
+          sed "s/__YO_VERSION__/${VERSION}/g" pc/compose.yaml > pc-dist/yo-app-compose.yaml
+          cp pc/yo.ico pc-dist/yo.ico
+          chmod 755 pc-dist/install.sh pc-dist/yo-app
+          if grep -l '__YO_VERSION__' pc-dist/*; then echo "::error::__YO_VERSION__ left in the files above"; exit 1; fi
+          bash -n pc-dist/install.sh
+          bash -n pc-dist/yo-app
+          shellcheck pc-dist/install.sh pc-dist/yo-app
+          ls -la pc-dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: yo-pc
+          path: pc-dist/*
           if-no-files-found: error
           retention-days: 7
 
@@ -297,7 +338,7 @@ jobs:
   release:
     name: Publish the GitHub Release
     # Only once the app AND the computer image it pulls exist.
-    needs: [version, computer-manifest, core, mac]
+    needs: [version, computer-manifest, core, pc, mac]
     if: github.repository == 'JuniorSua/yo-app'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -311,6 +352,10 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: yo-server
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: yo-pc
           path: dist
       - name: Create or update the release
         env:
@@ -327,6 +372,8 @@ jobs:
           dmg="Yo-${VERSION}-arm64.dmg"
           cat > notes.md <<EOF
           **Download [${dmg}](https://github.com/${REPO}/releases/download/${TAG}/${dmg})** — that's the app (Macs with Apple silicon).
+
+          **Windows or Linux?** Yo runs in your browser there, installed with one command: see [Windows and Linux](https://github.com/${REPO}#windows-and-linux-in-your-browser).
 
           ## Install
 
@@ -345,6 +392,8 @@ jobs:
           - **.dmg** — the app, recommended
           - **.zip** — the same app, used by Set up with your agent
           - **compose.server.yaml** — for running Yo on an always-on home server (Yo's setup chat walks you through it)
+          - **install.ps1**, **install.sh** — Yo for Windows and Linux, in your browser (run them with the one-line commands linked above)
+          - **yo-app**, **yo-app.ps1**, **yo-app.cmd**, **yo-app-compose.yaml**, **yo.ico** — used by those installers; you don't need to download them
           - **sha256** — a fingerprint GitHub shows so careful people can verify the file; you can ignore it
 
           **Updating:** Yo tells you when a new version is out (the update button, bottom left). First **quit Yo** (⌘Q, or **Quit Yo** in its menu-bar icon: closing the window keeps it running, and macOS won't replace an open app). Then install it the same way and choose **Replace**; your chats, memory and settings stay. If macOS then asks about **"Yo Safe Storage"**, enter your Mac password and click **Always Allow**. The first open after installing can take up to 30 seconds while macOS checks Yo.
@@ -353,7 +402,8 @@ jobs:
 
           <sub>The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it needs it).</sub>
           EOF
-          files=(dist/*.dmg dist/*.zip dist/compose.server.yaml)
+          files=(dist/*.dmg dist/*.zip dist/compose.server.yaml
+            dist/install.sh dist/install.ps1 dist/yo-app dist/yo-app.ps1 dist/yo-app.cmd dist/yo-app-compose.yaml dist/yo.ico)
           if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
             gh release upload "$TAG" "${files[@]}" -R "$REPO" --clobber
             gh release edit "$TAG" -R "$REPO" --notes-file notes.md

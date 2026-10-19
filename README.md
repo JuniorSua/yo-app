@@ -22,8 +22,11 @@ with ⌘⇧M. Assistants you made before the redesign keep their chats and setti
 
 Yo is **$10 a month** (cancel any time): download it below, then subscribe on [theyoapp.com](https://theyoapp.com/#pricing) and paste your license key into Yo.
 
+**On Windows or Linux?** Yo runs there too, in your browser: see [Windows and Linux](#windows-and-linux-in-your-browser).
+
 - [What you need](#what-you-need)
 - [Install](#install)
+- [Windows and Linux (in your browser)](#windows-and-linux-in-your-browser)
 - [Subscribe and activate](#subscribe-and-activate)
 - [Connect your model](#connect-your-model)
 - [Yo sets up its computer](#yo-sets-up-its-computer)
@@ -87,6 +90,52 @@ macOS checks once per update. Enter your Mac password and click **Always Allow**
 macOS Keychain…" page until you do.
 
 Yo lives in the menu bar: closing the window keeps Yo running. ⌘Q (or **Quit Yo** in the menu-bar icon) quits.
+
+## Windows and Linux (in your browser)
+
+On a Windows or Linux PC, Yo's core and its computer run in Docker on your PC, and you use Yo in Chrome, Edge or
+Firefox at `http://127.0.0.1:7777`. It's the same Yo as on the Mac, without the Mac-only parts (Calendar, Contacts,
+Reminders, Notes, Mail and controlling Mac windows).
+
+**What you need:**
+
+- Windows 11, or Windows 10 version 22H2 (64-bit); or a 64-bit Linux
+- 8 GB of memory (RAM) at least, 16 GB recommended
+- 4 processor cores recommended
+- 15 GB of free disk space
+- Docker Desktop on Windows (free for personal use; the installer offers to install it for you), or Docker Engine
+  on Linux
+
+**Install.** On Windows, open **PowerShell** (Start menu, type PowerShell, press Enter) and paste:
+
+```powershell
+irm https://github.com/JuniorSua/yo-app/releases/latest/download/install.ps1 | iex
+```
+
+On Linux (or Ubuntu on Windows' WSL), in a terminal:
+
+```bash
+curl -fsSL https://github.com/JuniorSua/yo-app/releases/latest/download/install.sh | bash
+```
+
+The installer checks your PC (each check in plain words), installs Docker if you agree, downloads Yo (about 1 GB),
+starts it and opens it in your browser, signed in. On Windows it adds a **Yo** icon to the Start menu and the
+desktop. Yo keeps running in the background with Docker, also with the browser closed. Running the same command
+again repairs or updates Yo and keeps your data. Then [activate](#subscribe-and-activate) and
+[connect your model](#connect-your-model) as on the Mac (Claude Code on Windows:
+`irm https://claude.ai/install.ps1 | iex`).
+
+**The `yo-app` command** (in PowerShell, Command Prompt or a Linux terminal):
+
+| Command | What it does |
+| --- | --- |
+| `yo-app open` | Open Yo in your browser (starts it if needed) |
+| `yo-app signin` | A one-time sign-in link for another browser (works once, for 10 minutes) |
+| `yo-app status` | Is Yo running? |
+| `yo-app stop` / `start` / `restart` | Stop, start or restart Yo |
+| `yo-app update` | Get the newest Yo (your data stays) |
+| `yo-app logs` | Yo's recent messages, for bug reports |
+| `yo-app uninstall` | Remove Yo (asks before deleting your data) |
 
 ## Subscribe and activate
 
@@ -166,6 +215,8 @@ Yo checks GitHub Releases for a newer version (when it starts and every few hour
 Your chats, Yo's memory and your settings stay. (Ad-hoc signed apps can't update themselves in place on macOS,
 so Yo only points you at the download.)
 
+**Windows and Linux:** run `yo-app update`.
+
 ## Getting help
 
 - **Something broke?** Open **Settings → Bug reports → Report a problem**, or tell Yo "report this bug". You see
@@ -210,6 +261,9 @@ Yo adds no login items or background services. To remove it completely:
    Calendars, Accessibility, Screen Recording…) can be switched off there. Homebrew, Colima, the Docker CLI,
    Claude Code and Codex are separate tools; keep them or remove them with `brew uninstall colima docker
    docker-compose`.
+
+**Windows and Linux:** run `yo-app uninstall`. It asks before deleting Yo's data (chats, memories and the
+computer's files).
 
 **Home server:** on the server, stop Yo and delete its containers, data and images:
 
