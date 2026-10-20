@@ -19,12 +19,12 @@ the result rather than stopping after the download.
 
 Safety rules:
 
-- **Never print, log, store or commit a secret.** That includes the Claude sign-in token, anything in
-  `~/.yo/codex`, `~/.codex` or `~/.claude`, and the Keychain. Never read those files. The person pastes the
-  Claude token into Yo themselves; you never see it.
-- **Sign-ins stay under the person's control.** Commands that open a browser to sign in (`claude setup-token`,
-  `codex login`) or ask for the Mac's password (the Homebrew installer) are run by the person in their own
-  Terminal window. Tell them exactly what to paste and wait for them.
+- **Never print, log, store or commit a secret.** That includes anything in `~/.codex` or `~/.claude`, the
+  Keychain, any code a sign-in page shows, and the address ChatGPT's sign-in leads to. Never read those files.
+- **Sign-ins stay under the person's control.** Claude's and ChatGPT's sign-ins happen inside Yo (on Claude's and
+  ChatGPT's own pages); the person does them themselves. Commands that ask for the Mac's password (the Homebrew
+  installer) are run by the person in their own Terminal window. Tell them exactly what to paste and wait for
+  them.
 - **Ask before** removing the quarantine flag, replacing an existing Yo.app, installing anything, or stopping
   any app, VM or container. Never stop or delete other Colima profiles or Docker containers.
 - Don't start Colima yourself. Yo creates and starts its own VM (profile `yo`) when the person presses
@@ -165,49 +165,29 @@ Open Yo (`open "<install dir>/Yo.app"`). First it shows **Activate Yo**: Yo is $
 **Subscribe**, pays on theyoapp.com, copies the license key shown after paying, pastes it and clicks **Activate**
 (you never see or handle the key, and never pay for them). Already subscribed: they paste their key. Lost it:
 https://theyoapp.com/support#license-key. Then tell them what they'll see next: Yo's **Connect your model**
-walkthrough. It first lists the sign-ins it can see on this Mac. A ChatGPT sign-in made just for Yo
-(`~/.yo/codex`) can be finished with one click. A Claude Code or Codex sign-in only takes them to the right
-steps below: they still make a token for Yo (Claude) or sign in once more just for Yo (ChatGPT).
+walkthrough. It first lists the sign-ins it can see on this Mac. A Claude Code or Codex sign-in only takes them to the
+right steps below: they still sign in to Claude or ChatGPT on Yo's computer.
 
-**Claude.** If `claude --version` fails, install Claude Code (you can run this):
+**Claude.** Nothing to install or type: Yo runs Claude Code on its own computer, and the person signs in to
+Claude there with Claude's own sign-in. In the walkthrough they press **Sign in to Claude**, sign in on Claude's
+page with the account that has their plan, click **Authorize**, and paste the code Claude shows into Yo. Yo never
+sees their password or a sign-in token, and neither do you: don't ask for the code.
 
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-```
+Claude signs in on Yo's computer, so on a Mac that hasn't set it up yet the walkthrough says so: they press
+**Continue**, set up the computer in the first agent's chat (step 6), and sign in to Claude at the end of it.
 
-Then the person runs this **in their own Terminal** (not through you), signs in in the browser with the
-account that has their plan, and pastes the token Terminal prints (it starts with `sk-ant-oat`) into step 3 of
-Yo's walkthrough, then presses **Connect**:
+**ChatGPT.** Nothing to install or type either: Yo runs Codex on its own computer, and the person signs in to
+ChatGPT there with ChatGPT's own sign-in page. They don't need Codex on this Mac. In the walkthrough they press
+**Sign in to ChatGPT**, sign in on ChatGPT's page with the account that has their plan and click **Continue**.
+Their browser then lands on a page that says it can't connect (the address starts with `http://127.0.0.1:1455`).
+That's expected: they copy the whole address from the address bar and paste it into Yo. Don't ask for that address
+(it carries a one-time sign-in code). As with Claude, on a Mac that hasn't set up Yo's computer yet, they press
+**Continue** and sign in at the end of the setup chat (step 6).
 
-```bash
-claude setup-token
-```
-
-Don't run `claude setup-token` yourself and don't ask for the token: it goes straight from their Terminal into
-Yo, which keeps it in its secret store.
-
-If Terminal says `claude: command not found` right after installing, use `~/.local/bin/claude setup-token`.
-
-**ChatGPT (Codex).** If `codex --version` fails, install Codex (you can run this; it's the command Yo shows. If it
-asks to start Codex now, answer no):
-
-```bash
-curl -fsSL https://chatgpt.com/codex/install.sh | sh
-```
-
-Only if that fails, use one of the alternatives Yo lists: `npm install -g @openai/codex` or
-`brew install --cask codex` (not both).
-
-Then the person runs this **in their own Terminal** and signs in with ChatGPT in the browser. It's a separate
-sign-in, kept in its own folder just for Yo, so their usual Codex sign-in keeps working:
-
-```bash
-mkdir -p ~/.yo/codex && CODEX_HOME=~/.yo/codex codex login
-```
-
-(If `codex` isn't found yet, use `~/.local/bin/codex login` in place of `codex login`.) Yo notices the sign-in
-by itself and turns green. You can confirm without reading any file:
-`CODEX_HOME=~/.yo/codex codex login status` (it says whether it's logged in, not the credentials).
+If copying the address is hard for them, Yo offers **Sign in with a one-time code instead**. ChatGPT only accepts
+codes after they turn on "Enable device code authorization for Codex" in ChatGPT's settings, under Security (Yo
+has a button that opens them; on a work or school account, their admin allows it). Then they press **Get my
+code**, open the link and enter the code; Yo turns green by itself.
 
 **Grok.** Nothing to type in Terminal: Grok signs in on Yo's own computer, so do step 4 (Colima and the
 Docker CLI) first. The person presses **Get my code** in Yo's walkthrough (the first time, Yo starts its
@@ -217,14 +197,17 @@ link or approve the code for them.
 
 ## 6. Start the agent's computer
 
-Once the model is connected, Yo's chat opens with "Looks like we have a model connected. Let's set up my
-computer." and three cards. (Outside the person's work hours the app may open Pip, the Personal space, instead;
+Yo's chat opens with "Looks like we have a model connected. Let's set up my computer." (or, when they chose
+Claude or ChatGPT, "Let's set up my computer first. You sign in to Claude on it right after.", with ChatGPT in
+place of Claude when they chose it) and three cards. (Outside the person's work hours the app may open Pip, the Personal space, instead;
 press ⌘⇧M to switch to Work, where Yo's setup chat is.)
 
 - **This Mac:** the person picks it. Yo checks the Mac (the same table as the preflight), shows any missing
   tools with copy buttons (already installed in step 4), and offers **Start my computer**. The first start
   creates Yo's VM (4 CPUs, 5 GB memory, 20 GB disk) and downloads the agent's computer (about 1 GB, plus a few
-  hundred MB for the VM itself). Allow a few minutes.
+  hundred MB for the VM itself). Allow a few minutes. If they chose Claude, the chat then shows **Sign in to
+  Claude** (Claude's own page, then the code it shows); if they chose ChatGPT, **Sign in to ChatGPT** (ChatGPT's
+  own page, then the address the browser lands on). **Start chatting** comes after that.
 - **Home server:** the person picks it, and Yo's setup chat shows each step with the exact commands: build and
   start Yo on the server with `computer/compose.server.yaml`, check SSH from this Mac, point this Mac's Yo at
   the server, and open an SSH tunnel. Help them run the steps in that order, on the machine each one says.
@@ -244,8 +227,7 @@ Report each of these as passed or failed:
    ```
 
 3. **The model is connected:** Yo's walkthrough showed the green "connected" status, and
-   **Settings → Accounts** lists the account as connected. For ChatGPT, `CODEX_HOME=~/.yo/codex codex login status`
-   also says it's logged in.
+   **Settings → Accounts** lists the account as connected.
 4. **The agent's computer is live** (this Mac):
 
    ```bash
@@ -259,7 +241,7 @@ Report each of these as passed or failed:
    its title") and confirm it answers.
 
 When finished, report: the install path and Yo's version (**Settings → About**), the macOS version and chip,
-the preflight results, which model is connected (never the token), where the computer runs, the four checks
+the preflight results, which model is connected (never a key or code), where the computer runs, the four checks
 above, and anything left to do.
 
 ## Troubleshooting
@@ -275,11 +257,14 @@ above, and anything left to do.
   (check them for anything secret before sharing).
 - **`curl .../healthz` fails:** Yo isn't running, or (home server) the SSH tunnel is down. Open Yo, or restart
   the tunnel: `ssh -N -L 7777:127.0.0.1:7777 <you>@<your-server>`.
-- **The Claude token is refused:** copy the *whole* line that starts with `sk-ant-oat` (Terminal may wrap it)
-  and paste it again. A key starting `sk-ant-api` is an API key, not a plan sign-in: run `claude setup-token`
-  again.
-- **ChatGPT stays "waiting for the sign-in":** make sure the login ran with `CODEX_HOME=~/.yo/codex` (the full
-  command above) and finished in the browser, then press **Check again** in Yo.
+- **Claude doesn't accept the code:** codes expire quickly and only work with the newest sign-in link. Press
+  **Try again** in Yo for a fresh link, sign in, and paste the whole code Claude shows.
+- **ChatGPT says "That isn't the address Yo needs" or "cut short":** after clicking **Continue** on ChatGPT's
+  page, copy the whole address of the page that says it can't connect (click the address bar, select all, copy),
+  not the sign-in link. "From an earlier sign-in": press **Try again** and use the newest page.
+- **ChatGPT's code page says code sign-in is off (or to ask an admin):** turn on "Enable device code authorization
+  for Codex" in ChatGPT's settings → Security, then enter the same code again; or use ChatGPT's sign-in page
+  instead (no setting needed).
 - **"Colima/Docker CLI not installed":** run step 4, then press **Check again** in the setup chat. Yo adds
   `/opt/homebrew/bin` and `/usr/local/bin` to its PATH, so a fresh Terminal isn't needed.
 - **`docker compose version` fails:** run the plugin link command from step 4 again.

@@ -153,24 +153,39 @@ Yo checks the subscription once a day, and keeps working for up to 7 days withou
 ## Connect your model
 
 On first launch Yo walks you through connecting your plan. It first looks for a Claude Code or Codex sign-in
-that's already on your Mac and offers to use it. Otherwise pick one; each takes about two minutes, with the
-commands in copy boxes and a status that turns green when Yo sees the connection.
+that's already on your Mac and offers to use the same plan. Otherwise pick one; each takes about two minutes, with
+nothing to type in Terminal and a status that turns green when Yo sees the connection.
 
-**Claude** (Pro or Max):
+**Claude** (Pro or Max): no Terminal and nothing to install. Yo runs Claude Code on its own computer, and you
+sign in to Claude there with Claude's own sign-in. Yo never sees your password or sign-in token.
 
-1. Install Claude Code, if you don't have it: `curl -fsSL https://claude.ai/install.sh | bash`
-2. Make a sign-in token for Yo: `claude setup-token`. Your browser opens; sign in with the account that has
-   your plan. Terminal prints a long token starting with `sk-ant-oat`.
-3. Paste the token into Yo and press **Connect**. Yo keeps it in its secret store and never shows it again.
+1. Press **Sign in to Claude**. Yo starts the sign-in on its computer (it starts the computer first if it's off).
+2. Claude's sign-in page opens in your browser (or open the link Yo shows, even on your phone). Sign in with the
+   account that has your plan and click **Authorize**.
+3. Claude shows a code. Paste it into Yo and press **Connect**. Claude Code keeps the sign-in on Yo's computer.
 
-**ChatGPT** (through Codex):
+On a new Mac, Yo's computer is set up first (in the first agent's chat), and the Claude sign-in comes right after.
+Signed in to Claude with an older Yo (a pasted token)? It keeps working. Settings → Accounts asks you to sign in
+once the new way; after that Yo deletes the old token.
 
-1. Install Codex, if you don't have it: `curl -fsSL https://chatgpt.com/codex/install.sh | sh` (or
-   `npm install -g @openai/codex`, or `brew install --cask codex`)
-2. Sign in with ChatGPT, just for Yo:
-   `mkdir -p ~/.yo/codex && CODEX_HOME=~/.yo/codex codex login`. It's a separate sign-in in its own folder, so
-   the Codex sign-in you already use keeps working.
-3. Yo notices the sign-in by itself and turns green.
+**ChatGPT** (Plus, Pro, Business or Enterprise): no Terminal and nothing to install, the same on every edition.
+Yo runs Codex on its own computer, and you sign in to ChatGPT there with ChatGPT's own sign-in page. Yo never sees
+your password. The Codex sign-in you may already use on your Mac keeps working; it's never copied.
+
+1. Press **Sign in to ChatGPT**. Yo starts the sign-in on its computer (it starts the computer first if it's off).
+2. ChatGPT's sign-in page opens in your browser (or open the link Yo shows, even on your phone). Sign in with the
+   account that has your plan and click **Continue**.
+3. Your browser then shows a page that says it can't connect (it starts with `http://127.0.0.1:1455`). That's
+   expected. Copy the whole address from the address bar, paste it into Yo and press **Connect**. Codex keeps the
+   sign-in on Yo's computer.
+
+Rather use a one-time code? Press **Sign in with a one-time code instead**. ChatGPT only accepts codes once
+you turn on "Enable device code authorization for Codex" in ChatGPT's settings, under Security (Yo has a button
+that opens them; on a work or school account, your admin allows it). Then press **Get my code**, open the link,
+enter the code, and Yo turns green by itself.
+
+On a new Mac, Yo's computer is set up first (in the first agent's chat), and the ChatGPT sign-in comes right after.
+Connected ChatGPT with an older Yo (the Terminal sign-in)? It keeps working.
 
 **Grok** (SuperGrok or X Premium), nothing to type in Terminal. Grok signs in on Yo's own computer, so it needs
 Colima and the Docker CLI first (see [Yo sets up its computer](#yo-sets-up-its-computer)), and the first time
