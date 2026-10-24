@@ -72,14 +72,13 @@ df -k "$HOME" | awk 'NR==2 {printf "%.0f GB free\n", $4/1048576}'
 there yet. For a **home server**, the memory, core and disk numbers apply to the server (16 GB minimum,
 32 GB recommended, 4+ cores, about 20 GB free); this Mac only needs to run the app.
 
-Then look for the free tools. A Mac app doesn't see your shell's PATH, but Yo adds Homebrew's folders itself;
-if `brew` isn't found, also try `/opt/homebrew/bin/brew --version`.
+The downloaded Yo.app includes Colima, Lima, the Docker CLI and Compose for Apple silicon. A new Mac does not
+need Homebrew for them. Still look, in case this is a development build or the tools failed to ship:
 
 ```bash
-brew --version              # Homebrew
-colima version              # Colima
-docker --version            # Docker CLI
-docker compose version      # Docker Compose plugin
+# Inside a built Yo.app these exist and are what the app runs:
+ls "<install dir>/Yo.app/Contents/Resources/bin"
+# Colima, the Docker CLI and Compose. A development build looks in Homebrew instead.
 ```
 
 Colima and the Docker CLI are only needed when the computer runs on **this Mac**.
@@ -127,10 +126,18 @@ its confidential information stored in **"Yo Safe Storage"** (Yo's saved login i
 signed version has a new signature). Tell the person this is expected: enter the Mac password and click
 **Always Allow**. Yo shows "Waiting for macOS Keychain…" until they answer.
 
-## 4. Install Colima and the Docker CLI (this Mac only)
+## 4. Colima and the Docker CLI (this Mac only)
 
-Skip this for a home server, and skip any tool the preflight already found. These are the commands Yo's setup
-chat shows; all are free.
+Skip this for a home server. The downloaded Yo.app already includes pinned Apple silicon builds of Colima,
+Lima, the Docker CLI and Docker Compose, and it keeps their files under
+`~/Library/Application Support/Yo` (`colima/`, `lima/` and `docker/`). A new Mac does not run Homebrew and does
+not type an admin password for this.
+
+If this Mac already has a computer in `~/.colima`, Yo's setup chat asks whether to **keep it where it is** or
+**move it into Yo**. Neither choice deletes it. Other Colima profiles stay in `~/.colima`.
+
+Run the steps below only when the preflight says the tools are missing (a development build, or an Intel Mac
+built from source). These are the commands Yo's setup chat shows; all are free.
 
 1. **Homebrew**, only if it's missing. Its installer asks for the Mac's password, so the person runs it in their
    own Terminal:
@@ -168,10 +175,10 @@ https://theyoapp.com/support#license-key. Then tell them what they'll see next: 
 walkthrough. It first lists the sign-ins it can see on this Mac. A Claude Code or Codex sign-in only takes them to the
 right steps below: they still sign in to Claude or ChatGPT on Yo's computer.
 
-**Claude.** Nothing to install or type: Yo runs Claude Code on its own computer, and the person signs in to
-Claude there with Claude's own sign-in. In the walkthrough they press **Sign in to Claude**, sign in on Claude's
-page with the account that has their plan, click **Authorize**, and paste the code Claude shows into Yo. Yo never
-sees their password or a sign-in token, and neither do you: don't ask for the code.
+**Claude.** Nothing to install or type: Yo runs Claude Code on its own computer, and the person signs in on
+Claude's own page. In the walkthrough they press **Sign in to Claude**, sign in with the account that has their
+plan, click **Authorize**, and paste the code Claude shows into Yo. Yo never sees their password, and neither do
+you. Their sign-in stays inside Yo's computer. Don't ask for the code.
 
 Claude signs in on Yo's computer, so on a Mac that hasn't set it up yet the walkthrough says so: they press
 **Continue**, set up the computer in the first agent's chat (step 6), and sign in to Claude at the end of it.
@@ -231,6 +238,10 @@ Report each of these as passed or failed:
 4. **The agent's computer is live** (this Mac):
 
    ```bash
+   # The downloaded app. If the person chose "Keep it where it is", use ~/.colima and ~/.colima/_lima instead.
+   export COLIMA_HOME="$HOME/Library/Application Support/Yo/colima"
+   export LIMA_HOME="$HOME/Library/Application Support/Yo/lima"
+   export DOCKER_CONFIG="$HOME/Library/Application Support/Yo/docker"
    colima status --profile yo
    docker --context colima-yo ps --filter name=yo-computer --format '{{.Names}}: {{.Status}}'
    ```
@@ -265,15 +276,21 @@ above, and anything left to do.
 - **ChatGPT's code page says code sign-in is off (or to ask an admin):** turn on "Enable device code authorization
   for Codex" in ChatGPT's settings → Security, then enter the same code again; or use ChatGPT's sign-in page
   instead (no setting needed).
-- **"Colima/Docker CLI not installed":** run step 4, then press **Check again** in the setup chat. Yo adds
-  `/opt/homebrew/bin` and `/usr/local/bin` to its PATH, so a fresh Terminal isn't needed.
-- **`docker compose version` fails:** run the plugin link command from step 4 again.
-- **The computer fails to start:** Yo shows the error in the setup chat; `colima status --profile yo` and
-  `colima list` help explain it (often not enough free memory or disk). Free some up and press
-  **Try again**. Ask before deleting anything; never touch other Colima profiles.
+- **"Colima/Docker CLI not installed":** the downloaded app includes them. Reinstall Yo.app, then press
+  **Check again**. For a development build, run step 4. Yo also looks in `/opt/homebrew/bin` and `/usr/local/bin`.
+- **`docker compose version` fails:** the app links Compose into its own Docker config
+  (`~/Library/Application Support/Yo/docker`). For a development build, run the plugin link command from step 4.
+- **The computer fails to start:** Yo shows the error in the setup chat. With the `COLIMA_HOME` / `LIMA_HOME` /
+  `DOCKER_CONFIG` lines from the verify step, `colima status --profile yo` and `colima list` help explain it
+  (often not enough free memory or disk). Free some up and press **Try again**. Ask before deleting anything;
+  never touch other Colima profiles.
+- **Yo found an existing computer in ~/.colima:** the person picks **Keep it where it is** or **Move it into Yo**
+  in the setup chat. Neither deletes it. Do not remove `~/.colima` for them.
 - **An Intel Mac:** the download is Apple silicon only for now.
 - **Starting over with the computer** (ask first: it deletes the agent's computer, including the files and
-  browser sign-ins on it; Yo's chats and memory stay): quit Yo, run `colima delete --profile yo --data --force`
-  (without `--data` the computer's files and sign-ins survive), and open Yo again. A Grok sign-in lives on that
-  computer, so Grok needs **Get my code** once more.
+  browser sign-ins on it; Yo's chats and memory stay): quit Yo. If they kept `~/.colima`, run
+  `colima delete --profile yo --data --force`. If the computer lives in Yo's folder, run the same command with
+  the `COLIMA_HOME`, `LIMA_HOME` and `DOCKER_CONFIG` lines from the verify step (without `--data` the computer's
+  files and sign-ins survive). Then open Yo again. A Grok sign-in lives on that computer, so Grok needs
+  **Get my code** once more.
 - **Removing Yo completely:** follow "Uninstall" in [README.md](README.md#uninstall), asking before each step.

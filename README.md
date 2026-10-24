@@ -52,7 +52,7 @@ Yo is **$10 a month** (cancel any time): download it below, then subscribe on [t
 | Processor | Apple silicon, 4 cores | 8 cores or more (every M-series chip has them) |
 | Free disk space | 10 GB | 20 GB |
 | macOS | 13 Ventura | 15 Sequoia or newer |
-| Free tools | Homebrew, Colima and the Docker CLI (the app shows the install commands) | |
+| Free tools | Included in the downloaded app (Colima, Lima, Docker CLI, Compose) | |
 
 The agent's computer uses up to 4 CPUs, 5 GB of memory and a 20 GB disk, only while it's on. Quitting Yo
 (⌘Q) stops it and gives the memory back.
@@ -157,7 +157,7 @@ that's already on your Mac and offers to use the same plan. Otherwise pick one; 
 nothing to type in Terminal and a status that turns green when Yo sees the connection.
 
 **Claude** (Pro or Max): no Terminal and nothing to install. Yo runs Claude Code on its own computer, and you
-sign in to Claude there with Claude's own sign-in. Yo never sees your password or sign-in token.
+sign in on Claude's own page, so Yo never sees your password. Your sign-in stays inside Yo's computer.
 
 1. Press **Sign in to Claude**. Yo starts the sign-in on its computer (it starts the computer first if it's off).
 2. Claude's sign-in page opens in your browser (or open the link Yo shows, even on your phone). Sign in with the
@@ -196,7 +196,7 @@ takes a few minutes while that computer starts:
    plan.
 3. Check that the page shows the same code and approve. Yo turns green by itself.
 
-An xAI API key works too (billed by xAI per use).
+An xAI API key works too (billed by xAI per use). Yo keeps this key in its secret storage (the Keychain on a Mac).
 
 You can connect another one later in **Settings → Accounts**, and pick the account and model for Yo (and Pip)
 from the model picker under the message box.
@@ -206,10 +206,13 @@ from the model picker under the message box.
 Once a model is connected, Yo's chat opens with: *"Looks like we have a model connected. Let's set up my
 computer."* (If Pip's chat opens instead, press ⌘⇧M to switch to Work.) It offers three places to run it:
 
-- **This Mac** (free): it checks this Mac against the requirements above (pass, warn or block, each in plain
-  words), shows the copy-paste commands for anything missing (Homebrew, then
-  `brew install colima docker docker-compose`), starts its computer and confirms it's live. The first start
-  downloads the computer (about 1 GB) and takes a few minutes.
+- **This Mac** (free): the downloaded app already includes Colima, Lima, the Docker CLI and Compose, so a new
+  Mac does not open Terminal or type an admin password. Yo checks this Mac against the requirements above
+  (pass, warn or block, each in plain words). If this Mac already has a computer in `~/.colima`, Yo asks
+  whether to keep it there or move it into Yo's folder. Nothing is deleted. Then it starts the computer and
+  confirms it's live. The first start downloads the computer (about 1 GB) and takes a few minutes. A
+  development build still shows the Homebrew commands (`brew install colima docker docker-compose`) when those
+  tools are missing.
 - **Home server** (advanced): Yo's core and the agent's computer run on your own always-on PC at home (Linux,
   or Windows with WSL 2), so Yo keeps working while your Mac sleeps. Yo walks you through it
   step by step; the Mac reaches the PC over SSH, and nothing is exposed to the internet.
@@ -248,14 +251,17 @@ so Yo only points you at the download.)
 Yo adds no login items or background services. To remove it completely:
 
 1. **Quit Yo** (⌘Q, or **Quit Yo** in the menu-bar icon). That also stops its computer.
-2. **Delete the agent's computer** (its VM, files and browser sign-ins) in Terminal:
+2. **Delete the agent's computer** (its VM, files and browser sign-ins).
+
+   The downloaded app keeps that computer inside Yo's own folder. Step 4 removes it, along with chats and
+   settings. If you chose **Keep it where it is** during setup, the computer is still in `~/.colima`. Quit Yo,
+   then delete only that profile (other Colima profiles stay):
 
    ```bash
    colima delete --profile yo --data --force
-   docker context use default   # only if you use Docker for other things
    ```
 
-   This only removes Yo's own Colima profile (`yo`); other Colima profiles and Docker containers are untouched.
+   Homebrew's `colima` only sees `~/.colima`. The copy inside Yo's folder is removed with the folder in step 4.
 3. **Drag Yo.app** from Applications to the Trash.
 4. **Delete Yo's data** (chats, memory, settings, logs) and its separate ChatGPT sign-in:
 
@@ -273,9 +279,9 @@ Yo adds no login items or background services. To remove it completely:
 
    (Or open **Keychain Access**, search for "Yo" and delete the items named "Yo: …" and "Yo Safe Storage".)
 6. Optional: anything you allowed in **System Settings → Privacy & Security** (Files and Folders, Contacts,
-   Calendars, Accessibility, Screen Recording…) can be switched off there. Homebrew, Colima, the Docker CLI,
-   Claude Code and Codex are separate tools; keep them or remove them with `brew uninstall colima docker
-   docker-compose`.
+   Calendars, Accessibility, Screen Recording…) can be switched off there. The Colima, Lima and Docker binaries
+   that shipped inside Yo.app go away with the app. A Homebrew copy, if you installed one for a development
+   build, is separate: `brew uninstall colima docker docker-compose`. Claude Code and Codex are separate too.
 
 **Windows and Linux:** run `yo-app uninstall`. It asks before deleting Yo's data (chats, memories and the
 computer's files).

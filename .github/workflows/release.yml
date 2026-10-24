@@ -2,19 +2,31 @@ name: Release
 
 # Public builds of Yo, published as a GitHub Release with Yo-<version>-arm64.dmg/.zip and compose.server.yaml,
 # plus two images on GHCR that those builds pull: the agent's computer (ghcr.io/<owner>/yo-computer) and, for
-# home servers and the PC edition, Yo's core (ghcr.io/<owner>/yo-core), each :<version> and :latest.
+# home servers and the PC edition, Yo's core (ghcr.io/<owner>/yo-core), each :<version> and, when the
+# `latest` input is true (the default), :latest.
 # The PC edition (Yo in the browser on Windows and Linux, pc/) adds install.ps1, install.sh, the yo-app helper
 # (yo-app, yo-app.ps1, yo-app.cmd), yo-app-compose.yaml and yo.ico, with the version baked in; its one-line
 # installers use releases/latest/download/install.ps1 (or install.sh).
 #
 # Runs ONLY in the public repo JuniorSua/yo-app (every job checks), where releases live and Actions minutes are
-# free. Yo's source is private: every build job checks out JuniorSua/yo at the `source` commit with a read-only
-# deploy key (secret YO_SOURCE_DEPLOY_KEY) and writes VERSION, which makes it a public build (license check,
-# "github" update channel, bug reports to yo-app). Nothing here prints the source.
+# free. Yo's source is private: the build jobs and the Mac smoke check out JuniorSua/yo at the `source` commit
+# with a read-only deploy key (secret YO_SOURCE_DEPLOY_KEY). The builds write VERSION, which makes it a public
+# build (license check, "github" update channel, bug reports to yo-app). Nothing here prints the source.
 #
 # Started by the maintainer's release script, or from the Actions tab: tag
 # v0.1.N (N = the source commit's count on main), the source commit's full SHA, and the yo-app issue numbers it
 # fixes. The release's tag is made on yo-app's main.
+#
+# `latest` defaults to true: the release becomes GitHub's latest (what /releases/latest, the site, the
+# installers and the github update channel follow) and the GHCR :latest tags move. Set it false to publish a
+# public release existing installs do not see. It is not a draft or a prerelease, so its assets stay public;
+# `gh release create` is passed `--latest=false`, and the :latest image tags are left where they are.
+# Versioned image tags are still pushed. Mark it latest later with `gh release edit <tag> --latest`.
+# A re-run of a tag that already exists uploads over it; with latest false that edit
+# also passes `--latest=false`, so the rebuild does not promote it.
+#
+# `smoke` defaults to true. The Mac clean-install smoke runs on macos-15 after the Mac build and before the
+# release is created, and the release job waits for it. Set smoke false only to publish without that gate.
 #
 # The app is ad-hoc signed (no paid Apple Developer ID): users OK it once (Open Anyway in Privacy & Security), and it
 # updates through the "github" channel (it offers Download for newer releases; see apps/desktop/src/updates.ts).
@@ -38,6 +50,16 @@ on:
         required: false
         default: ""
         type: string
+      latest:
+        description: "Mark this release latest and move the GHCR :latest tags. false publishes publicly without notifying existing installs"
+        required: false
+        default: true
+        type: boolean
+      smoke:
+        description: "Run the Mac clean-install smoke before creating the release. false skips that gate"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -168,17 +190,24 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag <version> and latest
+      - name: Tag <version> and, when latest, :latest
         working-directory: digests
         env:
           IMAGE: ${{ needs.version.outputs.image }}
           VERSION: ${{ needs.version.outputs.version }}
+          LATEST: ${{ inputs.latest }}
         run: |
           set -euo pipefail
           refs=()
           for d in *; do refs+=("$IMAGE@sha256:$d"); done
           [ "${#refs[@]}" -eq 2 ] || { echo "::error::expected 2 digests, got ${#refs[@]}"; exit 1; }
-          docker buildx imagetools create -t "$IMAGE:$VERSION" -t "$IMAGE:latest" "${refs[@]}"
+          # Anything other than the string "true" leaves :latest where it is (a staged release).
+          if [ "$LATEST" = "true" ]; then
+            docker buildx imagetools create -t "$IMAGE:$VERSION" -t "$IMAGE:latest" "${refs[@]}"
+          else
+            echo "Not moving ${IMAGE}:latest (latest=${LATEST})"
+            docker buildx imagetools create -t "$IMAGE:$VERSION" "${refs[@]}"
+          fi
           docker buildx imagetools inspect "$IMAGE:$VERSION"
 
   core:
@@ -231,10 +260,16 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ needs.version.outputs.version }}
             org.opencontainers.image.description=Yo's core for home servers
-          tags: |
-            ${{ needs.version.outputs.core_image }}:${{ needs.version.outputs.version }}
-            ${{ needs.version.outputs.core_image }}:latest
+          tags: ${{ needs.version.outputs.core_image }}:${{ needs.version.outputs.version }}
           push: true
+      # A separate step so latest=false still pushes :<version> and does not move :latest.
+      # Pointing :latest at the tag just pushed is the same manifest the combined tag list used to publish.
+      - name: Tag the core image latest
+        if: inputs.latest == true || inputs.latest == 'true'
+        env:
+          IMAGE: ${{ needs.version.outputs.core_image }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: docker buildx imagetools create -t "$IMAGE:latest" "$IMAGE:$VERSION"
       - uses: actions/upload-artifact@v7
         with:
           name: yo-server
@@ -326,6 +361,13 @@ jobs:
           test "$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")" = "$VERSION"
           codesign --verify --deep --strict "$app"
           codesign -dv "$app" 2>&1 | grep -q 'Signature=adhoc'
+          for b in colima lima limactl docker docker-compose; do
+            test -x "$app/Contents/Resources/bin/$b"
+          done
+          test -f "$app/Contents/Resources/share/lima/lima-guestagent.Linux-aarch64.gz"
+          # --deep --strict above checks the seal. This checks the entitlement survived that seal:
+          # signing the app with --deep would have stripped it.
+          codesign -d --entitlements :- "$app/Contents/Resources/bin/limactl" 2>&1 | grep -q 'com.apple.security.virtualization'
           grep -q '"computerImageRepo"' "$app/Contents/Resources/yo-config.json"
           ls -la apps/desktop/release/dist
       - uses: actions/upload-artifact@v7
@@ -335,11 +377,215 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  mac-smoke:
+    name: Mac clean-install smoke
+    # After the Mac build, before the release is created. A failure here skips the publish job.
+    # Skip only when the smoke input is false (it defaults to true). A failed Mac build still skips
+    # this job, and the publish job then sees mac != success and does not run.
+    needs: [version, mac]
+    if: github.repository == 'JuniorSua/yo-app' && (inputs.smoke == true || inputs.smoke == 'true')
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: JuniorSua/yo
+          ref: ${{ needs.version.outputs.source }}
+          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      # tsx loads hostTools.ts. A full pnpm install would also download Electron, which this check doesn't run.
+      - name: Install tsx
+        run: npm install --prefix "$RUNNER_TEMP/smoke-tools" tsx@4.23.15
+      - uses: actions/download-artifact@v8
+        with:
+          name: yo-mac
+          path: dist
+      - name: Clean-install Yo.app and smoke it
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          TSX: ${{ runner.temp }}/smoke-tools/node_modules/tsx/dist/cli.mjs
+        run: |
+          set -euo pipefail
+          log="$GITHUB_WORKSPACE/mac-clean-install-smoke.log"
+          : > "$log"
+          exec > >(tee -a "$log") 2>&1
+          mount=""
+          cleanup() {
+            local code=$?
+            if [ -n "$mount" ]; then
+              hdiutil detach "$mount" >/dev/null 2>&1 || hdiutil detach -force "$mount" >/dev/null 2>&1 || true
+              mount=""
+            fi
+            if [ -d /Applications/Yo.app ]; then
+              osascript -e 'tell application "Yo" to quit' >/dev/null 2>&1 || true
+              sleep 2
+              if pgrep -x Yo >/dev/null 2>&1; then killall Yo >/dev/null 2>&1 || true; fi
+            fi
+            if [ "$code" -eq 0 ]; then echo "SMOKE: PASS"; else echo "SMOKE: FAIL (exit $code)"; fi
+          }
+          trap cleanup EXIT
+
+          echo "Host: $(sw_vers -productVersion) $(uname -m)"
+          if [ "$(uname -m)" != "arm64" ]; then
+            echo "The bundled binaries are arm64 and this smoke runs them. It needs an Apple silicon runner."
+            exit 1
+          fi
+          test -f "$TSX"
+
+          # hostTools.ts probes these absolute paths, so renaming them on PATH is not enough.
+          aside="/opt/yo-smoke-aside-$$"
+          sudo mkdir -p "$aside"
+          if [ -e /opt/homebrew ] || [ -L /opt/homebrew ]; then sudo mv /opt/homebrew "$aside/homebrew"; fi
+          if [ -e /usr/local/Homebrew ] || [ -L /usr/local/Homebrew ]; then
+            sudo mv /usr/local/Homebrew "$aside/usr-local-Homebrew"
+          fi
+          for b in brew colima lima limactl docker docker-compose; do
+            if [ -e "/usr/local/bin/$b" ] || [ -L "/usr/local/bin/$b" ]; then
+              sudo mv "/usr/local/bin/$b" "$aside/usr-local-bin-$b"
+            fi
+          done
+          hash -r
+          echo "node: $(command -v node)"
+          if [ -e /opt/homebrew ] || [ -L /opt/homebrew ]; then
+            echo "/opt/homebrew is still present"
+            exit 1
+          fi
+          echo "/opt/homebrew is absent"
+          for cmd in brew colima limactl docker; do
+            if command -v "$cmd" >/dev/null 2>&1; then
+              echo "FAIL: command -v $cmd -> $(command -v "$cmd")"
+              exit 1
+            fi
+            echo "absent: command -v $cmd"
+          done
+
+          shopt -s nullglob
+          dmgs=(dist/*.dmg)
+          test "${#dmgs[@]}" -eq 1
+          dmg=${dmgs[0]}
+          shopt -u nullglob
+          test -f "$dmg"
+          echo "Disk image: $dmg"
+          mount=$(hdiutil attach -nobrowse -readonly "$dmg" | awk '/\/Volumes\// { print substr($0, index($0, "/Volumes/")); exit }')
+          test -n "$mount"
+          test -d "$mount"
+          echo "Mounted at $mount"
+          if [ ! -d "$mount/Yo.app" ]; then
+            echo "Yo.app is not at the root of the disk image"
+            ls -la "$mount"
+            exit 1
+          fi
+          sudo rm -rf /Applications/Yo.app
+          sudo ditto "$mount/Yo.app" /Applications/Yo.app
+          sudo chown -R "$(id -un):$(id -gn)" /Applications/Yo.app
+          hdiutil detach "$mount"
+          mount=""
+          # The artifact download quarantines the copy. Clearing it does not change the ad-hoc signature.
+          xattr -dr com.apple.quarantine /Applications/Yo.app || true
+
+          app=/Applications/Yo.app
+          codesign --verify --deep --strict "$app"
+          echo "codesign verify: ok"
+          codesign -dv "$app" 2>&1 || true
+          bid=$(plutil -extract CFBundleIdentifier raw -o - "$app/Contents/Info.plist")
+          ver=$(plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist")
+          echo "bundle id: $bid"
+          echo "version: $ver (expected $VERSION)"
+          test "$bid" = "dev.yo.app"
+          test "$ver" = "$VERSION"
+
+          bin="$app/Contents/Resources/bin"
+          for b in colima lima limactl docker docker-compose; do
+            test -x "$bin/$b"
+            echo "executable: $b"
+          done
+          test -f "$app/Contents/Resources/share/lima/lima-guestagent.Linux-aarch64.gz"
+          echo "guest agent: present"
+          for b in colima limactl docker docker-compose; do
+            info=$(file "$bin/$b")
+            echo "$info"
+            case "$info" in
+              *arm64*) ;;
+              *) echo "$b is not arm64"; exit 1 ;;
+            esac
+          done
+          # lima is the shell wrapper from the Lima tarball; it execs limactl. An arm64 lima would also pass.
+          lima_info=$(file "$bin/lima")
+          echo "$lima_info"
+          case "$lima_info" in
+            *arm64*|*text*|*script*) ;;
+            *) echo "lima is neither arm64 nor a script"; exit 1 ;;
+          esac
+          ents=$(codesign -d --entitlements :- "$bin/limactl" 2>&1 || true)
+          echo "$ents"
+          case "$ents" in
+            *com.apple.security.virtualization*) ;;
+            *) echo "limactl is missing the virtualization entitlement"; exit 1 ;;
+          esac
+          echo "limactl entitlement: com.apple.security.virtualization"
+
+          hash -r
+          node "$TSX" apps/desktop/scripts/smoke-bundled-tools.mjs "$app"
+
+          crash_dir="$HOME/Library/Logs/DiagnosticReports"
+          mkdir -p "$crash_dir"
+          before=$(mktemp)
+          find "$crash_dir" -type f \( -iname 'Yo*.crash' -o -iname 'Yo*.ips' -o -iname 'dev.yo.app*.crash' -o -iname 'dev.yo.app*.ips' \) | sort > "$before"
+          open -a "$app"
+          deadline=$((SECONDS + 60))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            if pgrep -x Yo >/dev/null 2>&1; then break; fi
+            sleep 2
+          done
+          if ! pgrep -x Yo >/dev/null 2>&1; then
+            echo "Yo did not stay running after open -a"
+            exit 1
+          fi
+          echo "Yo is running; watching for 20s (no VM boot required)"
+          sleep 20
+          if ! pgrep -x Yo >/dev/null 2>&1; then
+            echo "Yo exited during the 20s watch"
+            exit 1
+          fi
+          after=$(mktemp)
+          find "$crash_dir" -type f \( -iname 'Yo*.crash' -o -iname 'Yo*.ips' -o -iname 'dev.yo.app*.crash' -o -iname 'dev.yo.app*.ips' \) | sort > "$after"
+          new=$(comm -13 "$before" "$after" || true)
+          if [ -n "$new" ]; then
+            echo "New crash reports:"
+            echo "$new"
+            exit 1
+          fi
+          echo "No new Yo crash reports"
+          osascript -e 'tell application "Yo" to quit' || true
+          sleep 2
+          if pgrep -x Yo >/dev/null 2>&1; then killall Yo || true; fi
+      - name: Upload the smoke log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mac-clean-install-smoke
+          path: mac-clean-install-smoke.log
+          if-no-files-found: warn
+          retention-days: 7
+
   release:
     name: Publish the GitHub Release
-    # Only once the app AND the computer image it pulls exist.
-    needs: [version, computer-manifest, core, pc, mac]
-    if: github.repository == 'JuniorSua/yo-app'
+    # Only once the app, the computer image it pulls, and the Mac smoke exist.
+    # always() is required so a skipped smoke (input smoke=false) does not skip the publish.
+    # Every other needed job must have succeeded; a failed or skipped Mac build still blocks this.
+    needs: [version, computer-manifest, core, pc, mac, mac-smoke]
+    if: >-
+      always() &&
+      github.repository == 'JuniorSua/yo-app' &&
+      needs.version.result == 'success' &&
+      needs.computer-manifest.result == 'success' &&
+      needs.core.result == 'success' &&
+      needs.pc.result == 'success' &&
+      needs.mac.result == 'success' &&
+      (needs.mac-smoke.result == 'success' || needs.mac-smoke.result == 'skipped')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -364,6 +610,7 @@ jobs:
           TAG: ${{ needs.version.outputs.tag }}
           VERSION: ${{ needs.version.outputs.version }}
           IMAGE: ${{ needs.version.outputs.image }}
+          LATEST: ${{ inputs.latest }}
         run: |
           set -euo pipefail
           # Written for everyday people: the top line is the one link they need. One line per paragraph or
@@ -404,11 +651,25 @@ jobs:
           EOF
           files=(dist/*.dmg dist/*.zip dist/compose.server.yaml
             dist/install.sh dist/install.ps1 dist/yo-app dist/yo-app.ps1 dist/yo-app.cmd dist/yo-app-compose.yaml dist/yo.ico)
+          # latest=true keeps the previous commands: a new release becomes GitHub's latest on its own,
+          # and updating an existing release does not change whether it is latest.
+          # latest=false (anything but the string "true") publishes publicly with --latest=false, including
+          # when the tag already exists, so a rebuild cannot promote it. Not a draft or a prerelease.
           if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
             gh release upload "$TAG" "${files[@]}" -R "$REPO" --clobber
-            gh release edit "$TAG" -R "$REPO" --notes-file notes.md
+            if [ "$LATEST" = "true" ]; then
+              gh release edit "$TAG" -R "$REPO" --notes-file notes.md
+            else
+              echo "Keeping ${TAG} off latest (latest=${LATEST})"
+              gh release edit "$TAG" -R "$REPO" --notes-file notes.md --latest=false
+            fi
           else
-            gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md
+            if [ "$LATEST" = "true" ]; then
+              gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md
+            else
+              echo "Creating ${TAG} with --latest=false (latest=${LATEST})"
+              gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md --latest=false
+            fi
           fi
 
   fixed-issues:
