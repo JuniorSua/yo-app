@@ -7,7 +7,7 @@ for them, with a line like:
 Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app/blob/main/SETUP_PROMPT.md
 ```
 
-Yo is a macOS app for a personal AI assistant (Yo, plus Pip for personal time). It works on its own computer (a
+Yo is a macOS app for a personal AI assistant (Yo, plus Pip for personal time). It works in a private workspace on the person's Mac or PC (a
 Linux desktop with Chromium, running in a small Colima VM), and runs on the Claude, ChatGPT or Grok plan the
 person already pays for. Below are the steps, in order. Every command here is the one the Yo app itself shows;
 don't substitute your own.
@@ -169,13 +169,13 @@ Check with `colima version`, `docker --version` and `docker compose version`. Do
 ## 5. Open Yo and connect the model
 
 Open Yo (`open "<install dir>/Yo.app"`). First it shows **Activate Yo**: Yo is $10 a month. The person clicks
-**Subscribe**, pays on theyoapp.com, copies the license key shown after paying, pastes it and clicks **Activate**
+**Subscribe**, pays on Stripe's secure checkout, copies the license key shown after paying, pastes it and clicks **Activate**
 (you never see or handle the key, and never pay for them). Already subscribed: they paste their key. Lost it:
 https://theyoapp.com/support#license-key. Then tell them what they'll see next: Yo's **Connect your model**
 walkthrough. It first lists the sign-ins it can see on this Mac. A Claude Code or Codex sign-in only takes them to the
 right steps below: they still sign in to Claude or ChatGPT on Yo's computer.
 
-**Claude.** Nothing to install or type: Yo runs Claude Code on its own computer, and the person signs in on
+**Claude.** Nothing to install or type: Yo runs Claude Code in its private workspace, and the person signs in on
 Claude's own page. In the walkthrough they press **Sign in to Claude**, sign in with the account that has their
 plan, click **Authorize**, and paste the code Claude shows into Yo. Yo never sees their password, and neither do
 you. Their sign-in stays inside Yo's computer. Don't ask for the code.
@@ -183,7 +183,7 @@ you. Their sign-in stays inside Yo's computer. Don't ask for the code.
 Claude signs in on Yo's computer, so on a Mac that hasn't set it up yet the walkthrough says so: they press
 **Continue**, set up the computer in the first agent's chat (step 6), and sign in to Claude at the end of it.
 
-**ChatGPT.** Nothing to install or type either: Yo runs Codex on its own computer, and the person signs in to
+**ChatGPT.** Nothing to install or type either: Yo runs Codex in its private workspace, and the person signs in to
 ChatGPT there with ChatGPT's own sign-in page. They don't need Codex on this Mac. In the walkthrough they press
 **Sign in to ChatGPT**, sign in on ChatGPT's page with the account that has their plan and click **Continue**.
 Their browser then lands on a page that says it can't connect (the address starts with `http://127.0.0.1:1455`).
@@ -196,7 +196,7 @@ codes after they turn on "Enable device code authorization for Codex" in ChatGPT
 has a button that opens them; on a work or school account, their admin allows it). Then they press **Get my
 code**, open the link and enter the code; Yo turns green by itself.
 
-**Grok.** Nothing to type in Terminal: Grok signs in on Yo's own computer, so do step 4 (Colima and the
+**Grok.** Nothing to type in Terminal: Grok signs in inside Yo's private workspace, so do step 4 (Colima and the
 Docker CLI) first. The person presses **Get my code** in Yo's walkthrough (the first time, Yo starts its
 computer, which takes a few minutes), opens the link it shows in any browser, signs in with the X or Grok
 account that has their plan, checks the code matches and approves. Yo turns green by itself. Don't open the

@@ -28,6 +28,10 @@ name: Release
 # `smoke` defaults to true. The Mac clean-install smoke runs on macos-15 after the Mac build and before the
 # release is created, and the release job waits for it. Set smoke false only to publish without that gate.
 #
+# `dry_run` defaults to false. Set it true to build everything (both images, Yo.app, the PC files) and run the
+# Mac smoke without publishing anything: no image is pushed to GHCR, no release or tag is created, and no issue
+# is commented on or closed. The dmg, zip, PC files and smoke log are left as this run's artifacts.
+#
 # The app is ad-hoc signed (no paid Apple Developer ID): users OK it once (Open Anyway in Privacy & Security), and it
 # updates through the "github" channel (it offers Download for newer releases; see apps/desktop/src/updates.ts).
 #
@@ -60,12 +64,17 @@ on:
         required: false
         default: true
         type: boolean
+      dry_run:
+        description: "Build everything and run the Mac smoke, but push no images and publish nothing"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.tag }}
+  group: release-${{ inputs.tag }}${{ inputs.dry_run && '-dry' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -153,16 +162,18 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ needs.version.outputs.version }}
             org.opencontainers.image.description=Yo agent's computer (agentd, desktop and browser)
-          outputs: type=image,name=${{ needs.version.outputs.image }},push-by-digest=true,name-canonical=true,push=true
+          outputs: ${{ inputs.dry_run && 'type=cacheonly' || format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', needs.version.outputs.image) }}
           cache-from: type=gha,scope=computer-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=computer-${{ matrix.arch }}
       - name: Save the digest
+        if: ${{ !inputs.dry_run }}
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           mkdir -p digests
           touch "digests/${DIGEST#sha256:}"
       - uses: actions/upload-artifact@v7
+        if: ${{ !inputs.dry_run }}
         with:
           name: digest-${{ matrix.arch }}
           path: digests/*
@@ -172,7 +183,7 @@ jobs:
   computer-manifest:
     name: Computer image (tag both architectures)
     needs: [version, computer]
-    if: github.repository == 'JuniorSua/yo-app'
+    if: github.repository == 'JuniorSua/yo-app' && !inputs.dry_run
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -261,11 +272,11 @@ jobs:
             org.opencontainers.image.version=${{ needs.version.outputs.version }}
             org.opencontainers.image.description=Yo's core for home servers
           tags: ${{ needs.version.outputs.core_image }}:${{ needs.version.outputs.version }}
-          push: true
+          push: ${{ !inputs.dry_run }}
       # A separate step so latest=false still pushes :<version> and does not move :latest.
       # Pointing :latest at the tag just pushed is the same manifest the combined tag list used to publish.
       - name: Tag the core image latest
-        if: inputs.latest == true || inputs.latest == 'true'
+        if: (inputs.latest == true || inputs.latest == 'true') && !inputs.dry_run
         env:
           IMAGE: ${{ needs.version.outputs.core_image }}
           VERSION: ${{ needs.version.outputs.version }}
@@ -580,6 +591,7 @@ jobs:
     if: >-
       always() &&
       github.repository == 'JuniorSua/yo-app' &&
+      !inputs.dry_run &&
       needs.version.result == 'success' &&
       needs.computer-manifest.result == 'success' &&
       needs.core.result == 'success' &&
@@ -675,7 +687,7 @@ jobs:
   fixed-issues:
     name: Close the issues this release fixes
     needs: [version, release]
-    if: github.repository == 'JuniorSua/yo-app' && needs.version.outputs.fixed != ''
+    if: github.repository == 'JuniorSua/yo-app' && !inputs.dry_run && needs.version.outputs.fixed != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:

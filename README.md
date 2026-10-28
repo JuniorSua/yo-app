@@ -1,8 +1,8 @@
 # Yo
 
-**Your AI, your subscription, its own computer.**
+**Your AI, your subscription, a private workspace on your Mac or PC.**
 
-Yo is a Mac app for **a personal assistant, Yo**, that works on **a computer of its own**: a private Linux
+Yo is a Mac app for **a personal assistant, Yo**, that works in **a private workspace on your Mac or PC**: a Linux
 desktop with a real Chromium browser, a terminal and files, running in a small virtual machine on your Mac (or on
 a PC at home). It never touches your browser or your files unless you share them, and you can watch its screen live
 and **Take over** whenever it needs a login or a 2FA code.
@@ -142,7 +142,7 @@ again repairs or updates Yo and keeps your data. Then [activate](#subscribe-and-
 Downloading Yo is open to everyone; using it takes a subscription ($10 a month, cancel any time).
 
 1. Open Yo. It shows **Activate Yo**.
-2. Click **Subscribe · $10/month**: it opens [theyoapp.com](https://theyoapp.com/#pricing) and Stripe's secure checkout.
+2. Click **Subscribe · $10/month**: it opens Stripe's secure checkout (the same one as on [theyoapp.com](https://theyoapp.com/#pricing)).
 3. After you pay, the page that opens shows your **license key** (it starts with `yo_`). Copy it.
 4. Paste it into Yo and click **Activate**. One key works on all your own Macs.
 
@@ -156,7 +156,7 @@ On first launch Yo walks you through connecting your plan. It first looks for a 
 that's already on your Mac and offers to use the same plan. Otherwise pick one; each takes about two minutes, with
 nothing to type in Terminal and a status that turns green when Yo sees the connection.
 
-**Claude** (Pro or Max): no Terminal and nothing to install. Yo runs Claude Code on its own computer, and you
+**Claude** (Pro or Max): no Terminal and nothing to install. Yo runs Claude Code in its private workspace, and you
 sign in on Claude's own page, so Yo never sees your password. Your sign-in stays inside Yo's computer.
 
 1. Press **Sign in to Claude**. Yo starts the sign-in on its computer (it starts the computer first if it's off).
@@ -169,7 +169,7 @@ Signed in to Claude with an older Yo (a pasted token)? It keeps working. Setting
 once the new way; after that Yo deletes the old token.
 
 **ChatGPT** (Plus, Pro, Business or Enterprise): no Terminal and nothing to install, the same on every edition.
-Yo runs Codex on its own computer, and you sign in to ChatGPT there with ChatGPT's own sign-in page. Yo never sees
+Yo runs Codex in its private workspace, and you sign in to ChatGPT there with ChatGPT's own sign-in page. Yo never sees
 your password. The Codex sign-in you may already use on your Mac keeps working; it's never copied.
 
 1. Press **Sign in to ChatGPT**. Yo starts the sign-in on its computer (it starts the computer first if it's off).
@@ -187,11 +187,11 @@ enter the code, and Yo turns green by itself.
 On a new Mac, Yo's computer is set up first (in the first agent's chat), and the ChatGPT sign-in comes right after.
 Connected ChatGPT with an older Yo (the Terminal sign-in)? It keeps working.
 
-**Grok** (SuperGrok or X Premium), nothing to type in Terminal. Grok signs in on Yo's own computer, so it needs
+**Grok** (SuperGrok or X Premium), nothing to type in Terminal. Grok signs in inside Yo's private workspace, so it needs
 Colima and the Docker CLI first (see [Yo sets up its computer](#yo-sets-up-its-computer)), and the first time
 takes a few minutes while that computer starts:
 
-1. Press **Get my code**. Yo runs `grok login --device-auth` on its own computer and shows a link and a code.
+1. Press **Get my code**. Yo runs `grok login --device-auth` in its private workspace and shows a link and a code.
 2. Open the link in any browser (your phone works too) and sign in with the X or Grok account that has your
    plan.
 3. Check that the page shows the same code and approve. Yo turns green by itself.

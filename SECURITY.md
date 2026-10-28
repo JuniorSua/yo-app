@@ -19,7 +19,7 @@ back within a week. Please give us a reasonable chance to fix it before talking 
 - Credentials (subscription logins, tokens, Keychain items) ending up in logs, URLs, files, or the agent's
   reach.
 - Prompt injection that leads to one of the above. Prompt injection on its own (the agent was persuaded to say
-  or do something silly inside its own computer) is a normal bug report.
+  or do something silly inside its private workspace) is a normal bug report.
 
 ## Supported versions
 
