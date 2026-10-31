@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["D5MC3NH58Y.dev.yo.phone"],
+        "components": [
+          {
+            "/": "/",
+            "#": "*k=*",
+            "comment": "A phone link (https://yo-phone.vercel.app/#k=…&a=…&p=…) opens the Yo app. Everything else stays on the web."
+          }
+        ]
+      }
+    ]
+  }
+}

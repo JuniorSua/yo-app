@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Support · Yo</title>
+    <meta
+      name="description"
+      content="Help with Yo: installing Yo for Mac, the first open, requirements and updates, Windows and Linux, plus the Yo iPhone app: pairing, Drive mode and the demo."
+    />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:title" content="Support · Yo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Yo" />
+    <meta property="og:image" content="https://theyoapp.com/assets/og.png" />
+    <link rel="canonical" href="https://theyoapp.com/support" />
+    <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/config.js"></script>
+    <script defer src="/contact.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav legal-nav">
+      <div class="nav-inner">
+        <a class="brand" href="/" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="28" height="28" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/support" aria-current="page">Help</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="legal">
+      <p class="kicker"><span>Help</span>Support</p>
+      <h1>How can we help?</h1>
+      <p class="sub">
+        Help with <a href="#mac">Yo for Mac</a> (installing, the first open and updates),
+        <a href="#windows-linux">Windows and Linux</a>, and the <a href="#iphone">Yo app for iPhone</a> (coming soon).
+        Yo is free; if you'd like to chip in, see <a href="/#support">Support Yo</a>. Still stuck?
+        <a href="#contact">Contact us</a>.
+      </p>
+
+      <div class="legal-body">
+        <h2 id="mac">Yo for Mac</h2>
+        <h3 id="install">Install Yo</h3>
+        <ol class="legal-steps">
+          <li><b>Download</b> Yo from the <a href="/">home page</a>, open the .dmg from your Downloads, and drag Yo into Applications.</li>
+          <li>
+            <b>Open it once.</b> Yo isn't notarized by Apple, so macOS asks you to confirm it the first time. Open Yo
+            and click <b>Done</b>. Then open System Settings → Privacy &amp; Security, scroll down to "Yo was
+            blocked", click <b>Open Anyway</b>, then Open Anyway again, and enter your Mac password.
+          </li>
+          <li><b>Connect your subscription.</b> Pick Claude, ChatGPT or Grok, and Yo walks you through signing in. There's no API key and no Yo account.</li>
+          <li>
+            <b>Let Yo set up its computer.</b> The app brings the free tools it needs (Colima and Docker), so there's
+            nothing extra to install. Then press Start my computer.
+          </li>
+        </ol>
+        <p>
+          Prefer not to do it by hand? After you click Download on the <a href="/">home page</a>, choose
+          <b>Copy a setup prompt</b> and paste it into Claude Code or Codex. It does these steps for you and asks
+          before it installs anything.
+        </p>
+
+        <h3 id="mac-faq">Questions about Yo for Mac</h3>
+        <div class="faq">
+          <div class="faq-list">
+            <details>
+              <summary>Which Macs can run Yo?</summary>
+              <p>
+                A Mac with Apple silicon (M1 or newer) and macOS 13 Ventura or newer. Yo needs at least 16 GB of memory
+                (32 GB is better) and 10 GB of free disk space (20 GB is better). Intel Macs aren't supported yet.
+                On a Windows or Linux PC, Yo runs in your browser instead (<a href="#windows-linux">see how</a>). See
+                <a href="/#requirements">what Yo needs</a>.
+              </p>
+            </details>
+            <details id="windows-linux">
+              <summary>Can I use Yo on Windows or Linux?</summary>
+              <p>
+                Yes. On a Windows or Linux PC, Yo runs in Docker on your PC and you use it in Chrome, Edge or Firefox.
+                It's the same Yo, without the Mac-only parts (Calendar, Contacts, Reminders, Notes, Mail and
+                controlling Mac windows). Your PC needs Windows 11 or Windows 10 22H2
+                (64-bit), or a 64-bit Linux, with 8 GB of memory (16 GB is better), 4 processor cores recommended and
+                15 GB of free disk space.
+              </p>
+              <p>
+                On Windows, open <b>PowerShell</b> (Start menu, type PowerShell, press Enter) and paste:
+                <code class="cmd">irm https://github.com/JuniorSua/yo-app/releases/download/v0.1.778/install.ps1 | iex</code>
+                On Linux, paste this in a terminal:
+                <code class="cmd">curl -fsSL https://github.com/JuniorSua/yo-app/releases/download/v0.1.778/install.sh | bash</code>
+                It checks your PC, installs Docker if you say yes (Docker Desktop on Windows, Docker Engine on Linux),
+                and opens Yo in your browser, signed in. Run the same line again later to update or repair Yo; your
+                data stays. See the
+                <a href="https://github.com/JuniorSua/yo-app#windows-and-linux-in-your-browser">full instructions</a>.
+              </p>
+            </details>
+            <details>
+              <summary>I don't see "Open Anyway".</summary>
+              <p>
+                macOS only shows it after you try to open Yo. Open Yo from Applications, click Done, then look again in
+                System Settings → Privacy &amp; Security, near the bottom. Or run this once in Terminal, then open Yo
+                as usual: <code>xattr -dr com.apple.quarantine /Applications/Yo.app</code>
+              </p>
+            </details>
+            <details>
+              <summary>Yo's computer won't start.</summary>
+              <p>
+                Yo checks your Mac and tells you what's missing, with the commands to fix it. Make sure you have about
+                20 GB free and that no other app is using most of your memory, then try Start my computer again. If it
+                still won't start, use <b>Settings → Bug reports → Report a problem</b> in Yo: the report includes the
+                logs we need, with passwords and personal details removed.
+              </p>
+            </details>
+            <details>
+              <summary>How do I update Yo?</summary>
+              <p>
+                Yo checks for new versions and tells you when one is out. Click Download, then install it the same way
+                you did the first time. Your conversations, routines and settings stay. After an update, macOS may ask
+                once about "Yo Safe Storage": enter your Mac password and click Always Allow.
+              </p>
+            </details>
+            <details>
+              <summary>Does Yo cost anything?</summary>
+              <p>
+                No. Yo is free and open source (Apache-2.0), with no paywall and no Yo account. It runs on the Claude,
+                ChatGPT or Grok subscription you already have, so there's no other bill from us. If you'd like to
+                help, see <a href="/#support">Support Yo</a>. It's optional and unlocks nothing.
+              </p>
+            </details>
+            <details>
+              <summary>How do I uninstall Yo?</summary>
+              <p>
+                Quit Yo and drag it from Applications to the Trash. To remove its data too, see
+                <a href="/privacy#mac">the privacy policy</a>.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <h2 id="license-key">Asked for a licence key?</h2>
+        <p>
+          Some older versions of Yo asked for a licence key. Yo is free now and doesn't need one: download the newest
+          version from the <a href="/">home page</a> and install it the same way.
+          <span data-email-only hidden>Questions about a past payment? <a href="#contact" data-support-email>Email us</a>.</span>
+        </p>
+
+        <h2 id="support-yo">Support Yo</h2>
+        <p>
+          Yo is free, and it stays free. If it's earned a spot in your day, you can chip in once or sponsor it monthly
+          on GitHub. See <a href="/#support">Support Yo</a> on the home page. It's a gift: it doesn't unlock
+          anything, and everything stays the same either way.
+        </p>
+
+        <h2 id="iphone">Yo for iPhone</h2>
+        <p class="legal-note">
+          <b>Coming soon.</b> The iPhone app and Yo Phone are in testing and aren't available to everyone yet. The
+          help below is for testers.
+        </p>
+        <p>
+          The Yo app is your Yo in your pocket. Send it a message, approve what it asks, stop a task, or talk to it
+          hands-free in Drive mode. Yo does the work in a private workspace on your Mac or PC and texts you back.
+        </p>
+        <h3 id="requirements">What you need</h3>
+        <ul>
+          <li><b>Your own Yo</b>, set up on a Mac or on a home server that stays on. <a href="/">Get Yo here</a>.</li>
+          <li><b>A subscription you already have</b>, like Claude or ChatGPT, which your Yo uses on your computer.</li>
+          <li><b>An iPhone</b> with iOS 17 or later.</li>
+        </ul>
+        <p>
+          No Yo yet? Tap <b>Try the demo</b> on the app's first screen to look around. The demo runs entirely on your
+          iPhone with made-up replies.
+        </p>
+
+        <h3 id="pair">Pair the app with your Yo</h3>
+        <ol class="legal-steps">
+          <li>On your computer, open Yo and go to <b>Settings → Phone</b>. Tap <b>Create phone link</b>. (Or ask Yo: "Set up Yo Phone on my phone." It asks for your OK first.)</li>
+          <li>Get the link to your iPhone. Send it to yourself, for example in a note or a message to your own number.</li>
+          <li>Open the Yo app and choose how to add it: <b>Paste</b> the link, <b>Scan</b> its QR code with the camera, or <b>tap</b> the link on your iPhone. If tapping opens Safari instead, copy the link and use Paste.</li>
+          <li>That's it. Say hi. Under each message, <b>Sent</b> means it reached the relay, and <b>Delivered</b> means your Yo has it.</li>
+        </ol>
+        <p>
+          <b>Keep your link to yourself.</b> Anyone with it can text your Yo as you, including your chats, files and
+          approvals. If it ever gets out, make a new link in Yo and the old one stops working.
+        </p>
+
+        <h3 id="using">Using the app</h3>
+        <ul>
+          <li><b>Approve or Deny:</b> when Yo needs a yes or no, a card shows up. Your answer goes straight to Yo.</li>
+          <li><b>Open Yo on your computer:</b> some requests, like changes to your Mac or taking over the screen, can only be answered on the computer itself.</li>
+          <li><b>Stop:</b> tap Stop to end what Yo is working on.</li>
+          <li><b>Drive mode:</b> tap Drive for a big microphone button. Say what you need; Yo reads its replies aloud.</li>
+        </ul>
+
+        <h3 id="faq">Questions about the iPhone app</h3>
+        <div class="faq">
+          <div class="faq-list">
+            <details>
+              <summary>Yo shows as offline.</summary>
+              <p>
+                The app shows Yo as online when your Yo has checked in during the last few minutes. If it's offline,
+                the computer Yo runs on is probably asleep, turned off, or not connected to the internet, or Yo isn't
+                running. Open Yo on that computer (or wake it up) and wait a moment. Messages you send while it's
+                offline wait for it in the relay for up to 30 days and are delivered when it's back. A home server
+                that stays on keeps Yo reachable even while your laptop is closed.
+              </p>
+            </details>
+            <details>
+              <summary>It says "This link was turned off."</summary>
+              <p>
+                That link no longer works, because someone turned Yo Phone off or made a new link in
+                <b>Settings → Phone</b>, or because your Yo hadn't checked in for about 30 days. Make a new link in Yo
+                and add it to the app again.
+              </p>
+            </details>
+            <details>
+              <summary>It says "This link is from an older version."</summary>
+              <p>Links made by older versions of Yo aren't supported. Update Yo on your computer, then make a new link.</p>
+            </details>
+            <details>
+              <summary>Yo says it's busy.</summary>
+              <p>
+                To keep things safe, Yo works on a few phone messages at a time. Wait a minute and send it again.
+              </p>
+            </details>
+            <details>
+              <summary>How does Drive mode work?</summary>
+              <p>
+                Tap <b>Drive</b>, then the microphone, and say what you need. When you stop talking, the app sends it
+                after a short pause (tap to cancel), and Yo reads its replies out loud. The first time, iOS asks for
+                microphone and speech recognition access. The app uses on-device recognition when your iPhone
+                supports it. Set things up before you drive, and keep your eyes on the road.
+              </p>
+            </details>
+            <details>
+              <summary>What is the demo?</summary>
+              <p>
+                <b>Try the demo</b> shows how the app works without a Yo. It runs entirely on your iPhone with
+                made-up conversations, approvals and replies, and doesn't connect to anything. Leave the demo any time
+                to pair with your own Yo.
+              </p>
+            </details>
+            <details>
+              <summary>Do I need a Mac?</summary>
+              <p>
+                Your Yo needs a computer to run on: a Mac, a Windows or Linux PC (Yo runs in your browser there, see
+                <a href="#windows-linux">Yo on Windows or Linux</a>), or an always-on home server. See the
+                <a href="/#requirements">requirements</a>. The iPhone app only needs your phone link.
+              </p>
+            </details>
+            <details>
+              <summary>Does it cost anything?</summary>
+              <p>
+                The iPhone app is free, with no ads or in-app purchases. Your Yo runs on the subscription you already have.
+              </p>
+            </details>
+            <details>
+              <summary>Is my data private?</summary>
+              <p>
+                Messages are end-to-end encrypted between your iPhone and your Yo, and the relay in the middle can't
+                read them. Your history stays on your phone. There are no accounts, analytics or ads. Read the
+                <a href="/privacy">privacy policy</a> for the details.
+              </p>
+            </details>
+            <details>
+              <summary>How do I remove my data?</summary>
+              <p>
+                In the app, tap <b>Forget this link</b> to erase the link and your history from the phone. In Yo on
+                your computer, <b>Settings → Phone → Turn off</b> deletes the relay mailbox and turns the link off.
+              </p>
+            </details>
+            <details>
+              <summary>Can I use one link on more than one phone, or share it?</summary>
+              <p>
+                A link is personal: whoever has it is treated as you. Don't share it with anyone else. A guest mode
+                with its own limits may come later.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <h2 id="contact">Contact</h2>
+        <div class="legal-contact">
+          <p data-email-only hidden>Email us at <a href="#contact" data-support-email data-show-address>our support address</a>, about anything: installing, updates or a past payment.</p>
+          <p>In Yo, open <b>Settings → Bug reports → Report a problem</b>. It reaches us directly, no account needed.</p>
+          <p>Or <a href="https://github.com/JuniorSua/yo-app/issues">open an issue on GitHub</a>. Please don't post your phone link or private messages there.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <a class="brand" href="/" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="24" height="24" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav aria-label="Footer">
+          <a href="/">Home</a>
+          <a href="/#support">Support Yo</a>
+          <a href="/support">Help</a>
+          <a href="/privacy">Privacy policy</a>
+          <a href="/terms">Terms</a>
+          <a href="/support#contact" data-support-email data-email-only hidden>Contact</a>
+          <a href="https://github.com/JuniorSua/yo-app">GitHub</a>
+        </nav>
+        <span class="footer-copy">© 2026 Yo · Apache-2.0</span>
+      </div>
+    </footer>
+  </body>
+</html>

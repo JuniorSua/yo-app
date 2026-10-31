@@ -1,0 +1,522 @@
+#!/usr/bin/env bash
+# yo-app: start, stop, update and sign in to Yo (PC edition) on Linux (and Windows' WSL).
+# Installed by install.sh into ~/.local/share/yo-app and linked as ~/.local/bin/yo-app. The Windows twin is
+# yo-app.ps1: same commands, same words. See pc/README.md.
+#
+# Every Docker command runs from the install folder as
+#   docker compose --project-name <YO_APP_PROJECT> -f compose.yaml --env-file .env ...
+# so the stack is found again whatever the current folder is. The project name and port live in .env.
+set -uo pipefail
+
+YO_HELPER_VERSION="__YO_VERSION__"
+REPO="JuniorSua/yo-app"
+RELEASES="${YO_APP_RELEASES:-https://github.com/$REPO/releases/download}"
+API_LATEST="https://api.github.com/repos/$REPO/releases/latest"
+CORE_REPO="ghcr.io/juniorsua/yo-core"
+COMPUTER_REPO="ghcr.io/juniorsua/yo-computer"
+INSTALL_CMD="curl -fsSL https://github.com/$REPO/releases/latest/download/install.sh | bash"
+
+self="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+APP_HOME="${YO_APP_HOME:-$(cd "$(dirname "$self")" && pwd)}"
+ENV_FILE="$APP_HOME/.env"
+
+# ------------------------------------------------------------------ output and prompts
+say() { printf '%s\n' "$*"; }
+die() {
+  printf '\n%s\n' "$@" >&2
+  exit 1
+}
+has_tty() { { : </dev/tty; } 2>/dev/null; }
+# ask "Question?" Y|N  -> 0 for yes. YO_APP_YES=1 answers yes; without a terminal, the default.
+ask() {
+  local q="$1" def="${2:-Y}" hint ans
+  if [ "$def" = Y ]; then hint="[Y/n]"; else hint="[y/N]"; fi
+  if [ "${YO_APP_YES:-}" = 1 ]; then
+    say "$q $hint yes"
+    return 0
+  fi
+  if ! has_tty; then
+    [ "$def" = Y ]
+    return
+  fi
+  printf '%s %s ' "$q" "$hint" >/dev/tty
+  read -r ans </dev/tty || ans=""
+  case "$ans" in
+    [Yy]*) return 0 ;;
+    [Nn]*) return 1 ;;
+    *) [ "$def" = Y ] ;;
+  esac
+}
+
+# ------------------------------------------------------------------ settings (.env)
+env_get() { [ -f "$ENV_FILE" ] && sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1; }
+# env_set KEY VALUE: replaces the line, or adds it. Keeps the file private (600).
+env_set() {
+  local tmp="$ENV_FILE.tmp.$$"
+  (
+    umask 077
+    if [ -f "$ENV_FILE" ]; then
+      awk -v k="$1" -v v="$2" 'BEGIN { done = 0 } index($0, k "=") == 1 { if (!done) print k "=" v; done = 1; next } { print } END { if (!done) print k "=" v }' "$ENV_FILE" >"$tmp"
+    else
+      printf '%s=%s\n' "$1" "$2" >"$tmp"
+    fi
+  ) && chmod 600 "$tmp" && mv -f "$tmp" "$ENV_FILE"
+}
+rand_hex() { od -An -tx1 -N32 /dev/urandom | tr -d ' \n'; }
+
+PROJECT="$(env_get YO_APP_PROJECT)"
+PROJECT="${PROJECT:-${YO_APP_PROJECT:-yo-app}}"
+PORT="$(env_get YO_PORT)"
+PORT="${PORT:-7777}"
+
+dc() { (cd "$APP_HOME" && docker compose --project-name "$PROJECT" -f compose.yaml --env-file .env "$@"); }
+
+need_install() {
+  { [ -f "$APP_HOME/compose.yaml" ] && [ -f "$ENV_FILE" ]; } ||
+    die "Yo isn't installed in $APP_HOME (no compose.yaml or .env there)." \
+      "Install it with:  $INSTALL_CMD"
+}
+
+# ------------------------------------------------------------------ Docker
+# 0 running, 1 not installed, 2 no permission, 3 not running
+docker_state() {
+  command -v docker >/dev/null 2>&1 || return 1
+  local out
+  out="$(docker info --format '{{.ServerVersion}}' 2>&1)" && return 0
+  case "$out" in *"ermission denied"*) return 2 ;; esac
+  return 3
+}
+
+is_wsl() { grep -qi microsoft /proc/version 2>/dev/null; }
+
+wait_docker() { # seconds
+  local i=0
+  while [ "$i" -lt "$1" ]; do
+    docker_state && return 0
+    sleep 3
+    i=$((i + 3))
+  done
+  return 1
+}
+
+need_docker() {
+  docker_state
+  case $? in
+    0) return 0 ;;
+    1) die "Docker isn't installed, and Yo runs in Docker." "Run the Yo installer again; it helps you install it:  $INSTALL_CMD" ;;
+    2) die "You don't have permission to use Docker yet." \
+      "Add yourself to the docker group:  sudo usermod -aG docker \"\$USER\"" \
+      "then log out and back in (or run: newgrp docker), and try again." ;;
+  esac
+  say "Docker isn't running."
+  if command -v systemctl >/dev/null 2>&1 && systemctl cat docker.service >/dev/null 2>&1; then
+    if ask "Start it now? (needs your password)" Y; then
+      sudo systemctl start docker || true
+    fi
+  elif command -v service >/dev/null 2>&1 && [ -e /etc/init.d/docker ]; then
+    if ask "Start it now? (needs your password)" Y; then
+      sudo service docker start || true
+    fi
+  elif is_wsl; then
+    say "Open Docker Desktop on Windows and wait until it says the engine is running. Waiting for it..."
+  fi
+  if ! wait_docker 120; then
+    die "Docker still isn't running." "Start Docker (Linux: sudo systemctl start docker; with Docker Desktop: open it), then try again."
+  fi
+}
+
+# ------------------------------------------------------------------ Yo's containers
+container_of() { dc ps -a -q "$1" 2>/dev/null | head -n 1; }
+state_of() { # service -> "running (healthy)", "exited", "not created"
+  local id
+  id="$(container_of "$1")"
+  if [ -z "$id" ]; then
+    say "not created"
+    return
+  fi
+  docker inspect -f '{{.State.Status}}{{if and .State.Running .State.Health}} ({{.State.Health.Status}}){{end}}' "$id" 2>/dev/null || say "unknown"
+}
+core_running() { [ -n "$(dc ps -q --status running yo-core 2>/dev/null)" ]; }
+healthz() { curl -fsS -m 3 -o /dev/null "http://127.0.0.1:$PORT/healthz" 2>/dev/null; }
+
+# 0 once core answers (within 3 minutes); else shows core's last messages and returns 1.
+await_healthy() {
+  local i=0
+  printf 'Waiting for Yo to start...'
+  while [ "$i" -lt 180 ]; do
+    if healthz; then
+      printf ' done.\n'
+      return 0
+    fi
+    printf '.'
+    sleep 2
+    i=$((i + 2))
+  done
+  printf '\n'
+  say "Yo's core didn't answer within 3 minutes. Its last messages:"
+  dc logs --tail 30 yo-core 2>&1 | sed 's/^/  /'
+  return 1
+}
+
+wait_healthy() {
+  await_healthy || die "Try:  yo-app restart" "If it keeps happening, send the output of 'yo-app logs' with a bug report."
+}
+
+compose_up() {
+  say "Starting Yo..."
+  dc up -d
+}
+
+up() {
+  compose_up || die "Docker couldn't start Yo (the messages above say why)." "If it mentions a port, another program is using port $PORT: stop it, or reinstall Yo to pick a free port."
+}
+
+open_file() { # a file in the default browser -> 0 if one was asked to open it
+  local file="$1"
+  if is_wsl; then
+    if command -v wslview >/dev/null 2>&1 && wslview "$file" >/dev/null 2>&1; then return 0; fi
+    local win
+    win="$(wslpath -w "$file" 2>/dev/null)"
+    if [ -n "$win" ] && command -v cmd.exe >/dev/null 2>&1 &&
+      (cd /mnt/c 2>/dev/null && cmd.exe /c start "" "$win") >/dev/null 2>&1; then return 0; fi
+  fi
+  if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+    local opener
+    for opener in xdg-open sensible-browser gio; do
+      command -v "$opener" >/dev/null 2>&1 || continue
+      if [ "$opener" = gio ]; then
+        gio open "$file" >/dev/null 2>&1 && return 0
+      else
+        "$opener" "$file" >/dev/null 2>&1 &
+        return 0
+      fi
+    done
+  fi
+  [ "$(uname -s)" = Darwin ] && open "$file" >/dev/null 2>&1 && return 0
+  return 1
+}
+
+# snap_browser -> 0 when the default browser is a Snap package (e.g. firefox_firefox.desktop).
+snap_browser() {
+  local b
+  command -v xdg-settings >/dev/null 2>&1 || return 1
+  b="$(xdg-settings get default-web-browser 2>/dev/null)"
+  case "$b" in *_*.desktop) [ -d "/snap/${b%%_*}" ] ;; *) return 1 ;; esac
+}
+
+# open_signin <url> -> 0 if a browser was asked to open it. The link holds a sign-in code, and every user of this
+# PC can read the command lines of running programs, so the browser gets a private page instead (mode 600, in the
+# install folder) that forwards it to the link. The page deletes itself 20 seconds later.
+open_signin() {
+  local url="$1" page
+  [ "${YO_APP_NO_BROWSER:-}" = 1 ] && return 1
+  # Snap browsers (Ubuntu's default Firefox) can't read files in hidden folders, so they get the link itself.
+  if ! is_wsl && snap_browser; then
+    if command -v xdg-open >/dev/null 2>&1 && [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
+      xdg-open "$url" >/dev/null 2>&1 &
+      return 0
+    fi
+    return 1
+  fi
+  page="$APP_HOME/yo-signin-$(rand_hex | cut -c 1-16).html"
+  (
+    umask 077
+    set -C
+    printf '<!doctype html>\n<html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer">\n<meta http-equiv="refresh" content="0;url=%s">\n<title>Yo</title><script>location.replace("%s")</script></head>\n<body><a href="%s">Open Yo</a></body></html>\n' \
+      "$url" "$url" "$url" >"$page"
+  ) 2>/dev/null || return 1
+  chmod 600 "$page"
+  (
+    sleep 20
+    rm -f "$page"
+  ) >/dev/null 2>&1 </dev/null &
+  disown 2>/dev/null || true
+  open_file "$page" && return 0
+  rm -f "$page"
+  return 1
+}
+
+# ------------------------------------------------------------------ commands
+cmd_signin() {
+  need_install
+  need_docker
+  core_running || die "Yo isn't running. Start it with:  yo-app open"
+  healthz || wait_healthy
+  local token url
+  token="$(rand_hex)"
+  [ "${#token}" -eq 64 ] || die "Couldn't make a sign-in code (no /dev/urandom?)."
+  printf '%s\n' "$token" | dc exec -T yo-core sh -c 'umask 077 && cat > /data/enroll-token' ||
+    die "Couldn't hand the sign-in code to Yo's core. Try:  yo-app restart"
+  url="http://127.0.0.1:$PORT/#signin=$token"
+  say ""
+  if open_signin "$url"; then
+    say "Opening Yo in your browser. If it didn't open, use this sign-in link:"
+  else
+    say "Open this link in your browser to sign in:"
+  fi
+  say "  $url"
+  say "It works once, for 10 minutes. Run 'yo-app signin' for a new one."
+}
+
+cmd_open() {
+  need_install
+  need_docker
+  core_running || up
+  healthz || wait_healthy
+  cmd_signin
+}
+
+cmd_start() {
+  need_install
+  need_docker
+  up
+  wait_healthy
+  say "Yo is running at http://127.0.0.1:$PORT  ('yo-app open' signs this browser in)."
+}
+
+cmd_stop() {
+  need_install
+  need_docker
+  dc stop || die "Docker couldn't stop Yo (the messages above say why)."
+  say "Yo is stopped. Your chats and files are kept. Start it again with:  yo-app start"
+}
+
+cmd_restart() {
+  need_install
+  need_docker
+  core_running || {
+    cmd_start
+    return
+  }
+  dc restart yo-computer yo-core || die "Docker couldn't restart Yo (the messages above say why)."
+  wait_healthy
+  say "Yo restarted: http://127.0.0.1:$PORT"
+}
+
+cmd_status() {
+  need_install
+  local version
+  version="$(env_get YO_VERSION)"
+  say "Yo (PC edition) ${version:-unknown version}"
+  if docker_state; then
+    say "  Docker:          running"
+    say "  Yo's core:       $(state_of yo-core)"
+    say "  Yo's computer:   $(state_of yo-computer)"
+    if healthz; then
+      say "  Yo answers at:   http://127.0.0.1:$PORT  (open it with: yo-app open)"
+    else
+      say "  Yo answers at:   not answering on http://127.0.0.1:$PORT  (start it with: yo-app start)"
+    fi
+  else
+    say "  Docker:          not running (start it, then: yo-app open)"
+  fi
+  say "  Installed in:    $APP_HOME"
+  say "  Data:            Docker volumes ${PROJECT}_core-data and ${PROJECT}_computer-data"
+}
+
+cmd_version() {
+  need_install
+  say "Yo $(env_get YO_VERSION)"
+  say "  core:      $(env_get YO_CORE_IMAGE)"
+  say "  computer:  $(env_get YO_COMPUTER_IMAGE)"
+  if valid_version "$YO_HELPER_VERSION"; then say "  helper:    $YO_HELPER_VERSION"; else say "  helper:    development copy"; fi
+}
+
+cmd_logs() {
+  need_install
+  need_docker
+  local svc=() follow=() a
+  for a in "$@"; do
+    case "$a" in
+      core) svc+=(yo-core) ;;
+      computer) svc+=(yo-computer) ;;
+      -f | --follow) follow=(--follow) ;;
+      *) die "Unknown option '$a'. Use: yo-app logs [core|computer] [--follow]" ;;
+    esac
+  done
+  [ "${#svc[@]}" -gt 0 ] || svc=(yo-core yo-computer)
+  dc logs --tail 200 ${follow[@]+"${follow[@]}"} "${svc[@]}"
+}
+
+valid_version() { [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]*)?$ ]]; }
+
+latest_version() {
+  curl -fsSL -m 20 -H 'Accept: application/vnd.github+json' "$API_LATEST" 2>/dev/null |
+    sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([^"]*\)".*/\1/p' | head -n 1
+}
+
+# fetch_assets <version> <dir>: compose.yaml and the yo-app helper, from the release or YO_APP_SOURCE.
+fetch_assets() {
+  local v="$1" dir="$2"
+  if [ -n "${YO_APP_SOURCE:-}" ]; then
+    local compose="$YO_APP_SOURCE/yo-app-compose.yaml"
+    [ -f "$compose" ] || compose="$YO_APP_SOURCE/compose.yaml"
+    cp "$compose" "$dir/compose.yaml" && cp "$YO_APP_SOURCE/yo-app" "$dir/yo-app"
+  else
+    local base="$RELEASES/v$v"
+    curl -fsSL --retry 3 -o "$dir/compose.yaml" "$base/yo-app-compose.yaml" &&
+      curl -fsSL --retry 3 -o "$dir/yo-app" "$base/yo-app"
+  fi
+}
+
+pull_images() {
+  [ "${YO_APP_SKIP_PULL:-}" = 1 ] && return 0
+  say "Downloading Yo (about 1 GB the first time; later updates are smaller)..."
+  dc pull
+}
+
+cmd_update() {
+  need_install
+  need_docker
+  local cur new stage
+  cur="$(env_get YO_VERSION)"
+  new="${YO_APP_VERSION:-}"
+  if [ -z "$new" ]; then
+    new="$(latest_version)"
+    [ -n "$new" ] || die "Couldn't ask GitHub for the newest version of Yo. Check this PC's internet connection and try again."
+  fi
+  valid_version "$new" || [ -n "${YO_APP_SOURCE:-}" ] || die "'$new' doesn't look like a Yo version (like 0.1.700)."
+  # Without YO_APP_VERSION, only ever move forward.
+  if [ "$new" = "$cur" ] || { [ -z "${YO_APP_VERSION:-}" ] && valid_version "$cur" &&
+    [ "$(printf '%s\n%s\n' "$new" "$cur" | sort -V | tail -n 1)" = "$cur" ]; }; then
+    say "Yo is up to date ($cur)."
+    return 0
+  fi
+  say "Updating Yo from ${cur:-an unknown version} to $new..."
+  stage="$APP_HOME/.update"
+  rm -rf "$stage" && mkdir -p "$stage"
+  fetch_assets "$new" "$stage" ||
+    {
+      rm -rf "$stage"
+      die "Couldn't download Yo $new. Check this PC's internet connection and try again. Nothing was changed."
+    }
+  # Backups of what this changes, kept until the new version answers.
+  if ! { cp -p "$ENV_FILE" "$stage/env.backup" && cp -p "$APP_HOME/compose.yaml" "$stage/compose.backup" &&
+    cp -p "$APP_HOME/yo-app" "$stage/yo-app.backup"; }; then
+    rm -rf "$stage"
+    die "Couldn't make a backup of Yo's settings in $stage. Nothing was changed."
+  fi
+  restore_settings() {
+    mv -f "$stage/env.backup" "$ENV_FILE"
+    mv -f "$stage/compose.backup" "$APP_HOME/compose.yaml"
+  }
+  mv -f "$stage/compose.yaml" "$APP_HOME/compose.yaml"
+  env_set YO_CORE_IMAGE "${YO_CORE_IMAGE:-$CORE_REPO:$new}"
+  env_set YO_COMPUTER_IMAGE "${YO_COMPUTER_IMAGE:-$COMPUTER_REPO:$new}"
+  env_set YO_VERSION "$new"
+  # From here .env decides: Compose would prefer these over it, also when putting the old version back.
+  unset YO_CORE_IMAGE YO_COMPUTER_IMAGE
+  if ! pull_images; then
+    restore_settings
+    rm -rf "$stage"
+    die "Couldn't download Yo $new (no internet, or the release isn't ready yet). Yo $cur keeps running; try again later."
+  fi
+  # A rename, so this running script keeps reading its old copy.
+  chmod 755 "$stage/yo-app" && mv -f "$stage/yo-app" "$APP_HOME/yo-app"
+  if compose_up && await_healthy; then
+    rm -rf "$stage"
+    say "Yo updated: ${cur:-?} -> $new. Your browser picks it up when you reload the page."
+    return 0
+  fi
+  # The new version didn't start: put the old one back.
+  say ""
+  say "Yo $new didn't start, so this puts Yo ${cur:-as it was} back..."
+  restore_settings
+  mv -f "$stage/yo-app.backup" "$APP_HOME/yo-app"
+  rm -rf "$stage"
+  if compose_up && await_healthy; then
+    say ""
+    say "The update was rolled back: Yo ${cur:-as it was} is running again, with all your chats and files."
+    say "Try 'yo-app update' again later. If it keeps failing, send the output of 'yo-app logs' with a bug report."
+    exit 1
+  fi
+  die "The update was rolled back to Yo ${cur:-as it was}, but that didn't start either (the messages above say why)." \
+    "Try:  yo-app restart" "If it keeps happening, send the output of 'yo-app logs' with a bug report."
+}
+
+cmd_uninstall() {
+  need_install
+  ask "Remove Yo from this PC?" N || {
+    say "Nothing was removed."
+    return 0
+  }
+  local delete=0
+  if ask "Also delete Yo's data (chats, memories, the computer's files)? This can't be undone." N; then delete=1; fi
+  need_docker
+  if [ "$delete" = 1 ]; then
+    dc down --volumes --remove-orphans || die "Docker couldn't remove Yo (the messages above say why). Nothing else was removed."
+  else
+    dc down --remove-orphans || die "Docker couldn't remove Yo (the messages above say why). Nothing else was removed."
+  fi
+  # Only Yo's own published images; a custom or locally built image may be used by something else.
+  local img
+  for img in "$(env_get YO_CORE_IMAGE)" "$(env_get YO_COMPUTER_IMAGE)"; do
+    case "$img" in
+      "$CORE_REPO":* | "$COMPUTER_REPO":*) docker image rm "$img" >/dev/null 2>&1 && say "Removed $img" ;;
+    esac
+  done
+  local bin
+  bin="$(env_get YO_APP_LINK)"
+  bin="${bin:-$HOME/.local/bin/yo-app}"
+  if [ -L "$bin" ] && [ "$(readlink -f "$bin")" = "$(readlink -f "$APP_HOME/yo-app")" ]; then rm -f "$bin"; fi
+  # Only the files Yo put there (the folder may be one the user chose, with their own files in it); then the folder,
+  # if that left it empty.
+  rm -f "$APP_HOME/compose.yaml" "$APP_HOME/.env" "$APP_HOME/yo-app" "$APP_HOME"/.env.tmp.* "$APP_HOME"/yo-signin-*.html
+  rm -rf "$APP_HOME/.update" "$APP_HOME/.install"
+  say ""
+  if rmdir "$APP_HOME" 2>/dev/null; then
+    say "Yo is removed from this PC."
+  else
+    say "Yo is removed from this PC. (Its folder $APP_HOME has other files in it, so it stays.)"
+  fi
+  if [ "$delete" = 1 ]; then
+    say "Its data is deleted too."
+  else
+    say "Your data is kept in Docker (volumes ${PROJECT}_core-data and ${PROJECT}_computer-data): installing Yo again picks it up."
+    say "To delete it later:  docker volume rm ${PROJECT}_core-data ${PROJECT}_computer-data"
+  fi
+}
+
+cmd_help() {
+  cat <<EOF
+yo-app: run Yo (PC edition) on this PC. Yo lives at http://127.0.0.1:$PORT.
+
+  yo-app open        start Yo if needed and open it in your browser (signs this browser in)
+  yo-app signin      a new one-time sign-in link (for another browser, or if you were signed out)
+  yo-app status      is Docker running, are Yo's core and computer up, which version
+  yo-app start       start Yo in the background
+  yo-app stop        stop Yo (it stays stopped until 'yo-app start', even after a restart)
+  yo-app restart     restart Yo's core and its computer
+  yo-app update      get the newest version of Yo (your data stays)
+  yo-app logs [core|computer] [--follow]
+                     Yo's recent messages, for bug reports
+  yo-app version     which version is installed
+  yo-app uninstall   remove Yo (asks before deleting your data)
+  yo-app help        this list
+EOF
+}
+
+main() {
+  local cmd="${1:-help}"
+  [ "$#" -gt 0 ] && shift
+  case "$cmd" in
+    open) cmd_open ;;
+    signin | sign-in) cmd_signin ;;
+    status) cmd_status ;;
+    start) cmd_start ;;
+    stop) cmd_stop ;;
+    restart) cmd_restart ;;
+    update) cmd_update ;;
+    logs) cmd_logs "$@" ;;
+    version | --version | -v) cmd_version ;;
+    uninstall) cmd_uninstall ;;
+    help | --help | -h) cmd_help ;;
+    *)
+      say "Unknown command '$cmd'."
+      cmd_help
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

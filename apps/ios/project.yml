@@ -1,0 +1,92 @@
+# Generate Yo.xcodeproj with `xcodegen` (brew install xcodegen). The generated project is committed, so building
+# doesn't need XcodeGen.
+name: Yo
+options:
+  bundleIdPrefix: dev.yo
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  groupSortPosition: top
+settings:
+  base:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
+    DEVELOPMENT_TEAM: D5MC3NH58Y
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+packages:
+  YoPhoneKit:
+    path: YoPhoneKit
+targets:
+  Yo:
+    type: application
+    platform: iOS
+    sources:
+      - path: Yo
+        excludes:
+          - Info.plist
+          - Yo.entitlements
+    dependencies:
+      - package: YoPhoneKit
+    settings:
+      base:
+        PRODUCT_NAME: Yo
+        PRODUCT_BUNDLE_IDENTIFIER: dev.yo.phone
+        # iPhone only. Set per target: XcodeGen's iOS target defaults ("1,2") override a project-level value.
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_FILE: Yo/Info.plist
+        INFOPLIST_PREPROCESS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: Yo/Yo.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+      configs:
+        Debug:
+          INFOPLIST_PREPROCESSOR_DEFINITIONS: YO_DEBUG=1
+  YoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: YoTests
+    dependencies:
+      - target: Yo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.yo.phone.tests
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+  YoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: YoUITests
+    dependencies:
+      - target: Yo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.yo.phone.uitests
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Yo
+schemes:
+  Yo:
+    build:
+      targets:
+        Yo: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - YoTests
+        - YoUITests
+    archive:
+      config: Release

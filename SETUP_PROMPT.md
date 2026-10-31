@@ -7,9 +7,10 @@ for them, with a line like:
 Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app/blob/main/SETUP_PROMPT.md
 ```
 
-Yo is a macOS app for a personal AI assistant (Yo, plus Pip for personal time). It works in a private workspace on the person's Mac or PC (a
-Linux desktop with Chromium, running in a small Colima VM), and runs on the Claude, ChatGPT or Grok plan the
-person already pays for. Below are the steps, in order. Every command here is the one the Yo app itself shows;
+Yo is a free, open-source macOS app for a team of AI agents (Yo leads, plus Pip for personal time and any
+teammates the person adds). It works in a private workspace on the person's Mac or PC (a Linux desktop with
+Chromium, running in a small Colima VM), and runs on the Claude, ChatGPT or Grok plan the person already pays
+for. Yo itself costs nothing and asks for no key or account. Below are the steps, in order. Every command here is the one the Yo app itself shows;
 don't substitute your own.
 
 ## How to work
@@ -42,9 +43,7 @@ Before changing anything, ask these short questions (offer the defaults):
    - **Home server** (advanced): an always-on PC at home (Linux, or Windows with WSL 2), reached over SSH.
      Yo still gets installed on this Mac; the server part is done afterwards, in Yo's setup chat.
    - **Cloud** is coming soon. It isn't available yet.
-3. **Yo is $10 a month.** Say so up front: Yo asks for a license key (from a subscription on theyoapp.com) when
-   it first opens. Downloading and installing is fine before they subscribe.
-4. **Where to install Yo?** `/Applications` (default) or `~/Applications`. Call it `<install dir>` below.
+3. **Where to install Yo?** `/Applications` (default) or `~/Applications`. Call it `<install dir>` below.
 
 ## 2. Preflight (macOS)
 
@@ -168,10 +167,7 @@ Check with `colima version`, `docker --version` and `docker compose version`. Do
 
 ## 5. Open Yo and connect the model
 
-Open Yo (`open "<install dir>/Yo.app"`). First it shows **Activate Yo**: Yo is $10 a month. The person clicks
-**Subscribe**, pays on Stripe's secure checkout, copies the license key shown after paying, pastes it and clicks **Activate**
-(you never see or handle the key, and never pay for them). Already subscribed: they paste their key. Lost it:
-https://theyoapp.com/support#license-key. Then tell them what they'll see next: Yo's **Connect your model**
+Open Yo (`open "<install dir>/Yo.app"`). Tell them what they'll see: Yo's **Connect your model**
 walkthrough. It first lists the sign-ins it can see on this Mac. A Claude Code or Codex sign-in only takes them to the
 right steps below: they still sign in to Claude or ChatGPT on Yo's computer.
 

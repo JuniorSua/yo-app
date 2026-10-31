@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy · Yo</title>
+    <meta
+      name="description"
+      content="How Yo for Mac, the Yo iPhone app and Yo Phone handle your data: Yo runs on your own computer, with your own subscription. No accounts, no licence checks, no analytics, no ads, no tracking."
+    />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:title" content="Privacy Policy · Yo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Yo" />
+    <meta property="og:image" content="https://theyoapp.com/assets/og.png" />
+    <link rel="canonical" href="https://theyoapp.com/privacy" />
+    <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script defer src="/config.js"></script>
+    <script defer src="/contact.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav legal-nav">
+      <div class="nav-inner">
+        <a class="brand" href="/" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="28" height="28" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="/">Home</a>
+          <a href="/support">Help</a>
+          <a href="/privacy" aria-current="page">Privacy</a>
+          <a href="/terms">Terms</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="legal">
+      <p class="kicker"><span>Legal</span>Privacy Policy</p>
+      <h1>Your data stays yours.</h1>
+      <p class="sub">
+        This policy covers <b>Yo for Mac</b>, the <b>Yo</b> app for iPhone, <b>Yo Phone</b> (the web version at
+        <span class="nowrap">yo-phone.vercel.app</span>) and this website. Yo is free and open source, and it runs on
+        your own computer with the subscription you already have.
+      </p>
+      <p class="legal-meta">Effective October 8, 2026 · Last updated October 30, 2026</p>
+
+      <ul class="legal-summary" aria-label="The short version">
+        <li><b>It runs at home.</b> Your chats, memory and files live on your Mac (or your home server), not on our servers.</li>
+        <li><b>No accounts, no licence checks.</b> You don't sign up with us, and Yo never checks in with us. What you tell Yo, like your name, stays on your own computer.</li>
+        <li><b>No analytics, ads or tracking.</b> No third-party SDKs, no advertising IDs, no tracking across apps or websites.</li>
+        <li><b>Phone messages are end-to-end encrypted.</b> They are encrypted on your phone and decrypted only by your own Yo. The relay in between can't read them.</li>
+        <li><b>History stays on your phone.</b> Your conversation history is stored on your device only.</li>
+        <li><b>You can erase it.</b> "Forget this link" clears the app. Turning the link off in Yo deletes its relay mailbox.</li>
+      </ul>
+
+      <div class="legal-body">
+        <h2 id="mac">Yo for Mac</h2>
+        <p>
+          Yo for Mac is the app you download from this site. It keeps your conversations, memory, routines and
+          settings on your Mac. Your agents' computer (a Linux desktop with a browser, for them to work on) runs in a
+          small virtual machine on your Mac, or on a home server you set up. Sign-ins are kept in your Mac's Keychain (as
+          "Yo Safe Storage") and on Yo's computer, and are never written to logs.
+        </p>
+        <p>Here is everything that leaves your Mac, and why:</p>
+        <table class="legal-table">
+          <thead>
+            <tr><th scope="col">Goes to</th><th scope="col">What</th><th scope="col">When</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Your AI provider (Anthropic for Claude, OpenAI for ChatGPT, or xAI for Grok)</td>
+              <td>
+                Your requests and what Yo needs to answer them: your messages, files you share with it, and what it
+                reads while it works. They're sent by the provider's own app (Claude Code, Codex or the Grok CLI) on
+                Yo's computer, signed in as you. That provider's privacy policy applies.
+              </td>
+              <td>Whenever Yo works for you.</td>
+            </tr>
+            <tr>
+              <td>Websites and services</td>
+              <td>Yo's own browser visits the sites it needs for your request, like any browser would.</td>
+              <td>When a request needs the web.</td>
+            </tr>
+            <tr>
+              <td>GitHub</td>
+              <td>
+                Yo asks GitHub whether a new version is out, and downloads updates and the software for its computer
+                from GitHub. GitHub sees your IP address, as with any download.
+              </td>
+              <td>Update checks, and setup.</td>
+            </tr>
+            <tr>
+              <td>Free setup tools</td>
+              <td>Homebrew, Colima and Docker download from their own sources when you (or your coding agent) install them.</td>
+              <td>Setup only.</td>
+            </tr>
+            <tr>
+              <td>Us, the developer</td>
+              <td>
+                Nothing, unless you send a bug report. Yo shows it to you first. Passwords, keys, emails and personal
+                folders are removed, and it's encrypted so only the developer can read it. When you send one
+                from Report a problem, your recent chat (the last 30 messages and steps, with the same things
+                removed) is included unless you untick "Include recent chat"; reports Yo drafts for you don't
+                include it. We use reports only to fix Yo, and file them as issues to track the fix.
+              </td>
+              <td>Only when you choose to send a report.</td>
+            </tr>
+            <tr>
+              <td>Things you turn on</td>
+              <td>
+                Telegram (Telegram carries those messages), access to your Mac's Calendar, Reminders, Notes or
+                Mail, and, once it's available, Yo Phone (below). Each is off until you turn it on.
+              </td>
+              <td>Only after you turn it on.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          To remove Yo and its data: quit Yo, delete Yo from Applications and the Yo folder in
+          ~/Library/Application Support, and remove Yo's computer (in Terminal: <code>colima delete yo</code>).
+          Your sign-ins with your AI providers stay with those providers; sign out there if you like.
+        </p>
+
+        <h2 id="website">This website</h2>
+        <p>
+          This site uses no cookies, analytics or third-party scripts, and its fonts are served from here. It's hosted
+          on Vercel, which keeps standard request logs (like IP address and time) for a short time under its own
+          policies. When you click Download, your browser asks GitHub for the newest version and downloads it from
+          GitHub.
+        </p>
+
+        <h2 id="payments">Support payments</h2>
+        <p>
+          Yo is free, and the app never handles payments. If you choose to support Yo, a one-time payment ("Chip in")
+          happens on Stripe's own checkout page, under <a href="https://stripe.com/privacy">Stripe's privacy policy</a>,
+          and a monthly sponsorship happens on GitHub Sponsors, under
+          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>.
+          We receive what they share with the person being paid, like your name, email address, the amount and your
+          country, and use it only for receipts and questions about your payment. We never see your full card number.
+          Supporting Yo doesn't link anything to your copy of Yo.
+        </p>
+
+        <h2 id="license">No licence checks</h2>
+        <p>
+          Yo doesn't check a licence. Some older 0.1 versions of Yo checked a licence
+          key with this website about once a day; that check sent the key and nothing about your chats or files, and
+          the server didn't save it. Update to the newest version and that check is gone.
+        </p>
+
+        <h2 id="how">How Yo for iPhone works</h2>
+        <p class="legal-note">
+          <b>Coming soon.</b> The iPhone app and Yo Phone are in testing and aren't available to everyone yet. This
+          part of the policy applies to them from day one.
+        </p>
+        <p>
+          Yo is a team of AI agents that runs on <b>your own computer</b>: a Mac, or a home server you control. It
+          uses your own subscription (for example Claude or ChatGPT), signed in as you. The iPhone app is a
+          remote control for that Yo. It does not contain an AI model and does not talk to AI providers itself.
+        </p>
+        <p>
+          You pair the app with your Yo using your <b>personal phone link</b>, which Yo creates for you on your
+          computer. The link holds a secret key. From it, the app and your Yo derive the keys that encrypt your
+          messages. Messages travel through a small <b>relay</b> (a mailbox service), because your computer never
+          opens itself to the internet: it only reaches out to the relay to pick up and drop off messages.
+        </p>
+
+        <h2 id="data">What data exists, and where</h2>
+        <table class="legal-table">
+          <thead>
+            <tr><th scope="col">Where</th><th scope="col">What</th><th scope="col">How long</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>On your iPhone</td>
+              <td>
+                Your phone link's secret, kept in the iOS Keychain. Your conversation history and small app settings
+                (like Drive mode preferences), kept in the app's private storage.
+              </td>
+              <td>Until you tap <b>Forget this link</b> or delete the app.</td>
+            </tr>
+            <tr>
+              <td>On the relay</td>
+              <td>
+                Encrypted message envelopes waiting to be picked up, a mailbox ID (a one-way hash, not your name or
+                number), a flag saying the mailbox is turned on, a message counter, and the time your Yo last
+                checked in (so the app can show whether Yo is online). The relay never has your key and can't read
+                your messages.
+              </td>
+              <td>
+                Envelopes expire after at most <b>30 days</b> (most are picked up within seconds). The "last checked
+                in" time expires after 10 minutes. Everything is deleted at once when you turn the link off.
+              </td>
+            </tr>
+            <tr>
+              <td>On your Yo computer</td>
+              <td>
+                Your messages, decrypted, and Yo's replies, as part of your conversation with Yo. A short label for
+                your phone (like "iPhone") so you can see what's connected.
+              </td>
+              <td>Under your control, on your own machine.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <b>What we, the developer, can see through the relay:</b> nothing that identifies you and nothing you write. We operate the
+          default relay, but its contents are encrypted with keys only your phone and your Yo hold. Yo signs its
+          replies, so the app can tell a real reply from anything else and ignores anything that isn't signed.
+        </p>
+
+        <h2 id="relay">The relay and our hosting providers</h2>
+        <p>
+          The default relay runs on <b>Vercel</b> (hosting) and stores mailboxes in <b>Upstash Redis</b> (a
+          database). They process the encrypted envelopes on our behalf and can't read them either. Like any web
+          service, the hosting provider receives your phone's IP address when it connects, and may keep standard
+          request logs (such as IP address, time and the address requested) for a short time under its own policies.
+          We don't use these logs to identify you, don't combine them with other data, and don't sell or share them.
+          To protect the service, the relay counts requests per IP address in memory to limit abuse; those counts
+          aren't stored.
+        </p>
+        <p>
+          Your Yo can be set to use a different relay (for example, one you host yourself). Then that relay's operator
+          handles the encrypted envelopes instead of us.
+        </p>
+
+        <h2 id="ai">AI providers</h2>
+        <p>
+          When you text Yo, <b>your own Yo</b>, running on your computer, may send your request to the AI service
+          you chose when you set Yo up (such as Anthropic's Claude or OpenAI's ChatGPT), using your own account with
+          that service. That happens on your computer, under your account, and that provider's privacy policy
+          applies. The iPhone app never sends your messages to an AI provider directly, and we never receive them.
+          Yo may also visit websites or use services you connected, as it does when you use it on your computer.
+        </p>
+
+        <h2 id="permissions">Permissions</h2>
+        <p>The app asks for each permission only when you use the feature that needs it. You can say no and still use the rest of the app.</p>
+        <ul>
+          <li>
+            <b>Camera:</b> only to scan the QR code of your phone link while pairing. Camera frames are processed on
+            your iPhone and are never saved or sent anywhere.
+          </li>
+          <li>
+            <b>Microphone and Speech Recognition:</b> only in <b>Drive mode</b>, to turn what you say into a text
+            message for Yo. The app uses Apple's speech recognition on your iPhone when it's available. If your
+            iPhone or language doesn't support on-device recognition, iOS may send the audio to Apple to transcribe
+            it, under <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. The app doesn't keep
+            recordings; only the resulting text is sent to your Yo, encrypted, like any other message.
+          </li>
+          <li>
+            <b>Reading replies aloud</b> in Drive mode uses the voices built into iOS and needs no permission.
+          </li>
+        </ul>
+
+        <h2 id="not">What we don't do</h2>
+        <ul>
+          <li>We don't collect personal information, contacts, location, photos or device identifiers.</li>
+          <li>We don't use analytics, crash-reporting or advertising SDKs, and we don't show ads.</li>
+          <li>We don't track you across other companies' apps or websites, and we don't sell or share data.</li>
+          <li>We don't build profiles of you or use your data to train AI models.</li>
+        </ul>
+        <p>
+          If you choose to share crash reports with developers in your iPhone's settings, Apple may share anonymous
+          crash data with us under Apple's terms. We use it only to fix bugs.
+        </p>
+
+        <h2 id="delete">Deleting your data</h2>
+        <ul>
+          <li>
+            <b>On your iPhone:</b> in the app, tap <b>Forget this link</b>. This removes the link's secret from the
+            Keychain and erases your conversation history from the phone. Deleting the app removes its stored data
+            too.
+          </li>
+          <li>
+            <b>On the relay:</b> in Yo on your computer, go to <b>Settings → Phone</b> and tap <b>Turn off</b> (or
+            <b>New link</b>). Yo deletes the whole mailbox from the relay, and the old link stops working. You can also
+            ask Yo: "Turn off Yo Phone." Even if you never do, mailboxes expire on their own once your Yo stops
+            checking in (after about 30 days).
+          </li>
+          <li>
+            <b>On your Yo computer:</b> your conversations are part of your Yo, and you can delete them there.
+          </li>
+        </ul>
+
+        <h2 id="web">Yo Phone on the web</h2>
+        <p>
+          Yo Phone (<span class="nowrap">yo-phone.vercel.app</span>) works the same way, in your browser. The secret part of your link comes after
+          the <code>#</code> in the address, which browsers never send to the website. The web app keeps your link and
+          history in your browser's local storage on your phone, and <b>Forget this phone</b> clears them. Drive mode
+          uses your browser's speech features, which are provided by your browser and operating system. The site uses
+          no cookies, analytics or third-party scripts.
+        </p>
+
+        <h2 id="demo">Demo mode</h2>
+        <p>
+          "Try the demo" runs entirely on your iPhone with made-up replies. It doesn't contact the relay or any
+          server, and nothing you type in it leaves your phone.
+        </p>
+
+        <h2 id="security">Security</h2>
+        <p>
+          Messages are encrypted with AES-GCM using keys derived from your link's secret (HKDF), and Yo's replies are
+          signed (Ed25519), using Apple's built-in cryptography. Your link is your key: <b>anyone who has it can
+          text your Yo as you</b>, so keep it to yourself. If you think someone else has it, make a new link in Yo;
+          the old one stops working right away.
+        </p>
+
+        <h2 id="children">Children</h2>
+        <p>
+          Yo is a tool for adults who run their own Yo. It isn't directed to children under 13 (or the minimum age
+          in your country), and we don't knowingly collect personal information from children. Since we don't
+          collect personal information at all, there's nothing for us to delete, but if you have a concern, contact
+          us below.
+        </p>
+
+        <h2 id="rights">Your rights</h2>
+        <p>
+          Depending on where you live (for example under the GDPR in the EU and UK, or state laws like the CCPA in
+          California), you may have the right to access, correct or delete personal data about you. Because your
+          data stays on your devices and the relay holds only encrypted envelopes we can't read or link to you, you
+          can exercise these rights directly with the deletion options above. You can also contact us with any
+          request or question.
+        </p>
+
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+          If we change how the app handles data, we'll update this page and the date at the top before the change
+          takes effect. If a change is significant, we'll also say so in the app's release notes.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <div class="legal-contact">
+          <p>Questions about privacy: in Yo, use <b>Settings → Bug reports → Report a problem</b>. It reaches us directly, no account needed.</p>
+          <p data-email-only hidden>Or email us at <a href="/support#contact" data-support-email data-show-address>our support address</a>.</p>
+          <p>You can also <a href="https://github.com/JuniorSua/yo-app/issues">open an issue on GitHub</a>. Please don't post your phone link there.</p>
+        </div>
+        <p>See also: <a href="/support">Help</a> · <a href="/terms">Terms</a>.</p>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <a class="brand" href="/" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="24" height="24" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav aria-label="Footer">
+          <a href="/">Home</a>
+          <a href="/#support">Support Yo</a>
+          <a href="/support">Help</a>
+          <a href="/privacy">Privacy policy</a>
+          <a href="/terms">Terms</a>
+          <a href="/support#contact" data-support-email data-email-only hidden>Contact</a>
+          <a href="https://github.com/JuniorSua/yo-app">GitHub</a>
+        </nav>
+        <span class="footer-copy">© 2026 Yo · Apache-2.0</span>
+      </div>
+    </footer>
+  </body>
+</html>

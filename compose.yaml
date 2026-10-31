@@ -1,0 +1,34 @@
+# yo-computer: the agent's own Linux computer. Only agentd is published, and only on loopback.
+#   YO_AGENTD_TOKEN=$(openssl rand -hex 32) docker compose up -d yo-computer
+name: yo
+
+services:
+  yo-computer:
+    image: yo-computer:dev
+    build:
+      context: .
+      dockerfile: computer/Dockerfile
+    ports:
+      - "127.0.0.1:7801:7801"
+    environment:
+      YO_AGENTD_TOKEN: ${YO_AGENTD_TOKEN:?set YO_AGENTD_TOKEN (32+ chars)}
+      TZ: ${YO_TZ:-America/New_York}
+    shm_size: 1g
+    mem_limit: 4500m
+    pids_limit: 4096
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - yo-data:/data
+    restart: unless-stopped
+    init: false
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  yo-data:

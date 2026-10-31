@@ -1,0 +1,974 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "./styles/shell.css";
+@import "./styles/chat.css";
+@import "@yo/avatar/avatar.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------ Design tokens ------------------------------ */
+/* Yo 2, Dots-calm: a white canvas, light grey side columns, near-black ink and 1px hairline rings. The only
+   saturated colour belongs to an agent: its accent (lib/accent.ts) tints its own world (your bubbles, its send
+   button, its computer frame, its unread dot). Yo's yellow is Yo's accent, not the app's. Token names are the ones
+   the rest of the app already uses; `--rail`, `--unread` and `--online` are new. */
+
+:root,
+.light {
+  --bg: #ffffff;
+  /* The rail and the roster: one light grey column beside the white canvas. */
+  --sidebar: #f7f7f7;
+  --rail: #f7f7f7;
+  --card: #ffffff;
+  --elevated: #ffffff;
+  /* An agent's reply. Your own bubbles take the agent's accent. */
+  --bubble: #f3f3f3;
+  --border: rgb(0 0 0 / 0.09);
+  --border-strong: rgb(0 0 0 / 0.14);
+  --fg: #0d0d0d;
+  --fg-2: #4d4d4d;
+  /* AA (4.5:1) on every light surface, #efefef included. Faint is for meta and icons (3:1). */
+  --muted: #6b6b6b;
+  --faint: #8a8a8a;
+  --hover: rgb(0 0 0 / 0.04);
+  --active: rgb(0 0 0 / 0.065);
+  /* "Brand" is plain ink now: primary buttons are black pills, as in Dots. */
+  --brand: #0d0d0d;
+  --brand-ink: #0d0d0d;
+  --brand-fg: #ffffff;
+  --link: #215cf3;
+  --focus: #215cf3;
+  --unread: #215cf3;
+  --online: #22c55e;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --working: #215cf3;
+  /* An agent's colour until the shell sets the open agent's (Dots' default slate). */
+  --accent: #7c9cc3;
+  --accent-ink: #0d0d0d;
+  --accent-soft: #edf1f6;
+  --accent-text: #4c6a8f;
+  /* Very soft, low-opacity shadows. Most cards also draw a 1px border, so only the floating ones carry a ring. */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.03), 0 4px 16px rgb(0 0 0 / 0.05);
+  --shadow-raised: 0 0 0 1px rgb(0 0 0 / 0.07), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-float: 0 0 0 1px rgb(0 0 0 / 0.06), 0 4px 18px rgb(0 0 0 / 0.07);
+  --shadow-pop:
+    0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.04), 0 12px 32px -8px rgb(0 0 0 / 0.14);
+  --shadow-dialog: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 24px 72px -16px rgb(0 0 0 / 0.22);
+  --scrim: rgb(0 0 0 / 0.22);
+  --screen-bg: #f3f3f3;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #171717;
+  --sidebar: #1b1b1b;
+  --rail: #1b1b1b;
+  --card: #1f1f1f;
+  --elevated: #262626;
+  --bubble: #2a2a2a;
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.13);
+  --fg: #ececec;
+  --fg-2: #c4c4c4;
+  --muted: #a3a3a3;
+  --faint: #7a7a7a;
+  --hover: rgb(255 255 255 / 0.05);
+  --active: rgb(255 255 255 / 0.085);
+  --brand: #ececec;
+  --brand-ink: #ececec;
+  --brand-fg: #171717;
+  --link: #6ea8fe;
+  --focus: #6ea8fe;
+  --unread: #6ea8fe;
+  --online: #22c55e;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --working: #6ea8fe;
+  --accent: #7c9cc3;
+  --accent-ink: #0d0d0d;
+  --accent-soft: #2a2e33;
+  --accent-text: #9db4d3;
+  /* Shadows can't be seen on dark surfaces: a faint white ring does the work, plus depth for what floats. */
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-soft: 0 0 0 1px rgb(255 255 255 / 0.03), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.09), 0 4px 16px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.08), 0 16px 40px -12px rgb(0 0 0 / 0.6);
+  --shadow-dialog: 0 0 0 1px rgb(255 255 255 / 0.08), 0 28px 80px -20px rgb(0 0 0 / 0.75);
+  --scrim: rgb(0 0 0 / 0.55);
+  --screen-bg: #0f0f0f;
+  color-scheme: dark;
+}
+
+/* Air Glass is a material, not a palette. Everything is solid by default (Dots' Mac app is flat white with grey
+   columns); in the Mac app, macOS draws a frosted blur of the desktop behind the window (vibrancy) and the side
+   columns let a little of it through. The reading canvas always stays solid. */
+:root,
+.dark {
+  --glass-page: var(--bg);
+  --glass-sidebar: var(--sidebar);
+  --glass-card: var(--card);
+  --glass-elevated: var(--elevated);
+  --glass-line: var(--border);
+  --glass-line-strong: var(--border-strong);
+  /* Frosted chrome over a scrolling page (the phone tab bar). */
+  --glass-chrome: color-mix(in srgb, var(--card) 82%, transparent);
+}
+
+@media (prefers-reduced-transparency: no-preference) and (prefers-contrast: no-preference) {
+  html[data-native-glass="true"]:not([data-glass="off"]) {
+    --glass-sidebar: color-mix(in srgb, var(--sidebar) 78%, transparent);
+  }
+  html[data-native-glass="true"]:not([data-glass="off"]).dark {
+    --glass-sidebar: color-mix(in srgb, var(--sidebar) 84%, transparent);
+  }
+  html[data-native-glass="true"]:not([data-glass="off"]) :is(body, #root) {
+    background: transparent;
+  }
+}
+
+.air-page {
+  background: var(--glass-page);
+}
+/* Small floating surfaces (menus, popovers, the computer's windows) blur what's under them. */
+.air-overlay {
+  background-color: var(--glass-elevated);
+  backdrop-filter: blur(20px) saturate(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(1.05);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .air-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+/* Settings → Appearance → Air Glass off: solid side columns in the Mac app too. */
+html[data-glass="off"] .air-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+@media (forced-colors: active) {
+  body,
+  #root,
+  .air-page,
+  .air-overlay {
+    background: Canvas;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-sidebar: var(--glass-sidebar);
+  --color-rail: var(--rail);
+  --color-card: var(--glass-card);
+  --color-elevated: var(--glass-elevated);
+  --color-bubble: var(--bubble);
+  --color-border: var(--glass-line);
+  --color-border-strong: var(--glass-line-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-fg: var(--brand-fg);
+  --color-link: var(--link);
+  /* Link text. Kept as its own name: it once mixed toward the ink for text over glass. */
+  --color-link-ink: var(--link);
+  --color-focus: var(--focus);
+  --color-unread: var(--unread);
+  --color-online: var(--online);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-scrim: var(--scrim);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --shadow-card: var(--shadow-card);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-dialog: var(--shadow-dialog);
+  --shadow-float: var(--shadow-float);
+  --shadow-raised: var(--shadow-raised);
+  --color-working: var(--working);
+}
+
+@theme {
+  /* The platform's own font first (SF Pro on a Mac), as in Dots; Geist where there's no system UI font. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Geist Variable", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Geist Mono Variable", Menlo, monospace;
+  --text-2xs: 11px;
+  --text-2xs--line-height: 14px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 13px;
+  --text-sm--line-height: 18px;
+  /* Body: 14/20, as in Dots on desktop. */
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-md: 15px;
+  --text-md--line-height: 22px;
+  --text-lg: 16px;
+  --text-lg--line-height: 24px;
+  --text-xl: 19px;
+  --text-xl--line-height: 26px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 30px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+  --text-4xl: 40px;
+  --text-4xl--line-height: 44px;
+  /* Fields 8–12, chips and tabs 8–12, bubbles 18, cards 20–24, the composer 24, buttons are pills. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
+  --radius-card: 20px;
+  --radius-field: 24px;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  /* `backwards`, not `both`: these keyframes only define a start state, so the end looks identical, and the
+     element isn't kept as its own compositor layer forever after the animation. */
+  --animate-fade-in: fade-in 0.22s var(--ease-out-soft) backwards;
+  --animate-rise: rise 0.28s var(--ease-out-soft) backwards;
+  --animate-pop: pop 0.18s var(--ease-out-soft) backwards;
+  --animate-panel-in: panel-in 0.2s var(--ease-out-soft) backwards;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+  @keyframes panel-in {
+    from {
+      opacity: 0;
+      transform: translateX(10px);
+    }
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(2px);
+    }
+  }
+}
+
+/* ---------------------------------- Base ---------------------------------- */
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01", "cv11";
+    overflow: hidden;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--link) 35%, transparent);
+  }
+  /* Hand cursor on everything clickable. :where() keeps this at zero specificity, so cursor-* utilities
+     (zoom, grab, resize) still win. */
+  :where(
+    button,
+    a[href],
+    summary,
+    label[for],
+    select,
+    input:is([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+    [role="button"],
+    [role="link"],
+    [role="tab"],
+    [role="switch"],
+    [role="checkbox"],
+    [role="radio"],
+    [role="option"],
+    [role="combobox"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="menuitemradio"]
+  ) {
+    cursor: pointer;
+  }
+  :where(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: default;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--faint);
+  }
+}
+
+/* Thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--fg) 14%, transparent) transparent;
+}
+
+/* Soft fade at the top/bottom edge of a scroll area, only on the side that has more to scroll. Scroll-driven
+   animations grow each fade over the first/last few px of scroll, so nothing fades at rest. Tune the depth per
+   element with [--scroll-fade:16px]. */
+@property --fade-top {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --fade-bottom {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes scroll-fade-top {
+  to {
+    --fade-top: var(--scroll-fade, 36px);
+  }
+}
+@keyframes scroll-fade-bottom {
+  from {
+    --fade-bottom: var(--scroll-fade, 36px);
+  }
+}
+@utility scroll-fade {
+  @supports (animation-timeline: scroll()) {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)),
+      transparent
+    );
+    animation-name: scroll-fade-top, scroll-fade-bottom;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self), scroll(self);
+    animation-range:
+      0 var(--scroll-fade, 36px),
+      calc(100% - var(--scroll-fade, 36px)) 100%;
+  }
+}
+
+@keyframes viewer-hint {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  10%,
+  78% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Electron window chrome */
+.app-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+.app-drag :is(button, a, input, textarea, select, [role="button"], .no-drag) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* ------------------------------- Utilities -------------------------------- */
+
+@utility shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--muted) 35%,
+    var(--fg) 50%,
+    var(--muted) 65%,
+    var(--muted) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@keyframes caret {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.stream-caret::after,
+.streaming > :last-child:not(ul, ol, table, pre)::after,
+.streaming > :last-child:is(ul, ol) > li:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.17em;
+  border-radius: 2px;
+  background: var(--brand);
+  animation: caret 1s steps(1) infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.72);
+    opacity: 0.55;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.glass {
+  background: var(--glass-elevated);
+  backdrop-filter: blur(20px) saturate(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(1.05);
+}
+
+/* ------------------------------ Markdown prose ----------------------------- */
+
+.prose-yo {
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: -0.004em;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+.prose-yo > * + * {
+  margin-top: 0.85em;
+}
+/* Team chat (agent-to-agent) replies: a step smaller than the main conversation. */
+.prose-yo.prose-team {
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.prose-yo.prose-team > * + * {
+  margin-top: 0.6em;
+}
+.prose-yo :where(h1, h2, h3, h4) {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.2em;
+}
+.prose-yo h1 {
+  font-size: 1.35em;
+}
+.prose-yo h2 {
+  font-size: 1.2em;
+}
+.prose-yo h3 {
+  font-size: 1.05em;
+}
+.prose-yo strong {
+  font-weight: 600;
+}
+.prose-yo a {
+  color: var(--link);
+  text-decoration: none;
+}
+.prose-yo a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-yo :where(ul, ol) {
+  padding-left: 1.3em;
+}
+.prose-yo ul {
+  list-style: disc;
+}
+.prose-yo ol {
+  list-style: decimal;
+}
+.prose-yo li + li {
+  margin-top: 0.25em;
+}
+.prose-yo li::marker {
+  color: var(--muted);
+}
+.prose-yo code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--active);
+  border-radius: 5px;
+  padding: 0.12em 0.36em;
+}
+/* A fenced block: a card with a label + Copy bar on top. Everything wraps; nothing scrolls sideways. */
+.prose-yo .code-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.prose-yo .code-card-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 4px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--hover);
+}
+.prose-yo .code-card-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.prose-yo pre {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.prose-yo .code-card pre {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 14px 12px;
+}
+/* Messages, emails and notes to copy: normal text, like the rest of the reply. */
+.prose-yo .code-card pre.is-text {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.65;
+  padding: 12px 16px 14px;
+}
+.prose-yo pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+.prose-yo blockquote {
+  border-left: 2px solid var(--border-strong);
+  padding-left: 12px;
+  color: var(--fg-2);
+}
+.prose-yo hr {
+  border-color: var(--border);
+}
+/*
+ * Tables sit on a card: a tinted header row, soft row stripes and a hover row, so a wide comparison stays easy
+ * to scan. One too wide for the chat scrolls inside its own frame instead of being cut off or squeezed.
+ */
+.prose-yo .table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow-x: auto;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}
+.prose-yo table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.prose-yo th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--fg-2);
+  background: var(--active);
+  white-space: nowrap;
+}
+.prose-yo :where(th, td) {
+  padding: 9px 14px;
+  overflow-wrap: break-word;
+  min-width: 6em;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.prose-yo tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--active) 45%, transparent);
+}
+.prose-yo tbody tr:hover td {
+  background: var(--hover);
+}
+.prose-yo tr:last-child td {
+  border-bottom: 0;
+}
+.prose-yo td:first-child {
+  font-weight: 500;
+}
+
+/* A revised draft: what's new is marked, what's gone is struck through. */
+.draft-add {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.draft-del {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-radius: 3px;
+}
+
+/* xterm */
+.xterm {
+  padding: 10px 12px;
+  height: 100%;
+}
+.xterm .xterm-viewport {
+  background: transparent;
+}
+
+/* Reduced motion: must beat component-level animation declarations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
+    animation-duration: 0.001ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* The chat column is a size container; its head, bar and rows live in styles/chat.css. */
+.workspace-app {
+  --workspace-header: 74px;
+}
+.chat-column {
+  container-type: inline-size;
+}
+.presence-card {
+  width: 288px;
+  padding: 16px;
+  border-radius: 20px;
+}
+.presence-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.presence-card-head strong {
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.presence-card p {
+  margin: 6px 0 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.presence-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: scale 0.15s var(--ease-out-soft);
+}
+.presence-primary:active {
+  scale: 0.98;
+}
+.presence-primary:hover {
+  filter: brightness(1.1);
+}
+.presence-primary svg,
+.presence-more svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.presence-more {
+  display: flex;
+  flex-direction: column;
+  margin: 8px -6px -6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.presence-more > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+.presence-more > button > svg {
+  color: var(--muted);
+}
+.presence-more > button:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+/* Tasks · Needs you · Routines · Activity: quiet text tabs, the current one on a grey pill (Dots-style). */
+.workspace-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 22px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+.workspace-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    scale 0.12s var(--ease-out-soft);
+}
+.workspace-tabs button:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.workspace-tabs button:active {
+  scale: 0.96;
+}
+.workspace-tabs [aria-current="page"],
+.workspace-tabs [aria-current="page"]:hover {
+  background: var(--active);
+  color: var(--fg);
+}
+.workspace-tabs button > b {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--unread);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.dark .workspace-tabs button > b {
+  color: #0d0d0d;
+}
+.workspace-highlight {
+  outline: 2px solid var(--link);
+  outline-offset: 5px;
+  border-radius: 8px;
+}
+@media (max-width: 600px) {
+  /* Room under the chat (message box) and the pages so nothing hides behind the tab bar. */
+  .chat-column {
+    padding-bottom: var(--tabbar-space);
+  }
+  .workspace-app .air-page .page-body {
+    padding-bottom: calc(var(--tabbar-space) + 72px);
+  }
+  .composer-dock {
+    padding-bottom: 6px;
+  }
+  .workspace-app [data-testid="timeline"] > div {
+    padding: 24px 18px;
+  }
+  .workspace-app .air-page > .relative.shrink-0 {
+    padding-inline: 14px;
+  }
+  .workspace-app .air-page .scroll-fade > .mx-auto {
+    padding-inline: 20px;
+  }
+  .workspace-app .air-page .mb-7.flex.items-end {
+    flex-wrap: wrap;
+  }
+  .workspace-tabs {
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+  .workspace-tabs button {
+    padding-inline: 12px;
+    font-size: 13px;
+  }
+  /* Make: two to a row on phones. */
+  .workspace-app [data-testid="artifacts-grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .page-heading > div {
+    flex-basis: 100%;
+  }
+}
+
+/* ------------------------------ Floating + button ------------------------------ */
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow:
+    0 0 0 0.5px rgb(1 5 7 / 0.1),
+    0 6px 16px -6px rgb(1 5 7 / 0.35),
+    0 14px 32px -16px rgb(1 5 7 / 0.3);
+  transition: transform 160ms var(--ease-out-soft, ease-out);
+}
+.fab:hover {
+  transform: scale(1.04);
+}
+.fab:active {
+  transform: scale(0.94);
+}
+.fab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.fab svg {
+  width: 24px;
+  height: 24px;
+  transition: transform 200ms var(--ease-out-soft, ease-out);
+}
+.fab.is-open svg {
+  transform: rotate(45deg);
+}
+@media (max-width: 600px) {
+  /* Above the floating tab bar. */
+  .fab {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    right: 16px;
+  }
+}
+
+/* ------------------------------ Make: kind colours and the + menu ------------------------------ */
+/* Each kind's colour (lib/make.ts KIND_COLOUR): text-safe (WCAG AA) on the card and on its 13% tint. */
+:root,
+.light {
+  --kind-red: #c0322b;
+  --kind-amber: #9a5a05;
+  --kind-violet: #6a48d6;
+  --kind-blue: #2459c2;
+  --kind-grey: #62626b;
+}
+.dark {
+  --kind-red: #f87171;
+  --kind-amber: #fbbf24;
+  --kind-violet: #b39dff;
+  --kind-blue: #82abff;
+  --kind-grey: #a1a1aa;
+}
+.make-menu {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  z-index: 30;
+}
+.make-menu > li {
+  animation: make-fan-in 240ms var(--ease-out-soft, ease-out) backwards;
+  /* Nearest the + first, 45ms apart. */
+  animation-delay: calc(var(--fan-order, 0) * 45ms);
+  transform-origin: bottom right;
+}
+@keyframes make-fan-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+}
+@media (max-width: 600px) {
+  .make-menu {
+    right: 16px;
+    bottom: calc(164px + env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .make-menu > li {
+    animation-delay: 0s;
+  }
+}

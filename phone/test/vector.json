@@ -1,0 +1,26 @@
+{
+  "secret": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "authToken": "shxIzTrsnDuy1iniyCgu1w1j2oLXhnPPZtvxSMECIs0",
+  "box": "a0d9fd4d7641efdc1fd140df6d46bee0e242384590f91e149a8164c3ce47a410",
+  "dir": "in",
+  "aad": "yo-phone/v1/in",
+  "iv": "oKGio6Slpqeoqaqr",
+  "plaintext": {
+    "v": 1,
+    "t": "msg",
+    "id": "vector-1",
+    "text": "Yo, café at 5? 👋",
+    "at": 1767225600000
+  },
+  "plaintextJson": "{\"v\":1,\"t\":\"msg\",\"id\":\"vector-1\",\"text\":\"Yo, café at 5? 👋\",\"at\":1767225600000}",
+  "envelope": "oKGio6Slpqeoqaqrsopf9pC3af8GKXdfu9li3rqiVIzsVKxqmAO9UnxqqxhrqvTbl1FLgDzyBTml1PpS4sx_V00UrNySufxoCjMmQCVSmiG0l5j6n2U9BnAEdep4NtOR_TwszT8kW0EOwyh3WfQ",
+  "registerKey": "yo-phone-test-register-key",
+  "admit": "jY3o3uB5gcBP6Sd7hq000fnWtIMv7910wsgDIxFjC2s",
+  "coreCred": "FfobAgcPCJ2mcFLHYgkyFXgEn5r7KhzEDpxXerV0AaA",
+  "signSeedHex": "404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f",
+  "signPkcs8": "MC4CAQAwBQYDK2VwBCIEIEBBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5f",
+  "signPub": "JUO5L_EJVRFHatyDadtt3JM2ZaEZeN2hQE7hBmypVZ0",
+  "sigMessage": "yo-phone/v1/out\noKGio6Slpqeoqaqrsopf9pC3af8GKXdfu9li3rqiVIzsVKxqmAO9UnxqqxhrqvTbl1FLgDzyBTml1PpS4sx_V00UrNySufxoCjMmQCVSmiG0l5j6n2U9BnAEdep4NtOR_TwszT8kW0EOwyh3WfQ",
+  "sig": "-4LFYTlkSG04V2exUqxedKG26y4L99lzEf21dxc8W3GS1HuPx4ZF4wRqpfxDnB_Y2YxuI7gpqTNDN61ECtthCw",
+  "link": "https://yo-phone.vercel.app/#k=AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8&a=jY3o3uB5gcBP6Sd7hq000fnWtIMv7910wsgDIxFjC2s&p=JUO5L_EJVRFHatyDadtt3JM2ZaEZeN2hQE7hBmypVZ0"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@yo/agentd",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "tsx src/main.ts",
+    "dev-client": "tsx scripts/dev-client.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "1.5.1",
+    "@anthropic-ai/claude-agent-sdk": "0.3.285",
+    "@modelcontextprotocol/sdk": "1.31.0",
+    "@yo/contracts": "workspace:*",
+    "node-pty": "1.1.0",
+    "ws": "8.22.0",
+    "zod": "4.3.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.20.0",
+    "@yo/testkit": "workspace:*"
+  }
+}

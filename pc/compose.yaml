@@ -1,0 +1,142 @@
+# Yo, PC edition: Yo's core and the agent's computer run in Docker on this PC (Windows with Docker Desktop, or
+# Linux with Docker Engine; Docker Desktop on a Mac works too), and you open Yo in your browser at
+# http://127.0.0.1:7777. Installed and run by the installer and the `yo-app` helper (pc/install.ps1,
+# pc/install.sh, pc/yo-app, pc/yo-app.ps1); see pc/README.md. Attached to every release as yo-app-compose.yaml.
+#
+# The helper always runs, from the install folder:
+#   docker compose --project-name <YO_APP_PROJECT> -f compose.yaml --env-file .env <command>
+# with a private .env next to this file (written by the installer; mode 600 on Linux, current user only on Windows):
+#   YO_AGENTD_TOKEN=<64 hex>          core <-> computer secret (kept on reinstall and update)
+#   YO_PORT=7777                      the browser port (the next free one up to 7799 if 7777 is taken)
+#   YO_TZ=Europe/Lisbon               the PC's time zone (IANA name)
+#   YO_COMPUTER_MEMORY=4500m          3g on PCs with less than 16 GB
+#   YO_CORE_IMAGE=ghcr.io/juniorsua/yo-core:<version>
+#   YO_COMPUTER_IMAGE=ghcr.io/juniorsua/yo-computer:<version>
+#   YO_VERSION=<version>  YO_APP_PROJECT=yo-app  YO_APP_LINK=<Linux: the yo-app symlink>   (for the helper)
+#
+# Security, the same limits as computer/compose.server.yaml, but without host networking (Docker Desktop has
+# none, and it would put core on every interface of the Docker VM):
+# - Core is published on 127.0.0.1 only: reachable from this PC's browser, never from the network. It listens on
+#   the SAME port inside the container, so the browser's Origin (http://127.0.0.1:<port>) matches core's allowlist.
+# - The agent's computer is not published at all. Core reaches it on the private network at yo-computer:7801 with
+#   YO_AGENTD_TOKEN. The computer can reach core's address on that network, so core drops every connection from
+#   it (YO_DENY_PEERS=yo-computer): a prompt-injected agent can't reach core's sign-in endpoints.
+# - Data lives in two named volumes (no Windows path or permission problems). `init` makes core-data writable
+#   by core's user (node, uid 1000) and exits; it has no network and only the two capabilities it needs.
+# - No `cpus:` limit on the computer: Docker refuses to start a container asking for more CPUs than the engine
+#   has, and Docker Desktop users can lower its CPUs at any time. Memory and process limits stay.
+# - Both restart with Docker (restart: unless-stopped), so Yo keeps running with the browser closed and comes back
+#   after a reboot. `yo-app stop` stops them until `yo-app start`.
+name: yo-app
+
+services:
+  init:
+    image: ${YO_CORE_IMAGE:?YO_CORE_IMAGE is missing from .env; run the Yo installer again}
+    user: "0:0"
+    entrypoint: []
+    command: ["sh", "-c", "chown 1000:1000 /data && chmod 700 /data"]
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, FOWNER]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      disable: true
+    volumes:
+      - core-data:/data
+    mem_limit: 64m
+    pids_limit: 16
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "1"
+
+  yo-core:
+    image: ${YO_CORE_IMAGE:?YO_CORE_IMAGE is missing from .env; run the Yo installer again}
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      yo-computer:
+        condition: service_started
+    environment:
+      YO_AGENTD_TOKEN: ${YO_AGENTD_TOKEN:?YO_AGENTD_TOKEN is missing from .env; run the Yo installer again}
+      YO_AGENTD_URL: http://yo-computer:7801
+      YO_HOST: 0.0.0.0
+      YO_PORT: ${YO_PORT:-7777}
+      YO_EDITION: pc
+      YO_CORE_PLACEMENT: this-pc
+      YO_RUNNER_PLACEMENT: this-pc
+      YO_HELPER_COMMAND: yo-app
+      YO_DENY_PEERS: yo-computer
+      TZ: ${YO_TZ:-UTC}
+    ports:
+      - "127.0.0.1:${YO_PORT:-7777}:${YO_PORT:-7777}"
+    volumes:
+      - core-data:/data
+    networks:
+      - yo
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 1g
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:'+process.env.YO_PORT+'/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  yo-computer:
+    image: ${YO_COMPUTER_IMAGE:?YO_COMPUTER_IMAGE is missing from .env; run the Yo installer again}
+    # Docker Desktop gives every container a name for the PC itself, which leads to Yo's published port. The agent
+    # has no use for it: point those names nowhere. (Its raw address still works; core's sign-in can't be guessed,
+    # and the agent never sees a session. See docs/web-app/README.md, "Known limits".)
+    extra_hosts:
+      - "host.docker.internal:0.0.0.0"
+      - "gateway.docker.internal:0.0.0.0"
+    environment:
+      YO_AGENTD_TOKEN: ${YO_AGENTD_TOKEN:?YO_AGENTD_TOKEN is missing from .env; run the Yo installer again}
+      TZ: ${YO_TZ:-UTC}
+    volumes:
+      - computer-data:/data
+    networks:
+      - yo
+    shm_size: 1g
+    mem_limit: ${YO_COMPUTER_MEMORY:-4500m}
+    # Caps runaway or injected fork bombs.
+    pids_limit: 4096
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  yo: {}
+
+volumes:
+  core-data: {}
+  computer-data: {}

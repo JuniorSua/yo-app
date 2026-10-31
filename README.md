@@ -1,41 +1,69 @@
 # Yo
 
-**Your AI, your subscription, a private workspace on your Mac or PC.**
+**Switch models, not apps.**
 
-Yo is a Mac app for **a personal assistant, Yo**, that works in **a private workspace on your Mac or PC**: a Linux
-desktop with a real Chromium browser, a terminal and files, running in a small virtual machine on your Mac (or on
-a PC at home). It never touches your browser or your files unless you share them, and you can watch its screen live
-and **Take over** whenever it needs a login or a 2FA code.
+Yo is a free, open-source home for a team of AI agents, on the subscriptions you already have: Claude, ChatGPT
+and Grok. Yo is the lead and your front door. Add teammates when you want them, give each one a job and the model
+that suits it, and they work side by side on their own computer while you get on with your day. When a better
+model comes out, you change a dropdown, not your app.
 
-It runs on **the Claude, ChatGPT or Grok plan you already pay for** (Claude Pro/Max through Claude Code,
-ChatGPT through Codex, or SuperGrok / X Premium through the Grok CLI). No API key and no extra cost. You can
-switch between them at any time, and Yo keeps its memory and history.
-
-The app is laid out around that conversation: **Chat** (talk to Yo; **New request** with ⌘N), **Activity** (what
-it did, what needs your OK, and routines), **Library** (files and memories) and **Search** (messages, memories,
-routines and files, opened right where they are). The day has two spaces: **Work** with Yo and **Personal** with
-Pip, a second assistant for the rest of life. Yo follows your work hours (Settings → Work & Personal), or switch
-with ⌘⇧M. Assistants you made before the redesign keep their chats and settings under
-**Settings → Legacy workspace**.
+**So what are you selling me?** Nothing. Yo is free, and you can't pay us for AI. You bring the Claude, ChatGPT or
+Grok plan you already pay for, sign in on that company's own page, and Yo drives their official tools (Claude
+Code, Codex and the Grok CLI). Your prompts go from your computer straight to them, never through us, and your
+agents' memory stays on your machine. Every line of Yo is public under Apache-2.0. If we ever go the wrong way,
+fork it.
 
 ![Yo](https://theyoapp.com/assets/og.png)
 
-Yo is **$10 a month** (cancel any time): download it below, then subscribe on [theyoapp.com](https://theyoapp.com/#pricing) and paste your license key into Yo.
-
 **On Windows or Linux?** Yo runs there too, in your browser: see [Windows and Linux](#windows-and-linux-in-your-browser).
 
+- [What Yo does](#what-yo-does)
+- [Honest notes](#honest-notes)
 - [What you need](#what-you-need)
 - [Install](#install)
 - [Windows and Linux (in your browser)](#windows-and-linux-in-your-browser)
-- [Subscribe and activate](#subscribe-and-activate)
 - [Connect your model](#connect-your-model)
 - [Yo sets up its computer](#yo-sets-up-its-computer)
 - [Updates](#updates)
 - [Getting help](#getting-help)
 - [Uninstall](#uninstall)
-- [Pricing and license](#pricing-and-license)
-- [Support Yo ($10 a month)](#support-yo-10-a-month)
+- [Build it from source](#build-it-from-source)
+- [Support Yo](#support-yo)
+- [Contributing](#contributing)
 - [License](#license)
+
+## What Yo does
+
+- **A team, not a chatbot.** Yo leads. Teammates are optional: one for research, one for building, one for your
+  inbox, and so on. Each has a name, a job, its own memory and its own Softie, a small character in its own
+  colour. They hand work to each other quietly ("Messaged Dew") and only come to you when something needs you.
+- **Switch models, not apps.** Every agent runs on the subscription and model you pick for it, and you can change
+  both from the chat header. An agent keeps its memory and history when it moves from Claude to ChatGPT or Grok.
+- **Their own computer, on yours.** Your agents work in a private workspace: a Linux desktop with a real Chromium
+  browser, a terminal and files, in a small virtual machine on your Mac (or on a PC at home). Watch it live, and
+  **Take over** when a site wants a login or a 2FA code. It never touches your own browser or files unless you
+  share them.
+- **Asks before it acts.** Purchases, sending messages, posting and anything with a password wait for your OK.
+- **Tasks.** What you asked for and what your agents said they'd do, on one list, so nothing quietly drops.
+  Routines run on a schedule.
+- **Pages.** Agents can make you a page (a chart, a dashboard, a plan) that you open, pin and download.
+- **From your phone.** Text your agents, answer their questions and approve things with
+  [Yo Phone](docs/phone/GUIDE.md), a web app you add to your Home Screen. Messages are end-to-end encrypted.
+- **Telegram, if you like.** Chat, notifications and approvals through your own Telegram bot.
+- **Work and Personal.** Two spaces with their own agents and memory, following your work hours.
+
+## Honest notes
+
+- **Bring your own computer.** Your agents' computer runs on your machine: a Mac with Apple silicon and 16 GB of
+  memory or more (or a Windows or Linux PC, in the browser). There's no cloud option yet.
+- **Your subscription's limits apply.** Yo uses your plan the same way Claude Code, Codex and the Grok CLI do. A team
+  that works all day uses it faster than you would on your own.
+- **One shared browser.** Each agent gets its own screen and windows, but they share one browser, so they all have
+  the same logins.
+- **Not notarized by Apple.** That takes a paid developer account, so macOS asks once before the first open (see
+  [Install](#install)).
+- **Small team.** Yo is built by one developer and a lot of AI agents. Expect rough edges, and please
+  [report them](#getting-help).
 
 ## What you need
 
@@ -43,7 +71,7 @@ Yo is **$10 a month** (cancel any time): download it below, then subscribe on [t
 - **A Claude Pro/Max, ChatGPT or Grok (SuperGrok / X Premium) subscription.** Those are the three supported
   models.
 - For the agent's computer on this Mac (the app checks each of these for you, in plain words, before it starts
-  anything):
+  anything; the reasons and sources are in [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)):
 
 | | Minimum | Recommended |
 | --- | --- | --- |
@@ -121,9 +149,8 @@ curl -fsSL https://github.com/JuniorSua/yo-app/releases/latest/download/install.
 The installer checks your PC (each check in plain words), installs Docker if you agree, downloads Yo (about 1 GB),
 starts it and opens it in your browser, signed in. On Windows it adds a **Yo** icon to the Start menu and the
 desktop. Yo keeps running in the background with Docker, also with the browser closed. Running the same command
-again repairs or updates Yo and keeps your data. Then [activate](#subscribe-and-activate) and
-[connect your model](#connect-your-model) as on the Mac (Claude Code on Windows:
-`irm https://claude.ai/install.ps1 | iex`).
+again repairs or updates Yo and keeps your data. Then [connect your model](#connect-your-model) as on the Mac
+(Claude Code on Windows: `irm https://claude.ai/install.ps1 | iex`).
 
 **The `yo-app` command** (in PowerShell, Command Prompt or a Linux terminal):
 
@@ -136,19 +163,6 @@ again repairs or updates Yo and keeps your data. Then [activate](#subscribe-and-
 | `yo-app update` | Get the newest Yo (your data stays) |
 | `yo-app logs` | Yo's recent messages, for bug reports |
 | `yo-app uninstall` | Remove Yo (asks before deleting your data) |
-
-## Subscribe and activate
-
-Downloading Yo is open to everyone; using it takes a subscription ($10 a month, cancel any time).
-
-1. Open Yo. It shows **Activate Yo**.
-2. Click **Subscribe · $10/month**: it opens Stripe's secure checkout (the same one as on [theyoapp.com](https://theyoapp.com/#pricing)).
-3. After you pay, the page that opens shows your **license key** (it starts with `yo_`). Copy it.
-4. Paste it into Yo and click **Activate**. One key works on all your own Macs.
-
-Yo checks the subscription once a day, and keeps working for up to 7 days without internet. Lost your key? Use
-[theyoapp.com/support](https://theyoapp.com/support#license-key). Cancel or get a refund:
-[Payments, cancelling and refunds](https://theyoapp.com/support#billing).
 
 ## Connect your model
 
@@ -222,7 +236,7 @@ computer."* (If Pip's chat opens instead, press ⌘⇧M to switch to Work.) It o
 
 Yo checks GitHub Releases for a newer version (when it starts and every few hours; Settings → About has a
 **Check for updates** button). When there is one, the update button (bottom left) says
-**"Yo 0.1.N is available: Download"**, which downloads the new .dmg in your browser. Then:
+**"Yo 2.0.N is available: Download"**, which downloads the new .dmg in your browser. Then:
 
 1. **Quit Yo:** ⌘Q, or **Quit Yo** in its menu-bar icon (closing the window isn't enough: Yo keeps running in
    the menu bar, and macOS won't replace an app that's open).
@@ -294,12 +308,83 @@ docker image rm ghcr.io/juniorsua/yo-core ghcr.io/juniorsua/yo-computer
 rm -rf ~/yo
 ```
 
-## Pricing and license
+## Build it from source
 
-Yo is $10 a month, to support its ongoing development and updates. Cancel any time; refunds on request within
-10 days of a payment ([details](https://theyoapp.com/support#billing)).
+You need a Mac with Apple silicon, Node 22 (see `.nvmrc`), pnpm 9 (`corepack enable` picks the right version),
+and Xcode's command line tools for the small Swift helper.
 
-Yo is proprietary software: see [LICENSE](LICENSE). Its source code is private. This repository is Yo's public
-home: releases, the setup prompt, and bug reports. Earlier versions (up to 0.1.618) were published under the
-Apache License 2.0, and those copies stay under it. Yo builds on ideas and code from T3 Code (MIT), Rakazo
-(Apache-2.0) and noVNC (MPL-2.0); see [NOTICE](NOTICE).
+```bash
+git clone https://github.com/JuniorSua/yo-app.git && cd yo-app
+pnpm install
+pnpm --filter @yo/core --filter @yo/web build
+pnpm app:build                 # builds Yo.app and installs it in /Applications
+```
+
+A build from this repo follows the public releases for updates, and pulls the agent's computer for its version
+from `ghcr.io/juniorsua/yo-computer`.
+
+For working on Yo itself:
+
+```bash
+pnpm check                     # typecheck + lint + unit tests
+pnpm e2e                       # Playwright UI tests against the in-browser mock backend
+pnpm --filter @yo/web dev:mock # the UI alone, with the mock backend
+pnpm dev                       # core (watch) + web (Vite) at http://127.0.0.1:5173
+pnpm computer:build            # build the agent's computer image yourself (needs Docker)
+```
+
+How it fits together:
+
+```
+Yo.app (Electron) ── starts ─▶ yo-core (Node, SQLite, 127.0.0.1:7777) ◀── web UI (React)
+                                   │  token-authed WebSocket, loopback only
+                                   ▼
+                   Colima VM ▶ yo-computer container (127.0.0.1:7801)
+                               agentd ─ Claude Agent SDK / Codex app-server / Grok ACP (grok agent stdio)
+                                      ─ per-agent desktop + headed Chromium + VNC
+                                      ─ MCP tools: browser, desktop, Yo (memory, approvals, …)
+```
+
+- **The model's tools run inside the agent's computer**, so its shell and file tools act on that machine only.
+- **Yo owns each agent's identity**, memory, scratchpad and history. That's what lets an agent move between
+  Claude, ChatGPT and Grok and stay itself.
+- **Nothing runs in anyone's cloud** except the model calls your own subscription makes (and the bug reports you
+  choose to send, encrypted). Credentials stay in your macOS Keychain, Yo's data folder (encrypted with a
+  Keychain key) and the agent's VM, never in logs. Claude's and ChatGPT's sign-ins are Claude Code's and Codex's
+  own, kept on the agent's computer.
+
+| Path | What |
+| --- | --- |
+| `apps/desktop` | Electron shell (and the Swift helper for Mac access) |
+| `apps/core` | Control plane: agents, sessions, approvals, memory, routines, secrets |
+| `apps/agentd` | Daemon inside the agent's computer: provider adapters, displays, VNC, terminal, files, MCP |
+| `apps/web` | UI (React 19, Tailwind v4, zustand, noVNC, xterm) |
+| `packages/contracts` | Shared protocol types and checks (UI ↔ core ↔ agentd) |
+| `packages/avatar` | The Yo logo and the Softies |
+| `computer/` | The agent's computer image |
+| `pc/` | Yo for Windows and Linux (in the browser): installers and the `yo-app` helper |
+| `phone/` | Yo Phone, the phone web app, and its relay |
+| `site/` | The website |
+
+## Support Yo
+
+Yo is free and open source. It always will be. If Yo gives you back a little time, you can give a little back:
+[chip in once](https://theyoapp.com/#support), or [sponsor monthly](https://github.com/sponsors/JuniorSua) on
+GitHub. It's totally optional, and everything stays free either way. A star here, or telling a friend, helps just
+as much.
+
+Support goes to the people building Yo. It isn't a charity, so it's not tax-deductible.
+
+## Contributing
+
+Small, focused pull requests are welcome: a bug fix, a clearer message, a missing test. For a bigger feature,
+please open a [feature request](https://github.com/JuniorSua/yo-app/issues/new/choose) first so we can talk it
+through before you spend the time. Opening a PR doesn't mean it will be merged. How to set up, test and send a
+change: [CONTRIBUTING.md](CONTRIBUTING.md). Security problems: [SECURITY.md](SECURITY.md), privately.
+
+## License
+
+Yo is open source under the [Apache License 2.0](LICENSE) (Apache-2.0). It builds on ideas and code patterns
+from T3 Code (MIT), Rakazo (Apache-2.0) and noVNC (MPL-2.0); see [NOTICE](NOTICE).
+
+Yo was a paid app for a few weeks in 2026. Since Yo 2 it's free again, and those paid plans have ended.

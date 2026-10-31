@@ -1,0 +1,14 @@
+{
+  "name": "yo-phone",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Yo Phone: text Yo from your phone. Static PWA plus one Vercel function (api/relay.js).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node dev/server.mjs",
+    "fake-core": "node dev/fake-core.mjs"
+  }
+}

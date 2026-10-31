@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#171717" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" href="./favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <!-- Chrome and Edge can install Yo as an app window (the PC edition opens Yo in a browser). -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Yo</title>
+    <script>
+      // Apply the last-used theme before first paint (no flash).
+      (() => {
+        let t = "dark";
+        try {
+          t = localStorage.getItem("yo.theme") || "dark";
+        } catch (_e) {}
+        if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.className = t;
+        if (window.yoDesktop?.appearance?.nativeGlass)
+          document.documentElement.dataset.nativeGlass = "true";
+        // Settings → Appearance → Air Glass off: solid, regular panels.
+        try {
+          if (localStorage.getItem("yo.airGlass") === "0") document.documentElement.dataset.glass = "off";
+        } catch (_e) {}
+        document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "dark" ? "#171717" : "#FFFFFF");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>

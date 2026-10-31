@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yo · Switch models, not apps.</title>
+    <meta
+      name="description"
+      content="Yo is a free, open-source home for a team of AI agents that run on the subscriptions you already have: Claude, ChatGPT or Grok."
+    />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:title" content="Yo · Switch models, not apps." />
+    <meta
+      property="og:description"
+      content="A free, open-source home for a team of AI agents, on the Claude, ChatGPT or Grok subscription you already have."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Yo" />
+    <!-- Link previews (Messages, Slack, X) need absolute URLs. After adding a custom domain, switch every page to
+         it with: node site/scripts/set-domain.mjs https://your-domain (see site/README.md). -->
+    <meta property="og:image" content="https://theyoapp.com/assets/og.png" />
+    <meta property="og:url" content="https://theyoapp.com/" />
+    <link rel="canonical" href="https://theyoapp.com/" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Yo · Switch models, not apps. Six little agents, Yo, Dew, Pico, Mochi, Clove and Kiki, in a row." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/assets/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script>
+      // The team hops onto the window once per visit (site.js), never with reduced motion.
+      (() => {
+        const d = document.documentElement;
+        d.classList.add("js");
+        try {
+          if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !sessionStorage.getItem("yo-intro")) {
+            d.classList.add("intro");
+            sessionStorage.setItem("yo-intro", "1");
+          }
+        } catch {}
+      })();
+    </script>
+    <script defer src="/config.js"></script>
+    <script defer src="/contact.js"></script>
+    <script defer src="/site.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="nav" data-nav>
+      <div class="nav-inner">
+        <a class="brand" href="#top" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="28" height="28" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav class="nav-links" aria-label="Main">
+          <a href="#team">Team</a>
+          <a href="#models">Subscriptions</a>
+          <a href="#computer">Computer</a>
+          <a href="#open-source">Open source</a>
+          <a href="#support">Support Yo</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div class="nav-end">
+          <a class="icon-btn" href="https://github.com/JuniorSua/yo-app">
+            <span class="sr-only">Yo on GitHub</span>
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+          </a>
+          <a class="btn btn-ink btn-sm" href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-download>Download</a>
+          <button class="nav-menu" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" data-menu>
+            <span></span><span></span>
+          </button>
+        </div>
+      </div>
+      <div class="mobile-menu" id="mobile-menu" data-mobile-menu hidden>
+        <a href="#team">Team</a>
+        <a href="#models">Subscriptions</a>
+        <a href="#computer">Computer</a>
+        <a href="#open-source">Open source</a>
+        <a href="#support">Support Yo</a>
+        <a href="#faq">FAQ</a>
+        <a href="/support">Help</a>
+        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-download>Download</a>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Hero: the pitch, then the team standing on the app -->
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <p class="hero-kicker">Yo 2 · Free and open source</p>
+          <h1 class="hero-title">Switch models,<br /> not apps<span class="dot">.</span></h1>
+          <p class="hero-sub">
+            Yo is a free, open-source home for a team of AI agents that run on the subscriptions you already have:
+            Claude, ChatGPT or Grok.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-download>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+              Download
+            </a>
+            <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+              View on GitHub
+            </a>
+          </div>
+          <p class="hero-meta">For Macs with Apple silicon. Windows and Linux run it in your browser.</p>
+        </div>
+
+        <div class="stage">
+          <div class="team" role="img" aria-label="The team: Yo, Dew, Pico, Mochi, Clove and Kiki, standing on top of the Yo app">
+            <span class="softie" data-softie style="--s: 104px; --g: 12; --i: 0"><img src="/assets/softies/dew.svg" alt="" width="104" height="104" /></span>
+            <span class="softie" data-softie style="--s: 100px; --g: 12.5; --i: 1"><img src="/assets/softies/mochi.svg" alt="" width="100" height="100" /></span>
+            <span class="softie softie-lead" data-softie style="--s: 136px; --g: 6; --i: 2"><img src="/assets/softies/yo.svg" alt="" width="136" height="136" /></span>
+            <span class="softie" data-softie style="--s: 100px; --g: 12.5; --i: 3"><img src="/assets/softies/pico.svg" alt="" width="100" height="100" /></span>
+            <span class="softie" data-softie style="--s: 104px; --g: 13.5; --i: 4"><img src="/assets/softies/clove.svg" alt="" width="104" height="104" /></span>
+            <span class="softie" data-softie style="--s: 112px; --g: 12.5; --i: 5"><img src="/assets/softies/kiki.svg" alt="" width="112" height="112" /></span>
+          </div>
+
+          <!-- A drawing of the app (HTML and CSS, made-up content). Real screenshots can replace it: img/app-*.png. -->
+          <div class="app" role="img" aria-label="The Yo app: the team in the sidebar, a conversation with Yo, and Yo's profile with its computer">
+            <div class="app-bar" aria-hidden="true">
+              <span class="lights"><i></i><i></i><i></i></span>
+              <span class="app-space">Work<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></span>
+              <span class="app-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>Search</span>
+            </div>
+            <div class="app-body" aria-hidden="true">
+              <div class="app-rail">
+                <i class="rail-ico"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z" /></svg></i>
+                <i class="rail-ico is-on"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2" /><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6" /><circle cx="16.5" cy="8" r="2.6" /><path d="M16.5 13.2c2.2 0 3.7 1.3 4.2 3.6" /></svg></i>
+                <i class="rail-ico"><svg viewBox="0 0 24 24"><path d="M4 12h3.5l2.2-5.5 4.6 11 2.2-5.5H20" /></svg></i>
+                <i class="rail-ico"><svg viewBox="0 0 24 24"><path d="M7 3.8h7l4 4V19a1.2 1.2 0 0 1-1.2 1.2H7A1.2 1.2 0 0 1 5.8 19V5A1.2 1.2 0 0 1 7 3.8z" /><path d="M13.6 4v4.2H18M9 12.5h6M9 16h4" /></svg></i>
+                <i class="rail-ico"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.6" /><path d="M9 20h6M12 16v4" /></svg></i>
+                <i class="rail-ico rail-end"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.5 1.5M16.5 16.5 18 18M6 18l1.5-1.5M16.5 7.5 18 6" /></svg></i>
+              </div>
+
+              <div class="app-side">
+                <p class="side-label">Agents<b>+</b></p>
+                <div class="side-row is-on" style="--a: var(--yo)">
+                  <span class="side-av" data-softie><img src="/assets/softies/yo-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Yo</b><small>Planning your weekend</small></span>
+                </div>
+                <div class="side-row" style="--a: var(--dew)">
+                  <span class="side-av" data-softie><img src="/assets/softies/dew-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Dew</b><small>Comparing 6 places to stay…</small></span>
+                </div>
+                <div class="side-row" style="--a: var(--kiki)">
+                  <span class="side-av" data-softie><img src="/assets/softies/kiki-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Kiki</b><small>Watching fares to Lisbon</small></span>
+                </div>
+                <div class="side-row has-dot" style="--a: var(--mochi)">
+                  <span class="side-av" data-softie><img src="/assets/softies/mochi-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Mochi</b><small class="needs">2 replies for you to check</small></span>
+                </div>
+                <div class="side-row" style="--a: var(--pico)">
+                  <span class="side-av" data-softie><img src="/assets/softies/pico-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Pico</b><small>Idle</small></span>
+                </div>
+                <div class="side-row" style="--a: var(--clove)">
+                  <span class="side-av" data-softie><img src="/assets/softies/clove-xs.svg" alt="" width="28" height="28" /></span>
+                  <span class="side-txt"><b>Clove</b><small>Idle</small></span>
+                </div>
+                <p class="side-label">Team</p>
+                <div class="side-row side-team">
+                  <span class="stack"><img src="/assets/softies/yo-xs.svg" alt="" width="20" height="20" /><img src="/assets/softies/dew-xs.svg" alt="" width="20" height="20" /><img src="/assets/softies/kiki-xs.svg" alt="" width="20" height="20" /></span>
+                  <span class="side-txt"><b>Team chat</b></span>
+                  <em class="count">2</em>
+                </div>
+              </div>
+
+              <div class="app-chat" style="--a: var(--yo)">
+                <div class="chat-head">
+                  <span class="chat-av" data-softie data-look><img src="/assets/softies/yo.svg" alt="" width="64" height="64" /></span>
+                  <span class="name-pill">Yo</span>
+                  <span class="model-chip"><i class="pv pv-claude"></i>Claude · Opus<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg></span>
+                </div>
+                <p class="chat-time">Today 9:41 AM</p>
+                <div class="chat-log">
+                  <p class="bubble bubble-me">Plan a long weekend in Lisbon for two. Keep it under $1,500.</p>
+                  <p class="bubble">On it. I'll keep it under $1,500 and check with you before I book anything.</p>
+                  <p class="handoff"><img src="/assets/softies/dew-xs.svg" alt="" width="18" height="18" />Messaged <b>Dew</b><span>Compare stays near Alfama</span></p>
+                  <p class="handoff"><img src="/assets/softies/kiki-xs.svg" alt="" width="18" height="18" />Messaged <b>Kiki</b><span>Watch Friday fares</span></p>
+                  <p class="task-chip"><i class="spin"></i>Comparing 6 stays<span>Dew</span></p>
+                </div>
+                <div class="composer">
+                  <span class="c-plus">+</span>
+                  <span class="c-text">Message Yo</span>
+                  <svg class="c-mic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3.5" width="6" height="11" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" /></svg>
+                  <span class="c-send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" /></svg></span>
+                </div>
+              </div>
+
+              <div class="app-insp" style="--a: var(--yo)">
+                <div class="insp-head">
+                  <img src="/assets/softies/yo.svg" alt="" width="56" height="56" />
+                  <b>Yo</b>
+                  <small>Lead · Active now</small>
+                  <span class="insp-uses"><i class="pv pv-claude"></i>Uses your Claude subscription</span>
+                </div>
+                <p class="insp-label">Computer</p>
+                <div class="insp-pc">
+                  <span class="mini-screen"><i></i></span>
+                  <span class="insp-pc-row"><span class="ok-dot"></span>Ready<em>Open</em></span>
+                </div>
+                <p class="insp-label">Activity</p>
+                <ul class="insp-list">
+                  <li class="is-done">Checked your calendar</li>
+                  <li class="is-busy">Dew: comparing stays</li>
+                  <li class="is-busy">Kiki: watching fares</li>
+                </ul>
+                <p class="insp-label">Scheduled</p>
+                <ul class="insp-list">
+                  <li class="is-time">Morning brief · 8:00 AM</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Meet the team -->
+      <section class="section" id="team">
+        <div class="section-head">
+          <h2>Meet the team.</h2>
+          <p class="lead">
+            Yo leads and talks to you. Add a teammate whenever a job deserves its own: research, building, your inbox,
+            writing, keeping watch. Each one has a name, its own memory and the model you pick. They message each
+            other quietly, and a new one introduces itself and asks one question about its job.
+          </p>
+        </div>
+        <ul class="lineup">
+          <li style="--a: var(--yo); --ai: var(--yo-ink)">
+            <span class="lineup-av" data-softie style="--g: 6"><img src="/assets/softies/yo.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Yo</b><span class="role">Lead</span><small>Runs the team and talks to you.</small>
+          </li>
+          <li style="--a: var(--dew); --ai: var(--dew-ink)">
+            <span class="lineup-av" data-softie style="--g: 12"><img src="/assets/softies/dew.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Dew</b><span class="role">Research</span><small>Reads, digs and cites its sources.</small>
+          </li>
+          <li style="--a: var(--pico); --ai: var(--pico-ink)">
+            <span class="lineup-av" data-softie style="--g: 12.5"><img src="/assets/softies/pico.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Pico</b><span class="role">Builder</span><small>Code, sites and fixes.</small>
+          </li>
+          <li style="--a: var(--mochi); --ai: var(--mochi-ink)">
+            <span class="lineup-av" data-softie style="--g: 12.5"><img src="/assets/softies/mochi.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Mochi</b><span class="role">Inbox</span><small>Mail, calendar and follow-ups.</small>
+          </li>
+          <li style="--a: var(--clove); --ai: var(--clove-ink)">
+            <span class="lineup-av" data-softie style="--g: 13.5"><img src="/assets/softies/clove.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Clove</b><span class="role">Writer</span><small>Drafts, edits and finds the tone.</small>
+          </li>
+          <li style="--a: var(--kiki); --ai: var(--kiki-ink)">
+            <span class="lineup-av" data-softie style="--g: 12.5"><img src="/assets/softies/kiki.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <b>Kiki</b><span class="role">Scout</span><small>Browses, watches and tells you what changed.</small>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Bring your own subscription -->
+      <section class="section" id="models">
+        <div class="split">
+          <div class="split-copy">
+            <h2>Bring your own subscription.</h2>
+            <p class="lead">
+              Sign in with the Claude, ChatGPT or Grok plan you already pay for, and give each agent its own model.
+              When a better one ships, you change a dropdown. Your agents keep their names, their memory and their
+              work.
+            </p>
+            <ul class="notes">
+              <li><b>No API keys. No second bill.</b> Agents use your plan and its limits.</li>
+              <li><b>Your password stays with them.</b> You sign in on each provider's own page.</li>
+              <li><b>Mix them on one team.</b> Claude on one agent, ChatGPT on another, in the same chat.</li>
+            </ul>
+          </div>
+
+          <div class="picker" data-picker>
+            <p class="picker-title">Your team</p>
+            <ul class="picker-rows">
+              <li class="picker-row" data-agent="Yo" style="--a: var(--yo)">
+                <img src="/assets/softies/yo-xs.svg" alt="" width="32" height="32" />
+                <span class="pr-name"><b>Yo</b><small>Lead</small></span>
+                <button class="chip" type="button" data-chip aria-expanded="false"><i class="pv pv-claude"></i><span data-chip-label>Claude</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg><span class="sr-only">: change Yo's model</span></button>
+              </li>
+              <li class="picker-row is-open" data-agent="Dew" style="--a: var(--dew)">
+                <img src="/assets/softies/dew-xs.svg" alt="" width="32" height="32" />
+                <span class="pr-name"><b>Dew</b><small>Research</small></span>
+                <button class="chip" type="button" data-chip aria-expanded="true"><i class="pv pv-chatgpt"></i><span data-chip-label>ChatGPT</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg><span class="sr-only">: change Dew's model</span></button>
+              </li>
+              <li class="picker-menu" data-menu-panel>
+                <fieldset>
+                  <legend><span data-menu-agent>Dew</span>'s model</legend>
+                  <label class="opt"><input type="radio" name="model" value="claude" /><i class="pv pv-claude"></i><b>Claude</b><small>Pro or Max plan</small></label>
+                  <label class="opt"><input type="radio" name="model" value="chatgpt" checked /><i class="pv pv-chatgpt"></i><b>ChatGPT</b><small>Plus or Pro plan</small></label>
+                  <label class="opt"><input type="radio" name="model" value="grok" /><i class="pv pv-grok"></i><b>Grok</b><small>SuperGrok or X Premium</small></label>
+                </fieldset>
+              </li>
+              <li class="picker-row" data-agent="Pico" style="--a: var(--pico)">
+                <img src="/assets/softies/pico-xs.svg" alt="" width="32" height="32" />
+                <span class="pr-name"><b>Pico</b><small>Builder</small></span>
+                <button class="chip" type="button" data-chip aria-expanded="false"><i class="pv pv-claude"></i><span data-chip-label>Claude</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg><span class="sr-only">: change Pico's model</span></button>
+              </li>
+              <li class="picker-row" data-agent="Kiki" style="--a: var(--kiki)">
+                <img src="/assets/softies/kiki-xs.svg" alt="" width="32" height="32" />
+                <span class="pr-name"><b>Kiki</b><small>Scout</small></span>
+                <button class="chip" type="button" data-chip aria-expanded="false"><i class="pv pv-grok"></i><span data-chip-label>Grok</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg><span class="sr-only">: change Kiki's model</span></button>
+              </li>
+            </ul>
+            <p class="picker-note" role="status" aria-live="polite" data-picker-note>Same agent, same memory. Only the model changes.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Its own computer -->
+      <section class="section" id="computer">
+        <div class="section-head">
+          <h2>Its own computer. Not yours.</h2>
+          <p class="lead">
+            Your agents work on their own Linux computer, with a browser, a terminal and files. It runs on your Mac, or
+            on a PC at home that stays on, and it never touches your own browser. Watch it work, or take over when a
+            login needs you.
+          </p>
+        </div>
+        <figure class="pc" data-pc style="--a: var(--kiki)">
+          <div class="pc-tabs" aria-hidden="true">
+            <span class="pc-tab"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="11.5" rx="1.6" /><path d="M9 20h6M12 16v4" /></svg>Kiki's computer</span>
+          </div>
+          <div class="pc-screen" aria-hidden="true">
+            <div class="pc-window">
+              <div class="pw-bar">
+                <span class="pw-tab">Fares · Lisbon</span>
+                <span class="pw-url">skyfinder.example/fares/lis</span>
+              </div>
+              <div class="pw-page">
+                <p class="pw-title">Lisbon · Fri to Mon · 2 people</p>
+                <ul class="pw-fares">
+                  <li><b>9:40 AM</b><span>Direct · 2h 35m</span><em class="drop">$412</em></li>
+                  <li><b>1:15 PM</b><span>Direct · 2h 40m</span><em>$468</em></li>
+                  <li><b>6:05 PM</b><span>1 stop · 5h 10m</span><em>$395</em></li>
+                </ul>
+                <p class="pw-watch"><i></i>Watching this page · checked 2 min ago</p>
+              </div>
+              <span class="pw-cursor"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 3l16 7.5-7 1.8L9.5 20z" fill="#111" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" /></svg><img src="/assets/softies/kiki-xs.svg" alt="" width="22" height="22" /></span>
+            </div>
+            <div class="pc-dock">
+              <i class="dk dk-web"></i><i class="dk dk-term">&gt;_</i><i class="dk dk-files"></i>
+            </div>
+          </div>
+          <figcaption class="pc-control">
+            <span data-pc-label><b>Kiki</b> has control</span>
+            <button class="btn btn-ink btn-sm" type="button" data-pc-toggle aria-pressed="false">Take over</button>
+          </figcaption>
+        </figure>
+        <ul class="facts">
+          <li><b>It asks first.</b> You choose what needs your OK: purchases, messages, anything hard to undo.</li>
+          <li><b>Logins stay yours.</b> You type passwords and codes yourself, or take over its screen.</li>
+          <li><b>It works while your laptop sleeps.</b> Put its computer on a PC at home that stays on.</li>
+        </ul>
+      </section>
+
+      <!-- Phone -->
+      <section class="section" id="phone">
+        <div class="phone-split">
+          <div class="phone" aria-hidden="true" style="--a: var(--yo)">
+            <div class="phone-screen">
+              <div class="ph-head"><img src="/assets/softies/yo-xs.svg" alt="" width="34" height="34" /><b>Yo</b></div>
+              <p class="bubble bubble-me">Anything I need to know?</p>
+              <p class="bubble">Kiki says the Friday 9:40 flight dropped to $412 for two. Want me to hold it?</p>
+              <div class="ph-card">
+                <small>Needs your OK</small>
+                <b>Hold 2 seats · Fri 9:40 AM · $412</b>
+                <span class="ph-actions"><i>Not now</i><i class="is-yes">Allow once</i></span>
+              </div>
+              <div class="composer ph-composer"><span class="c-plus">+</span><span class="c-text">Message Yo</span><span class="c-send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" /></svg></span></div>
+            </div>
+          </div>
+          <div class="phone-copy">
+            <p class="soon">Coming soon</p>
+            <h2>On your phone too.</h2>
+            <p class="lead">
+              Text your agents from your phone, answer what they ask, and check in while you're out. Messages are
+              end-to-end encrypted, and nothing at home is opened to the internet. We're testing it now, and it isn't
+              open to everyone yet.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Open source -->
+      <section class="section" id="open-source">
+        <div class="oss">
+          <div class="oss-copy">
+            <h2>So what are we selling you? <span>Nothing.</span></h2>
+            <p class="lead">
+              Yo is free and open source under the Apache-2.0 licence. You can't pay us for AI: your prompts go from
+              your machine straight to your provider, never through us. Every line is on GitHub. Read it, fix it, or
+              fork it.
+            </p>
+            <div class="oss-actions">
+              <a class="btn btn-light btn-lg" href="https://github.com/JuniorSua/yo-app">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+                View on GitHub
+              </a>
+              <a class="oss-link" href="https://github.com/JuniorSua/yo-app/blob/main/LICENSE">Read the licence</a>
+            </div>
+          </div>
+          <div class="oss-peek" aria-hidden="true">
+            <span data-softie style="--s: 120px"><img src="/assets/softies/dew.svg" alt="" width="120" height="120" loading="lazy" /></span>
+            <span data-softie style="--s: 110px"><img src="/assets/softies/mochi.svg" alt="" width="110" height="110" loading="lazy" /></span>
+            <span data-softie style="--s: 148px"><img src="/assets/softies/yo.svg" alt="" width="148" height="148" loading="lazy" /></span>
+            <span data-softie style="--s: 112px"><img src="/assets/softies/pico.svg" alt="" width="112" height="112" loading="lazy" /></span>
+            <span data-softie style="--s: 116px"><img src="/assets/softies/clove.svg" alt="" width="116" height="116" loading="lazy" /></span>
+            <span data-softie style="--s: 124px"><img src="/assets/softies/kiki.svg" alt="" width="124" height="124" loading="lazy" /></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Support Yo -->
+      <section class="section" id="support">
+        <div class="give">
+          <div class="give-copy">
+            <h2>Yo is free.<br /> It always will be.</h2>
+            <p class="lead">
+              No paywall, no premium tier, and we don't sell AI. You bring your own. If Yo gives you back a little time,
+              you can give a little back. It keeps the lights on and new things shipping.
+            </p>
+            <p class="give-alt">
+              Not into that? Totally fine. A star on <a href="https://github.com/JuniorSua/yo-app">GitHub</a> or telling
+              a friend helps just as much.
+            </p>
+          </div>
+          <div class="give-card">
+            <span class="give-av" data-softie><img src="/assets/softies/yo.svg" alt="" width="88" height="88" loading="lazy" /></span>
+            <p class="give-title">Support Yo</p>
+            <p class="give-sub">Optional, and everything stays free either way.</p>
+            <div class="give-actions">
+              <a class="btn btn-yellow btn-lg" href="#support" data-support-once hidden rel="noopener">Chip in</a>
+              <a class="btn btn-line btn-lg" href="https://github.com/sponsors/JuniorSua" data-sponsor rel="noopener">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg>
+                Sponsor monthly
+              </a>
+            </div>
+            <p class="give-fine">
+              Support is a gift. It doesn't unlock anything, it isn't refundable, and Yo isn't a charity, so it isn't
+              tax-deductible. <a href="/terms#s7">Terms</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="section faq" id="faq">
+        <div class="faq-grid">
+          <h2>Questions.</h2>
+          <div class="faq-list">
+            <details>
+              <summary>Is it really free?</summary>
+              <p>
+                Yes. Yo is free and open source under Apache-2.0. There's no paywall, no premium tier and no Yo account.
+                You pay your AI provider for your subscription, as you already do. If you'd like to,
+                <a href="#support">you can support Yo</a>; everything stays the same either way.
+              </p>
+            </details>
+            <details>
+              <summary>Is using my Claude or ChatGPT subscription allowed?</summary>
+              <p>
+                Yo doesn't log in for you or hold your password. On Yo's computer you sign in with each provider's own
+                tool and page (Claude Code, Codex or the Grok CLI), and your agents drive that tool, the way other
+                open-source apps do. Each provider sets its own rules and limits, and they change, so check them:
+                <a href="https://code.claude.com/docs/en/legal-and-compliance">Anthropic</a>,
+                <a href="https://openai.com/policies/terms-of-use/">OpenAI</a> and
+                <a href="https://x.ai/legal/terms-of-service">xAI</a>. Agents can use up a plan's limits faster than
+                chatting does. If a provider changes its rules, move that agent to another one. It's a dropdown, not a
+                new app.
+              </p>
+            </details>
+            <details id="requirements">
+              <summary>What do I need?</summary>
+              <p>
+                A Mac with Apple silicon (M1 or newer) and macOS 13 or newer, with at least 16 GB of memory (32 GB is
+                better) and about 20 GB of free disk space. And a Claude, ChatGPT or Grok subscription.
+              </p>
+              <p>
+                On a Windows or Linux PC, Yo runs in Docker and you use it in your browser: 8 GB of memory (16 GB is
+                better), 4 cores and 15 GB free. You can also run its computer on an always-on home PC, so your agents
+                keep working while your laptop is closed.
+                <a href="https://github.com/JuniorSua/yo-app#windows-and-linux-in-your-browser">How to install it on a PC</a>
+              </p>
+            </details>
+            <details>
+              <summary>Is it private?</summary>
+              <p>
+                Yo runs on your machine. Your chats, memory and files stay there, and there's no Yo account and no
+                analytics. Your requests go from your machine to the provider you picked, under your own account.
+                Calendar, Mail and the rest of your Mac stay off until you turn each one on.
+                <a href="/privacy">Privacy policy</a>
+              </p>
+            </details>
+            <details id="first-open">
+              <summary>macOS says it can't verify Yo. How do I open it?</summary>
+              <p>
+                Yo's builds aren't notarized by Apple, so macOS asks you to confirm it once. Open Yo and click Done on
+                the warning. Then open System Settings → Privacy &amp; Security, scroll down to “Yo was blocked” and
+                click Open Anyway, then Open Anyway again and enter your Mac password. On macOS 13 or 14 you can
+                instead right-click Yo in Applications, choose Open, then Open again. Or run this once in Terminal:
+                <code class="cmd">xattr -dr com.apple.quarantine /Applications/Yo.app</code>
+              </p>
+            </details>
+            <details>
+              <summary>Can my agents spend money or send things without me?</summary>
+              <p>
+                Only if you let them. You choose which actions need your OK, and they show up in Needs you. Yo doesn't
+                solve captchas or know your passwords: for a login or a 2FA code, you type it yourself or take over its
+                screen.
+              </p>
+            </details>
+            <details>
+              <summary>Who makes Yo?</summary>
+              <p>
+                An independent developer, in the open. Every release is built on GitHub's servers and published on
+                <a href="https://github.com/JuniorSua/yo-app/releases">its releases page</a>. Found a bug? Use Report a
+                problem in the app, or <a href="https://github.com/JuniorSua/yo-app/issues">open an issue</a>. More
+                help is on the <a href="/support">help page</a>.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Closing -->
+      <section class="final" id="download">
+        <div class="final-team" aria-hidden="true">
+          <img src="/assets/softies/dew.svg" alt="" width="64" height="64" loading="lazy" />
+          <img src="/assets/softies/mochi.svg" alt="" width="60" height="60" loading="lazy" />
+          <img src="/assets/softies/yo.svg" alt="" width="84" height="84" loading="lazy" />
+          <img src="/assets/softies/pico.svg" alt="" width="60" height="60" loading="lazy" />
+          <img src="/assets/softies/clove.svg" alt="" width="62" height="62" loading="lazy" />
+          <img src="/assets/softies/kiki.svg" alt="" width="68" height="68" loading="lazy" />
+        </div>
+        <h2>Your team is waiting.</h2>
+        <p class="lead">Free, open source, and on the subscription you already have.</p>
+        <div class="final-actions">
+          <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-download>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
+            Download
+          </a>
+          <a class="btn btn-line btn-lg" href="https://github.com/JuniorSua/yo-app">View on GitHub</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <a class="brand" href="#top" aria-label="Yo home">
+          <img class="brand-mark" src="/assets/logo.svg" alt="" width="24" height="24" />
+          <svg class="brand-word" viewBox="0 0 120 90" aria-hidden="true"><path d="M11.1 77L11.1 65.2L18.4 65.2Q21 65.2 22.2 64.45Q23.4 63.7 24.1 61.8L25.1 59L20.8 59L2.1 8.3L18.4 8.3L30.1 44L41 8.3L57.4 8.3L36.9 66.8Q35 72.3 31.55 74.65Q28.1 77 21.9 77Z" /><path d="M81.86 63.2Q73.46 63.2 67.26 59.75Q61.06 56.3 57.61 49.95Q54.16 43.6 54.16 35.1Q54.16 26.6 57.61 20.35Q61.06 14.1 67.26 10.6Q73.46 7.1 81.86 7.1Q90.16 7.1 96.41 10.6Q102.66 14.1 106.11 20.35Q109.56 26.6 109.56 35.1Q109.56 43.6 106.11 49.95Q102.66 56.3 96.41 59.75Q90.16 63.2 81.86 63.2ZM81.86 51.1Q87.16 51.1 90.06 46.9Q92.96 42.7 92.96 35.1Q92.96 27.6 90.06 23.4Q87.16 19.2 81.86 19.2Q76.56 19.2 73.61 23.4Q70.66 27.6 70.66 35.1Q70.66 42.7 73.61 46.9Q76.56 51.1 81.86 51.1Z" /><circle class="brand-dot" cx="113" cy="57" r="5" /></svg>
+        </a>
+        <nav aria-label="Footer">
+          <a href="#team">Team</a>
+          <a href="#faq">FAQ</a>
+          <a href="#support">Support Yo</a>
+          <a href="/support">Help</a>
+          <a href="/privacy">Privacy policy</a>
+          <a href="/terms">Terms</a>
+          <a href="/support#contact" data-support-email data-email-only hidden>Contact</a>
+          <a href="https://github.com/JuniorSua/yo-app">GitHub</a>
+          <a href="https://github.com/JuniorSua/yo-app/releases">Releases</a>
+        </nav>
+        <span class="footer-copy">© 2026 Yo · Apache-2.0</span>
+      </div>
+    </footer>
+
+    <!-- After a Download click (site.js): what to do with the .dmg on a Mac, or the install command on Windows and Linux. -->
+    <div class="dl-panel" role="dialog" aria-modal="false" aria-labelledby="dl-title-mac" tabindex="-1" data-dl-panel hidden>
+      <button class="dl-close" type="button" aria-label="Close" data-dl-close>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      </button>
+      <div data-dl-mac>
+        <div class="dl-head">
+          <span class="dl-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg></span>
+          <div>
+            <h2 class="dl-title" id="dl-title-mac">Your download has started</h2>
+            <p class="dl-sub">Yo for Macs with Apple silicon</p>
+          </div>
+        </div>
+        <ol class="dl-steps">
+          <li><span>Open “<b data-dl-name>Yo.dmg</b>” from your Downloads.</span></li>
+          <li><span>Drag <b>Yo</b> into <b>Applications</b>.</span></li>
+          <li>
+            <span>
+              First open: macOS asks once. Open Yo, click <b>Done</b>, then System Settings → Privacy &amp; Security →
+              <b>Open Anyway</b>. <a class="dl-help" href="#first-open">Need help?</a>
+            </span>
+          </li>
+        </ol>
+        <div class="dl-foot">
+          <p>
+            Prefer the easy way?
+            <button
+              class="dl-link"
+              type="button"
+              data-setup-copy
+              data-copy-text="Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app/blob/main/SETUP_PROMPT.md"
+            >Copy a setup prompt</button>
+            for Claude Code or Codex.
+          </p>
+          <p class="dl-note" role="status" aria-live="polite" data-setup-note></p>
+          <input class="setup-fallback" data-setup-fallback readonly hidden aria-label="Setup prompt to copy" />
+          <p>Didn't start? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-dl-direct>Download it here</a>.</p>
+        </div>
+      </div>
+      <div data-dl-other hidden>
+        <div class="dl-head">
+          <span class="dl-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg></span>
+          <div>
+            <h2 class="dl-title" id="dl-title-other">Yo for Windows and Linux</h2>
+            <p class="dl-sub">Runs on your PC, used in your browser</p>
+          </div>
+        </div>
+        <ol class="dl-steps">
+          <li>
+            <span data-os="windows">Open <b>PowerShell</b>: Start menu, type PowerShell, press Enter.</span>
+            <span data-os="linux">Open a <b>terminal</b>.</span>
+            <span data-os="both">On your PC, open <b>PowerShell</b> (Windows) or a <b>terminal</b> (Linux).</span>
+          </li>
+          <li>
+            <div>
+              <span data-os="windows linux">Paste this and press Enter:</span>
+              <span data-os="both">Paste the line for your PC and press Enter:</span>
+              <div class="dl-cmd" data-os="windows both">
+                <div class="dl-cmd-head">
+                  <span class="dl-cmd-label">Windows · PowerShell</span>
+                  <button class="dl-copy" type="button" data-dl-copy aria-label="Copy the Windows command">
+                    <svg class="i-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+                    <svg class="i-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                    <span data-dl-copy-label>Copy</span>
+                  </button>
+                </div>
+                <code class="dl-cmd-code">irm https://github.com/JuniorSua/yo-app/releases/download/v0.1.778/install.ps1 | iex</code>
+              </div>
+              <div class="dl-cmd" data-os="linux both">
+                <div class="dl-cmd-head">
+                  <span class="dl-cmd-label">Linux · Terminal</span>
+                  <button class="dl-copy" type="button" data-dl-copy aria-label="Copy the Linux command">
+                    <svg class="i-copy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+                    <svg class="i-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                    <span data-dl-copy-label>Copy</span>
+                  </button>
+                </div>
+                <code class="dl-cmd-code">curl -fsSL https://github.com/JuniorSua/yo-app/releases/download/v0.1.778/install.sh | bash</code>
+              </div>
+              <p class="dl-note" role="status" aria-live="polite" data-dl-note></p>
+            </div>
+          </li>
+          <li>
+            <span>It checks your PC, installs <b>Docker</b> if you say yes, and opens Yo in your browser, signed in.</span>
+          </li>
+        </ol>
+        <div class="dl-foot">
+          <p>
+            What your PC needs, and more help:
+            <a href="https://github.com/JuniorSua/yo-app#windows-and-linux-in-your-browser">Full instructions</a>.
+          </p>
+          <p>Downloading it for a Mac? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v0.1.778" data-dl-direct>Get the Mac app</a>.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

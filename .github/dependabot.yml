@@ -1,0 +1,13 @@
+# Keeps the GitHub Actions used by CI up to date: at most one grouped PR a week.
+# (App dependencies are updated by hand, so lockfile changes stay deliberate.)
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "CI"

@@ -8,14 +8,15 @@ name: Release
 # (yo-app, yo-app.ps1, yo-app.cmd), yo-app-compose.yaml and yo.ico, with the version baked in; its one-line
 # installers use releases/latest/download/install.ps1 (or install.sh).
 #
-# Runs ONLY in the public repo JuniorSua/yo-app (every job checks), where releases live and Actions minutes are
-# free. Yo's source is private: the build jobs and the Mac smoke check out JuniorSua/yo at the `source` commit
-# with a read-only deploy key (secret YO_SOURCE_DEPLOY_KEY). The builds write VERSION, which makes it a public
-# build (license check, "github" update channel, bug reports to yo-app). Nothing here prints the source.
+# Runs ONLY in the public repo JuniorSua/yo-app (every job checks), where Yo's source, releases and free Actions
+# minutes live. Yo is free and open source (Apache-2.0). Each published snapshot is one commit on yo-app's main
+# with a VERSION file, which makes it a public build ("github" update channel, bug reports to yo-app). The build
+# jobs and the Mac smoke check out this repo at that `source` commit, and the version job checks that its
+# VERSION matches the tag.
 #
 # Started by the maintainer's release script, or from the Actions tab: tag
-# v0.1.N (N = the source commit's count on main), the source commit's full SHA, and the yo-app issue numbers it
-# fixes. The release's tag is made on yo-app's main.
+# v2.0.N (the VERSION of the snapshot), the full SHA of that yo-app commit, and the yo-app issue numbers it
+# fixes. The release's tag is made on that commit.
 #
 # `latest` defaults to true: the release becomes GitHub's latest (what /releases/latest, the site, the
 # installers and the github update channel follow) and the GHCR :latest tags move. Set it false to publish a
@@ -42,11 +43,11 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, e.g. v0.1.313"
+        description: "Release tag, e.g. v2.0.950 (the snapshot's VERSION with a v)"
         required: true
         type: string
       source:
-        description: "Full SHA of the JuniorSua/yo commit to build"
+        description: "Full SHA of the yo-app commit to build (a published snapshot)"
         required: true
         type: string
       fixed:
@@ -100,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Release tags look like v0.1.313, not $TAG"; exit 1
+            echo "::error::Release tags look like v2.0.950, not $TAG"; exit 1
           fi
           if [[ ! "$SOURCE" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::source must be a full 40-character commit SHA"; exit 1
@@ -116,6 +117,23 @@ jobs:
             echo "fixed=$fixed"
           } >> "$GITHUB_OUTPUT"
           echo "Releasing Yo ${TAG#v}"
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.v.outputs.source }}
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: The snapshot is this version
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          published="$(tr -d '[:space:]' < VERSION 2>/dev/null || true)"
+          if ! test "$published" = "$version"; then
+            echo "::error::The source commit's VERSION is '${published}', not ${version}: pick the snapshot published as Yo ${version}"
+            exit 1
+          fi
 
   computer:
     name: Computer image (${{ matrix.arch }})
@@ -137,14 +155,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: JuniorSua/yo
           ref: ${{ needs.version.outputs.source }}
-          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
           persist-credentials: false
-      - name: Mark it a public build
-        env:
-          VERSION: ${{ needs.version.outputs.version }}
-        run: echo "$VERSION" > VERSION
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -233,14 +245,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: JuniorSua/yo
           ref: ${{ needs.version.outputs.source }}
-          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
           persist-credentials: false
-      - name: Mark it a public build
-        env:
-          VERSION: ${{ needs.version.outputs.version }}
-        run: echo "$VERSION" > VERSION
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
@@ -297,9 +303,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: JuniorSua/yo
           ref: ${{ needs.version.outputs.source }}
-          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
           persist-credentials: false
       # The installers fetch the files of the release they came with: they say which one in __YO_VERSION__.
       - name: Bake the version in
@@ -336,14 +340,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: JuniorSua/yo
           ref: ${{ needs.version.outputs.source }}
-          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
           persist-credentials: false
-      - name: Mark it a public build
-        env:
-          VERSION: ${{ needs.version.outputs.version }}
-        run: echo "$VERSION" > VERSION
       - uses: pnpm/action-setup@v6 # pnpm version comes from "packageManager" in package.json
       # No dependency cache on purpose: a release builds from a clean install (no cache poisoning).
       - uses: actions/setup-node@v7
@@ -400,9 +398,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          repository: JuniorSua/yo
           ref: ${{ needs.version.outputs.source }}
-          ssh-key: ${{ secrets.YO_SOURCE_DEPLOY_KEY }}
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
@@ -621,6 +617,7 @@ jobs:
           REPO: ${{ github.repository }}
           TAG: ${{ needs.version.outputs.tag }}
           VERSION: ${{ needs.version.outputs.version }}
+          SOURCE: ${{ needs.version.outputs.source }}
           IMAGE: ${{ needs.version.outputs.image }}
           LATEST: ${{ inputs.latest }}
         run: |
@@ -639,7 +636,6 @@ jobs:
           1. **Open** ${dmg} from your Downloads.
           2. **Drag Yo into Applications.**
           3. **First open:** macOS asks once, because Yo isn't notarized by Apple. Open Yo and click **Done**, then go to **System Settings → Privacy & Security**, click **Open Anyway** next to "Yo was blocked", and enter your Mac password. (On macOS 13 or 14: right-click Yo in Applications → **Open**.)
-          4. **Activate:** Yo asks for your license key. Subscribe at [theyoapp.com](https://theyoapp.com/#pricing) (\$10 a month, cancel any time); your key is on the page that opens after you pay.
 
           If macOS still refuses (or says Yo "is damaged"), run this once in Terminal, then open Yo:
 
@@ -659,6 +655,8 @@ jobs:
 
           **Need help?** In Yo, open **Settings → Bug reports → Report a problem**. To remove Yo completely, see [Uninstall](https://github.com/${REPO}#uninstall).
 
+          Yo is free and open source (Apache-2.0). If it gives you back a little time, you can [support it](https://theyoapp.com/#support). Totally optional.
+
           <sub>The agent's computer for this version: \`${IMAGE}:${VERSION}\` (Yo downloads it the first time it needs it).</sub>
           EOF
           files=(dist/*.dmg dist/*.zip dist/compose.server.yaml
@@ -677,10 +675,10 @@ jobs:
             fi
           else
             if [ "$LATEST" = "true" ]; then
-              gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md
+              gh release create "$TAG" "${files[@]}" -R "$REPO" --target "$SOURCE" --title "Yo $VERSION" --notes-file notes.md
             else
               echo "Creating ${TAG} with --latest=false (latest=${LATEST})"
-              gh release create "$TAG" "${files[@]}" -R "$REPO" --target main --title "Yo $VERSION" --notes-file notes.md --latest=false
+              gh release create "$TAG" "${files[@]}" -R "$REPO" --target "$SOURCE" --title "Yo $VERSION" --notes-file notes.md --latest=false
             fi
           fi
 

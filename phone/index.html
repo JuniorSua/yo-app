@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <title>Yo</title>
+    <meta name="description" content="Text Yo from your phone." />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f6f6f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Yo" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="icon" href="/icons/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <!-- First run: no key yet -->
+      <section id="welcome" class="welcome" aria-labelledby="welcome-title" hidden>
+        <div class="welcome-inner">
+          <div class="hero">
+            <span class="hero-mark"><img class="hero-logo" src="/icons/logo.svg" alt="" width="88" height="88" /></span>
+            <h1 id="welcome-title">Your Yo, in your pocket</h1>
+            <p class="lede">
+              In Yo on your computer, open <strong>Settings → Phone → Create phone link</strong>, or ask Yo:
+              “Set up Yo Phone on my phone.” Then open the link on this phone.
+            </p>
+          </div>
+
+          <div class="card notice" id="revoked" role="alert" hidden>
+            <h2>This link was turned off</h2>
+            <p>Make a new one in Yo (Settings → Phone), then open it on this phone or paste it below.</p>
+          </div>
+
+          <form id="paste-form" class="card paste" novalidate>
+            <label for="paste-input">Got your link?</label>
+            <p class="paste-hint" id="paste-hint">Open it on this phone, or copy it and paste it here.</p>
+            <div class="paste-row">
+              <input
+                id="paste-input"
+                type="url"
+                inputmode="url"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                placeholder="Paste your phone link"
+                aria-describedby="paste-hint paste-error"
+              />
+              <button class="btn btn-brand" type="submit">Connect</button>
+            </div>
+            <p class="paste-error" id="paste-error" role="alert"></p>
+          </form>
+
+          <div class="card steps" id="install-steps">
+            <h2>Then put Yo on your Home Screen</h2>
+            <ol>
+              <li>
+                <span class="step-num" aria-hidden="true">1</span>
+                <span
+                  >Tap
+                  <span class="chip"
+                    ><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                      <path
+                        d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      /></svg
+                    >Share</span
+                  >
+                  in Safari</span
+                >
+              </li>
+              <li>
+                <span class="step-num" aria-hidden="true">2</span>
+                <span>Choose <strong>Add to Home Screen</strong></span>
+              </li>
+              <li>
+                <span class="step-num" aria-hidden="true">3</span>
+                <span>Open <strong>Yo</strong> from your Home Screen, like any app</span>
+              </li>
+            </ol>
+          </div>
+
+          <p class="fine">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8" />
+            </svg>
+            This link is your Yo in your pocket. Keep it to yourself: anyone with it can talk to Yo as you, including
+            your chats, files and approvals.
+          </p>
+        </div>
+      </section>
+
+      <!-- Chat -->
+      <section id="chat" class="chat" aria-label="Chat with Yo" hidden>
+        <header class="top" id="top">
+          <div class="who">
+            <span class="avatar" id="avatar"><img src="/icons/logo.svg" alt="" width="40" height="40" /></span>
+            <div class="who-text">
+              <h1 id="agent-name">Yo</h1>
+              <p class="presence" id="presence" data-tone="connecting">
+                <span class="dot" aria-hidden="true"></span>
+                <span id="presence-text">Connecting…</span>
+              </p>
+            </div>
+          </div>
+          <div class="top-actions">
+            <button class="icon-btn" id="peek-btn" type="button" aria-label="Peek at the screen" title="Peek at the screen" hidden>
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="12.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" />
+                <path d="M9 20.5h6M12 16.5v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                <path
+                  d="M7.4 10.3s1.8-2.7 4.6-2.7 4.6 2.7 4.6 2.7-1.8 2.7-4.6 2.7-4.6-2.7-4.6-2.7Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                />
+                <circle cx="12" cy="10.3" r="1.2" fill="currentColor" />
+              </svg>
+            </button>
+            <button
+              class="icon-btn drive-toggle"
+              id="drive-btn"
+              type="button"
+              aria-pressed="false"
+              aria-label="Hands-free mode"
+              title="Hands-free mode"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path
+                  d="M5 16.5V12l1.7-4.6A2 2 0 0 1 8.6 6h6.8a2 2 0 0 1 1.9 1.4L19 12v4.5M5 12h14M5 16.5h14M6.5 16.5V19M17.5 16.5V19"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle cx="8.5" cy="14.2" r="1" fill="currentColor" />
+                <circle cx="15.5" cy="14.2" r="1" fill="currentColor" />
+              </svg>
+            </button>
+            <button class="icon-btn" id="settings-btn" type="button" aria-label="Settings" title="Settings">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <circle cx="5.5" cy="12" r="1.6" fill="currentColor" />
+                <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+                <circle cx="18.5" cy="12" r="1.6" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="stage">
+          <main class="log" id="log" aria-label="Messages">
+            <div class="ptr" id="ptr" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+            <div class="tip" id="install-tip" hidden>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path
+                  d="M12 3v12M7.5 7.5 12 3l4.5 4.5M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <p>Share → <strong>Add to Home Screen</strong> for one-tap Yo</p>
+              <button class="tip-x" id="tip-close" type="button" aria-label="Dismiss tip">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div class="empty" id="empty" hidden>
+              <span class="empty-mark"><img src="/icons/logo.svg" alt="" width="72" height="72" /></span>
+              <h2 id="empty-title">Hi, I'm Yo</h2>
+              <p>Text me like a friend. I can research, plan, remind you and get things done on my computer.</p>
+              <div class="suggest" id="suggest">
+                <button type="button" class="suggest-chip" data-suggest="What's on my plate today?">What's on my plate today?</button>
+                <button type="button" class="suggest-chip" data-suggest="Find a quiet dinner spot for Friday at 7:30">Find a dinner spot for Friday</button>
+                <button type="button" class="suggest-chip" data-suggest="Remind me tomorrow at 9am to ">Remind me tomorrow at 9…</button>
+                <button type="button" class="suggest-chip" data-suggest="Take a screenshot of what you're working on">Show me what you're doing</button>
+              </div>
+            </div>
+            <div class="thread" id="thread" role="log" aria-live="polite" aria-relevant="additions"></div>
+            <div class="live" id="live" hidden>
+              <span class="live-mark" aria-hidden="true"><img class="live-logo" src="/icons/logo.svg" alt="" width="28" height="28" /></span>
+              <div class="live-body" role="status">
+                <p class="live-title"><span id="live-title">Yo is working</span><span class="live-elapsed" id="live-elapsed"></span></p>
+                <p class="live-step"><span class="shimmer" id="live-step">Thinking it through</span></p>
+                <p class="live-helpers" id="live-helpers" hidden>
+                  <span class="helpers-dots" aria-hidden="true"><span></span><span></span></span><span id="live-helpers-text"></span>
+                </p>
+              </div>
+              <button class="live-stop" id="stop-btn" type="button" aria-label="Stop" title="Stop">
+                <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
+                  <rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" />
+                </svg>
+              </button>
+            </div>
+            <p class="helpers-chip" id="helpers-row" hidden>
+              <span class="helpers-dots" aria-hidden="true"><span></span><span></span></span>
+              <span id="helpers-text" role="status">2 helpers working</span>
+            </p>
+            <div class="quick" id="quick" role="group" aria-label="Quick replies" hidden></div>
+          </main>
+
+          <div class="banner" id="banner" role="status" hidden>
+            <span class="banner-dot" aria-hidden="true"></span><span id="banner-text"></span>
+          </div>
+          <button class="jump" id="jump-btn" type="button" aria-label="Jump to the latest message" hidden>
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M12 5v13M6 12.5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="jump-new" id="jump-new" hidden>New</span>
+          </button>
+        </div>
+
+        <div class="drive-panel" id="drive-panel" hidden>
+          <p class="drive-transcript" id="drive-transcript" aria-live="polite"></p>
+          <p class="drive-hint" id="drive-hint">Tap to talk</p>
+          <button class="mic" id="mic-btn" type="button" aria-label="Start talking">
+            <span class="mic-ring" aria-hidden="true"></span>
+            <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true" class="mic-icon">
+              <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" />
+              <path
+                d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" class="stop-icon">
+              <rect x="6" y="6" width="12" height="12" rx="3" fill="currentColor" />
+            </svg>
+          </button>
+          <button class="countdown" id="countdown" type="button" hidden>
+            <svg class="countdown-ring" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
+              <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" stroke-opacity="0.18" stroke-width="4" />
+              <circle
+                class="countdown-arc"
+                cx="24"
+                cy="24"
+                r="21"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="4"
+                stroke-linecap="round"
+                pathLength="100"
+              />
+            </svg>
+            <span class="countdown-text"
+              ><strong id="countdown-label">Sending…</strong><span>Tap to cancel</span></span
+            >
+          </button>
+          <p class="drive-fallback" id="drive-fallback" hidden>
+            Voice typing isn't available in this browser. Tap the box below, then tap the
+            <strong>microphone on your keyboard</strong> to talk. Replies are read out loud.
+          </p>
+        </div>
+
+        <!-- Tasks (protocol v2.3: only when Yo's computer says it has them) -->
+        <div class="tasks-view" id="tasks-view" hidden>
+          <div class="tasks-scroll" id="tasks-scroll">
+            <div class="ptr" id="tasks-ptr" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </div>
+            <div class="tasks-head">
+              <h2 class="tasks-title" id="tasks-title">Tasks</h2>
+              <p class="tasks-sub" id="tasks-sub">What Yo is on, and what's next.</p>
+              <div class="seg" id="tasks-seg" role="tablist" aria-label="Which tasks">
+                <button class="seg-btn" type="button" role="tab" id="seg-active" data-view="active" aria-selected="true">Active</button>
+                <button class="seg-btn" type="button" role="tab" id="seg-upnext" data-view="upnext" aria-selected="false">Up next</button>
+              </div>
+            </div>
+            <div class="tasks-body" id="tasks-body" role="tabpanel" aria-labelledby="tasks-title"></div>
+          </div>
+        </div>
+
+        <footer class="composer" id="composer">
+          <form id="form" class="composer-box">
+            <div class="tray" id="tray" role="group" hidden aria-label="Photos to send"></div>
+            <div class="composer-row">
+              <button class="attach" id="photo-btn" type="button" aria-label="Add a photo" title="Add a photo" hidden>
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="15" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.9" />
+                  <circle cx="9" cy="10.5" r="1.8" fill="currentColor" />
+                  <path d="M4 17.5l4.6-4.4a1.6 1.6 0 0 1 2.2 0l2.4 2.3 2.4-2.1a1.6 1.6 0 0 1 2.1 0L20.5 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <input id="photo-input" type="file" accept="image/*" multiple hidden />
+              <label class="sr-only" for="input">Message</label>
+              <textarea
+                id="input"
+                rows="1"
+                maxlength="8000"
+                placeholder="Text Yo"
+                enterkeyhint="send"
+                autocomplete="off"
+              ></textarea>
+              <button class="send" id="send-btn" type="submit" aria-label="Send" disabled>
+                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                  <path
+                    d="M12 19V5M5.5 11.5 12 5l6.5 6.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </form>
+        </footer>
+
+        <!-- The floating tab bar: Chat and Tasks (hidden while the keyboard is open) -->
+        <nav class="tabbar" id="tabbar" aria-label="Yo Phone" hidden>
+          <button class="tab" type="button" id="tab-chat" data-tab="chat" aria-current="page">
+            <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+              <path
+                d="M12 4.5c4.7 0 8.2 3 8.2 6.9s-3.5 6.9-8.2 6.9c-.9 0-1.8-.1-2.6-.3L5.6 19.6l.9-3.3C4.8 15 3.8 13.3 3.8 11.4c0-3.9 3.5-6.9 8.2-6.9Z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span>Chat</span>
+          </button>
+          <button class="tab" type="button" id="tab-tasks" data-tab="tasks" aria-current="false">
+            <svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">
+              <path d="m4 6.6 1.6 1.6L8.4 5.4M4 15.6l1.6 1.6 2.8-2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M11.5 7h8.5M11.5 16h8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <span>Tasks</span>
+            <b class="tab-badge" id="tasks-badge" aria-hidden="true" hidden></b>
+          </button>
+        </nav>
+      </section>
+
+      <!-- Phones held sideways: Yo is a portrait app (iOS ignores the manifest's orientation) -->
+      <div class="rotate" id="rotate" aria-hidden="true">
+        <div class="rotate-inner">
+          <svg class="rotate-phone" viewBox="0 0 48 48" width="64" height="64">
+            <rect x="15" y="5" width="18" height="38" rx="4.5" fill="none" stroke="currentColor" stroke-width="2.4" />
+            <path d="M21.5 9h5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+          </svg>
+          <p class="rotate-title">Turn your phone upright</p>
+          <p class="rotate-sub">Yo is made for holding it this way.</p>
+        </div>
+      </div>
+
+      <!-- Settings sheet -->
+      <dialog class="sheet" id="settings" aria-labelledby="settings-title">
+        <div class="sheet-grab" aria-hidden="true"></div>
+        <header class="sheet-head">
+          <h2 id="settings-title">Settings</h2>
+          <button class="text-btn" id="settings-close" type="button">Done</button>
+        </header>
+        <div class="group">
+          <div class="row">
+            <span>Talking to</span>
+            <span class="row-value" id="set-agent">Yo</span>
+          </div>
+          <div class="row">
+            <span>Yo's computer</span>
+            <span class="row-value" id="set-seen">Unknown</span>
+          </div>
+          <div class="row">
+            <span>Phone link</span>
+            <span class="row-value" id="set-link">Not linked</span>
+          </div>
+        </div>
+        <div class="group">
+          <label class="row switch-row" for="set-read">
+            <span>
+              Read replies aloud
+              <small>Always read Yo's replies out loud. Hands-free mode reads them anyway.</small>
+            </span>
+            <input type="checkbox" id="set-read" class="switch" />
+          </label>
+        </div>
+        <div class="group">
+          <button class="row danger" id="forget-btn" type="button">Forget this phone</button>
+        </div>
+        <p class="sheet-foot">
+          Forgetting removes the link and your messages from this phone. You'll need a new link to text Yo again.
+        </p>
+        <p class="sheet-foot version" id="version">Yo Phone</p>
+      </dialog>
+
+      <!-- Full-screen picture: pinch or double-tap to zoom, swipe down to close -->
+      <dialog class="viewer" id="viewer" aria-label="Picture">
+        <div class="viewer-stage" id="viewer-stage"><img id="viewer-img" alt="" /></div>
+        <div class="viewer-bar">
+          <button class="viewer-btn" id="viewer-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" /></svg>
+          </button>
+          <p class="viewer-caption" id="viewer-caption"></p>
+          <button class="viewer-btn" id="viewer-copy" type="button" aria-label="Copy picture">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 5.6A2.4 2.4 0 0 0 13.2 4H6.4A2.4 2.4 0 0 0 4 6.4v6.8a2.4 2.4 0 0 0 1.6 2.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+      </dialog>
+
+      <!-- Long-press a message -->
+      <div class="msg-menu" id="msg-menu" role="menu" hidden>
+        <button type="button" role="menuitem" data-act="copy">
+          <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 5.6A2.4 2.4 0 0 0 13.2 4H6.4A2.4 2.4 0 0 0 4 6.4v6.8a2.4 2.4 0 0 0 1.6 2.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          Copy
+        </button>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,724 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0F33150958D3A4F60F6D6C25 /* DrivePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8722FAA248E848BD9996E17 /* DrivePanel.swift */; };
+		26913289926FCBE29177DA50 /* YoPhoneKit in Frameworks */ = {isa = PBXBuildFile; productRef = 665BB549CD1C93B9664459D6 /* YoPhoneKit */; };
+		2833900DACB2E74C97D24B5A /* Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFE72F24EF3A22682504C00 /* Composer.swift */; };
+		2CF3920941DA074ABBFAB547 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA6119BE80339FF4E831E7B /* AppModel.swift */; };
+		2DCE6C2EA371F2849646835E /* OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 132CE8F825E3926F51501324 /* OFL.txt */; };
+		46BA74DC6D1340DE4803DF33 /* KeychainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0726CF946073E72A248BA58 /* KeychainTests.swift */; };
+		4B7FA3224867A57FF384A9A6 /* YoUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35A8E25EFAD14B17E610B55 /* YoUITests.swift */; };
+		5B2717BD13B83868D85F7677 /* QRScannerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88BE69FD09839BA34A40869C /* QRScannerSheet.swift */; };
+		5D106FA35AA06938CB00E195 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47AD9BA62BA5DD9C7FA08BC8 /* MessageBubble.swift */; };
+		6430E6FB018B0324AC262FC1 /* DriveControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B227CA1136B019D1FF505FCF /* DriveControllerTests.swift */; };
+		675BE9A1CB6AC23FC0448BDB /* Speaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA73C41E25F8E0A7EE24BB0 /* Speaker.swift */; };
+		6AA0EF3651AD06A8037B4401 /* ChatHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E71377E34425693DC832D77 /* ChatHeader.swift */; };
+		7EBCE0B3080E7151ECC94781 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D0C13BF11B17F0EC0D8F88E /* AppModelTests.swift */; };
+		82255E7FBEBD76A97932DB00 /* DriveController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A891577058D614EA005A6C /* DriveController.swift */; };
+		A154D0E756E01DD730593BB0 /* SpeechListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3E00F384357426D90437E1 /* SpeechListener.swift */; };
+		A8ABA9721C6AAB59C7164BDB /* LaunchOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D290441D18F113CE63BF5FF /* LaunchOptions.swift */; };
+		AD2D08951FA0FC8185B4C199 /* Geist.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 5370873896776951AB8DFDD6 /* Geist.woff2 */; };
+		B5D0A297DC6539DDEA5A6B2A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8144D36470E7E0041C6468B1 /* Assets.xcassets */; };
+		B8AF29C0EE4D7E2C874D5D67 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2172F323CC10E068338B09DD /* Theme.swift */; };
+		B96707083B3EF4E52E0177D1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7115027E40A43E41718EFF /* SettingsView.swift */; };
+		BA1EE23E2D3E8125736C974B /* YoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A76D511ADF86B917D46242C /* YoApp.swift */; };
+		BAC8E314847632FE98B616A1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6FB1E6E01BE27396AE92D4A2 /* PrivacyInfo.xcprivacy */; };
+		C0D12A7E35D1B4DF6AEAA1B7 /* TestDoubles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0D5A12C925B60DBC308A329 /* TestDoubles.swift */; };
+		C9BDB57C1F73697DD5D01D83 /* GeistMono.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = EBA4F994CBED1C46D6CD4A30 /* GeistMono.woff2 */; };
+		D7101F93E27B36C434DF3F3A /* AINoticeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76DF68FA010C509284E2F903 /* AINoticeView.swift */; };
+		EB66D8E396B1FA8D8E763CEF /* RequestCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF35D6688C8D03F02F75A0ED /* RequestCardView.swift */; };
+		F62BF5FBC3DEF69B66970B94 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D386F816FDD0CD05ED17E14 /* WelcomeView.swift */; };
+		FC6B5C64A0780716022D7B91 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E92D08CCB6F2E757B187DA3 /* ChatView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0BCB11D9A977A33F13E570AA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14BBA4843686EC110427F363 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE7D7A80C7C126DDF23381D5;
+			remoteInfo = Yo;
+		};
+		F07D4DA1AC3635B8B9AC0224 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 14BBA4843686EC110427F363 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE7D7A80C7C126DDF23381D5;
+			remoteInfo = Yo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0C60960C59D3C688DCA86A7F /* YoUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		132CE8F825E3926F51501324 /* OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = OFL.txt; sourceTree = "<group>"; };
+		1D290441D18F113CE63BF5FF /* LaunchOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchOptions.swift; sourceTree = "<group>"; };
+		1E71377E34425693DC832D77 /* ChatHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatHeader.swift; sourceTree = "<group>"; };
+		2172F323CC10E068338B09DD /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		2CA6119BE80339FF4E831E7B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		2D0C13BF11B17F0EC0D8F88E /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		2DA46BD3E21E3089D96277E9 /* YoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = YoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D386F816FDD0CD05ED17E14 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		44967B1D59C11BEC186A0DB3 /* Yo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Yo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		47AD9BA62BA5DD9C7FA08BC8 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
+		50A891577058D614EA005A6C /* DriveController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveController.swift; sourceTree = "<group>"; };
+		5370873896776951AB8DFDD6 /* Geist.woff2 */ = {isa = PBXFileReference; path = Geist.woff2; sourceTree = "<group>"; };
+		5A3E00F384357426D90437E1 /* SpeechListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechListener.swift; sourceTree = "<group>"; };
+		5BFE72F24EF3A22682504C00 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
+		6FB1E6E01BE27396AE92D4A2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		76DF68FA010C509284E2F903 /* AINoticeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AINoticeView.swift; sourceTree = "<group>"; };
+		7E92D08CCB6F2E757B187DA3 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		8144D36470E7E0041C6468B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		88BE69FD09839BA34A40869C /* QRScannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRScannerSheet.swift; sourceTree = "<group>"; };
+		9A76D511ADF86B917D46242C /* YoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoApp.swift; sourceTree = "<group>"; };
+		9BA73C41E25F8E0A7EE24BB0 /* Speaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speaker.swift; sourceTree = "<group>"; };
+		A7BA4947ECEEF858FB9ECF84 /* YoPhoneKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = YoPhoneKit; path = YoPhoneKit; sourceTree = SOURCE_ROOT; };
+		B227CA1136B019D1FF505FCF /* DriveControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveControllerTests.swift; sourceTree = "<group>"; };
+		C8722FAA248E848BD9996E17 /* DrivePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivePanel.swift; sourceTree = "<group>"; };
+		DF35D6688C8D03F02F75A0ED /* RequestCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestCardView.swift; sourceTree = "<group>"; };
+		E35A8E25EFAD14B17E610B55 /* YoUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoUITests.swift; sourceTree = "<group>"; };
+		EBA4F994CBED1C46D6CD4A30 /* GeistMono.woff2 */ = {isa = PBXFileReference; path = GeistMono.woff2; sourceTree = "<group>"; };
+		F0726CF946073E72A248BA58 /* KeychainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainTests.swift; sourceTree = "<group>"; };
+		F0D5A12C925B60DBC308A329 /* TestDoubles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestDoubles.swift; sourceTree = "<group>"; };
+		FA7115027E40A43E41718EFF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C2F3C8ECF438755964C47B2F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26913289926FCBE29177DA50 /* YoPhoneKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14D404A9B3D9C098143FC75B /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				A7BA4947ECEEF858FB9ECF84 /* YoPhoneKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		461AE8C4CC7B7EAC76AF0426 = {
+			isa = PBXGroup;
+			children = (
+				14D404A9B3D9C098143FC75B /* Packages */,
+				838CA392A8E6C41679C1D6E2 /* Yo */,
+				5E208CA91EF20BECD6986531 /* YoTests */,
+				9A7B331C115E447D5493285B /* YoUITests */,
+				80907ADF514CF96C13768C62 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5E208CA91EF20BECD6986531 /* YoTests */ = {
+			isa = PBXGroup;
+			children = (
+				2D0C13BF11B17F0EC0D8F88E /* AppModelTests.swift */,
+				B227CA1136B019D1FF505FCF /* DriveControllerTests.swift */,
+				F0726CF946073E72A248BA58 /* KeychainTests.swift */,
+				F0D5A12C925B60DBC308A329 /* TestDoubles.swift */,
+			);
+			path = YoTests;
+			sourceTree = "<group>";
+		};
+		660CAA8B887A511B8702358C /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				1E71377E34425693DC832D77 /* ChatHeader.swift */,
+				7E92D08CCB6F2E757B187DA3 /* ChatView.swift */,
+				5BFE72F24EF3A22682504C00 /* Composer.swift */,
+				C8722FAA248E848BD9996E17 /* DrivePanel.swift */,
+				47AD9BA62BA5DD9C7FA08BC8 /* MessageBubble.swift */,
+				DF35D6688C8D03F02F75A0ED /* RequestCardView.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		80907ADF514CF96C13768C62 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				44967B1D59C11BEC186A0DB3 /* Yo.app */,
+				2DA46BD3E21E3089D96277E9 /* YoTests.xctest */,
+				0C60960C59D3C688DCA86A7F /* YoUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		838CA392A8E6C41679C1D6E2 /* Yo */ = {
+			isa = PBXGroup;
+			children = (
+				B7B63F7E614C6D03ABB65295 /* Resources */,
+				C734FCC5C5984F565C016F6C /* Sources */,
+			);
+			path = Yo;
+			sourceTree = "<group>";
+		};
+		97AC6B1B9BAACB8401028F4A /* Welcome */ = {
+			isa = PBXGroup;
+			children = (
+				76DF68FA010C509284E2F903 /* AINoticeView.swift */,
+				88BE69FD09839BA34A40869C /* QRScannerSheet.swift */,
+				3D386F816FDD0CD05ED17E14 /* WelcomeView.swift */,
+			);
+			path = Welcome;
+			sourceTree = "<group>";
+		};
+		9A7B331C115E447D5493285B /* YoUITests */ = {
+			isa = PBXGroup;
+			children = (
+				E35A8E25EFAD14B17E610B55 /* YoUITests.swift */,
+			);
+			path = YoUITests;
+			sourceTree = "<group>";
+		};
+		B7B63F7E614C6D03ABB65295 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BAD038B9C1FF6F247324C038 /* Fonts */,
+				8144D36470E7E0041C6468B1 /* Assets.xcassets */,
+				6FB1E6E01BE27396AE92D4A2 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BAD038B9C1FF6F247324C038 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				5370873896776951AB8DFDD6 /* Geist.woff2 */,
+				EBA4F994CBED1C46D6CD4A30 /* GeistMono.woff2 */,
+				132CE8F825E3926F51501324 /* OFL.txt */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		BB26521897F7D0727D7CB95B /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				50A891577058D614EA005A6C /* DriveController.swift */,
+				9BA73C41E25F8E0A7EE24BB0 /* Speaker.swift */,
+				5A3E00F384357426D90437E1 /* SpeechListener.swift */,
+			);
+			path = Voice;
+			sourceTree = "<group>";
+		};
+		C734FCC5C5984F565C016F6C /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				660CAA8B887A511B8702358C /* Chat */,
+				E31B1F47711111E11C4B6BFA /* Settings */,
+				BB26521897F7D0727D7CB95B /* Voice */,
+				97AC6B1B9BAACB8401028F4A /* Welcome */,
+				2CA6119BE80339FF4E831E7B /* AppModel.swift */,
+				1D290441D18F113CE63BF5FF /* LaunchOptions.swift */,
+				2172F323CC10E068338B09DD /* Theme.swift */,
+				9A76D511ADF86B917D46242C /* YoApp.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		E31B1F47711111E11C4B6BFA /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				FA7115027E40A43E41718EFF /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		66DC2CE9405DDE4BA8858F0D /* YoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 479B911FF3566844FF9FE5A3 /* Build configuration list for PBXNativeTarget "YoTests" */;
+			buildPhases = (
+				18FE3F2EAC6D702D52384E87 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3FEA89FB3F2956945186A67C /* PBXTargetDependency */,
+			);
+			name = YoTests;
+			packageProductDependencies = (
+			);
+			productName = YoTests;
+			productReference = 2DA46BD3E21E3089D96277E9 /* YoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CE7D7A80C7C126DDF23381D5 /* Yo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E5E7BF867613945C2B89391 /* Build configuration list for PBXNativeTarget "Yo" */;
+			buildPhases = (
+				3BAEB62FF4B1E74DCC9D1119 /* Sources */,
+				F7E3049E67E98607DFD4CF86 /* Resources */,
+				C2F3C8ECF438755964C47B2F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Yo;
+			packageProductDependencies = (
+				665BB549CD1C93B9664459D6 /* YoPhoneKit */,
+			);
+			productName = Yo;
+			productReference = 44967B1D59C11BEC186A0DB3 /* Yo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D1909EE77DC3FDB356E2497F /* YoUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5F55E8BDB608EDFEB1086317 /* Build configuration list for PBXNativeTarget "YoUITests" */;
+			buildPhases = (
+				C6EBCDB1A5B1A46B0CC78F25 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FBAB8E645F68B29D6FD4B2EA /* PBXTargetDependency */,
+			);
+			name = YoUITests;
+			packageProductDependencies = (
+			);
+			productName = YoUITests;
+			productReference = 0C60960C59D3C688DCA86A7F /* YoUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		14BBA4843686EC110427F363 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					66DC2CE9405DDE4BA8858F0D = {
+						DevelopmentTeam = D5MC3NH58Y;
+						ProvisioningStyle = Automatic;
+					};
+					CE7D7A80C7C126DDF23381D5 = {
+						DevelopmentTeam = D5MC3NH58Y;
+						ProvisioningStyle = Automatic;
+					};
+					D1909EE77DC3FDB356E2497F = {
+						DevelopmentTeam = D5MC3NH58Y;
+						ProvisioningStyle = Automatic;
+						TestTargetID = CE7D7A80C7C126DDF23381D5;
+					};
+				};
+			};
+			buildConfigurationList = 8737060DDEB23F2480F2848C /* Build configuration list for PBXProject "Yo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 461AE8C4CC7B7EAC76AF0426;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C23F870E49A19E7097D4B148 /* XCLocalSwiftPackageReference "YoPhoneKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 80907ADF514CF96C13768C62 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CE7D7A80C7C126DDF23381D5 /* Yo */,
+				66DC2CE9405DDE4BA8858F0D /* YoTests */,
+				D1909EE77DC3FDB356E2497F /* YoUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F7E3049E67E98607DFD4CF86 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5D0A297DC6539DDEA5A6B2A /* Assets.xcassets in Resources */,
+				AD2D08951FA0FC8185B4C199 /* Geist.woff2 in Resources */,
+				C9BDB57C1F73697DD5D01D83 /* GeistMono.woff2 in Resources */,
+				2DCE6C2EA371F2849646835E /* OFL.txt in Resources */,
+				BAC8E314847632FE98B616A1 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		18FE3F2EAC6D702D52384E87 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7EBCE0B3080E7151ECC94781 /* AppModelTests.swift in Sources */,
+				6430E6FB018B0324AC262FC1 /* DriveControllerTests.swift in Sources */,
+				46BA74DC6D1340DE4803DF33 /* KeychainTests.swift in Sources */,
+				C0D12A7E35D1B4DF6AEAA1B7 /* TestDoubles.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BAEB62FF4B1E74DCC9D1119 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D7101F93E27B36C434DF3F3A /* AINoticeView.swift in Sources */,
+				2CF3920941DA074ABBFAB547 /* AppModel.swift in Sources */,
+				6AA0EF3651AD06A8037B4401 /* ChatHeader.swift in Sources */,
+				FC6B5C64A0780716022D7B91 /* ChatView.swift in Sources */,
+				2833900DACB2E74C97D24B5A /* Composer.swift in Sources */,
+				82255E7FBEBD76A97932DB00 /* DriveController.swift in Sources */,
+				0F33150958D3A4F60F6D6C25 /* DrivePanel.swift in Sources */,
+				A8ABA9721C6AAB59C7164BDB /* LaunchOptions.swift in Sources */,
+				5D106FA35AA06938CB00E195 /* MessageBubble.swift in Sources */,
+				5B2717BD13B83868D85F7677 /* QRScannerSheet.swift in Sources */,
+				EB66D8E396B1FA8D8E763CEF /* RequestCardView.swift in Sources */,
+				B96707083B3EF4E52E0177D1 /* SettingsView.swift in Sources */,
+				675BE9A1CB6AC23FC0448BDB /* Speaker.swift in Sources */,
+				A154D0E756E01DD730593BB0 /* SpeechListener.swift in Sources */,
+				B8AF29C0EE4D7E2C874D5D67 /* Theme.swift in Sources */,
+				F62BF5FBC3DEF69B66970B94 /* WelcomeView.swift in Sources */,
+				BA1EE23E2D3E8125736C974B /* YoApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C6EBCDB1A5B1A46B0CC78F25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B7FA3224867A57FF384A9A6 /* YoUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3FEA89FB3F2956945186A67C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE7D7A80C7C126DDF23381D5 /* Yo */;
+			targetProxy = F07D4DA1AC3635B8B9AC0224 /* PBXContainerItemProxy */;
+		};
+		FBAB8E645F68B29D6FD4B2EA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE7D7A80C7C126DDF23381D5 /* Yo */;
+			targetProxy = 0BCB11D9A977A33F13E570AA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0573E0AB2DE67B09BE07BAFE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yo.app/Yo";
+			};
+			name = Release;
+		};
+		57DEE238135D4FAA21D3AD45 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = D5MC3NH58Y;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		58DF070FCB6471006522E0C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Yo/Yo.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Yo/Info.plist;
+				INFOPLIST_PREPROCESS = YES;
+				INFOPLIST_PREPROCESSOR_DEFINITIONS = "YO_DEBUG=1";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone;
+				PRODUCT_NAME = Yo;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		6FF3829E18D788BB34A8B695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Yo/Yo.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Yo/Info.plist;
+				INFOPLIST_PREPROCESS = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone;
+				PRODUCT_NAME = Yo;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		71A1C3D6261A5EBAD4A03718 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Yo;
+			};
+			name = Debug;
+		};
+		8CE5812E3612D0A540E3FA17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Yo;
+			};
+			name = Release;
+		};
+		8F2CC71CC264EEAF0B0F02D6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.yo.phone.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Yo.app/Yo";
+			};
+			name = Debug;
+		};
+		FF61DFF22A74D4B2C494BE78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = D5MC3NH58Y;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		479B911FF3566844FF9FE5A3 /* Build configuration list for PBXNativeTarget "YoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8F2CC71CC264EEAF0B0F02D6 /* Debug */,
+				0573E0AB2DE67B09BE07BAFE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5E5E7BF867613945C2B89391 /* Build configuration list for PBXNativeTarget "Yo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				58DF070FCB6471006522E0C7 /* Debug */,
+				6FF3829E18D788BB34A8B695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5F55E8BDB608EDFEB1086317 /* Build configuration list for PBXNativeTarget "YoUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71A1C3D6261A5EBAD4A03718 /* Debug */,
+				8CE5812E3612D0A540E3FA17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8737060DDEB23F2480F2848C /* Build configuration list for PBXProject "Yo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF61DFF22A74D4B2C494BE78 /* Debug */,
+				57DEE238135D4FAA21D3AD45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C23F870E49A19E7097D4B148 /* XCLocalSwiftPackageReference "YoPhoneKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = YoPhoneKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		665BB549CD1C93B9664459D6 /* YoPhoneKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = YoPhoneKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 14BBA4843686EC110427F363 /* Project object */;
+}

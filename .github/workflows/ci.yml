@@ -1,0 +1,116 @@
+name: CI
+
+# Pull requests only, and only once they are not drafts (marking a draft ready runs it via
+# ready_for_review). Not on push to main: that second full run was a large part of the Actions bill,
+# and this private repo is on the free plan (2,000 minutes a month).
+#
+# Docs-only changes are skipped with paths-ignore. The old `changes` and `ci` jobs existed so a
+# required check would still start on a docs-only PR. GitHub Free cannot enforce branch protection
+# on a private repo, so those jobs are gone. A required check that never
+# starts would block merges if protection is turned on later; don't require one while paths-ignore
+# is in place.
+#
+# This file does not turn the workflow back on. It was disabled in the repo settings. Re-enabling
+# it is a manual step: Actions → CI → Enable workflow.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Skipped only when every changed file matches. A workflow, script, or code file still runs the suite.
+    # Same set the old docs-only detector used: Markdown, docs media, the license files, issue forms,
+    # CODEOWNERS, and reference screenshots.
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**/*.html"
+      - "docs/**/*.png"
+      - "docs/**/*.jpg"
+      - "docs/**/*.jpeg"
+      - "docs/**/*.gif"
+      - "docs/**/*.svg"
+      - "NOTICE"
+      - "LICENSE"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/CODEOWNERS"
+      - "e2e/screenshots/**/*.png"
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run per PR. A new push cancels the run it replaces.
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint, unit tests, build
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6 # pnpm version comes from "packageManager" in package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint (biome)
+        run: pnpm lint
+      - name: Unit + integration tests (vitest)
+        run: pnpm test
+      - name: Home PC updater tests (python unittest)
+        run: pnpm test:py
+      - name: Build (core, web, agentd, desktop main)
+        run: pnpm build
+
+  e2e:
+    name: UI end-to-end (mock backend)
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright version
+        id: pw
+        run: |
+          echo "CPU cores: $(nproc)"
+          echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-chromium
+      - name: Install Chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      # Mostly a no-op (the runner image already has Chrome's libraries), but it runs apt-get update, which once
+      # took 12 minutes on a slow mirror. Capped so a slow mirror can't eat the minutes; the tests still run.
+      - name: Install Chromium system libraries (browser restored from cache)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 3
+        continue-on-error: true
+        run: pnpm exec playwright install-deps chromium
+      # The `screenshots` tests only write reference images for humans (e2e/screenshots); they don't
+      # compare anything, so CI skips them.
+      # Retries: e2e/playwright.config.ts sets retries to 1 when CI is set (GitHub sets it) and 0 locally.
+      - name: Playwright (chromium)
+        run: pnpm e2e --grep-invert screenshots
+      - name: Upload report, traces and failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/results
+          retention-days: 7

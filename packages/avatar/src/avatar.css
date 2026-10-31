@@ -1,0 +1,530 @@
+/*
+ * @yo/avatar styles: the Softies' motion and dark-mode colours, and the Yo logo's blink. Imported once by the app
+ * (apps/web/src/styles.css). Motion budget: subtle. Idle blinks every ~5s (and breathes only at 60px+); thinking
+ * and working loop gently; "needs you" leans in once and holds; "done" hops once. Nothing moves under
+ * prefers-reduced-motion, or on an avatar rendered with animated={false}.
+ */
+
+/* ------------------------------- Softies ------------------------------- */
+.sf {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  overflow: visible;
+}
+.sf * {
+  transform-box: fill-box;
+}
+.sf .sf-blink,
+.sf .sf-sp,
+.sf .sf-td,
+.sf .sf-badge,
+.sf .sf-halo,
+.sf .sf-shadow {
+  transform-origin: center;
+}
+.sf .sf-move,
+.sf .sf-breathe {
+  transform-origin: 50% 100%;
+}
+.sf .sf-sat {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+/* The spinner turns about the badge's centre (set inline, in viewBox units), not about its own 3/4 arc. */
+.sf .sf-spin {
+  transform-box: view-box;
+}
+
+/* Dark pages: a black contact shadow, dark thought bubble and chips, lighter accents. */
+.dark .sf .sf-sh0 {
+  stop-color: #000;
+  stop-opacity: 0.75;
+}
+.dark .sf .sf-sh1 {
+  stop-color: #000;
+  stop-opacity: 0.32;
+}
+.dark .sf .sf-sh2 {
+  stop-color: #000;
+}
+.dark .sf .sf-tb {
+  fill: #2c2c32;
+  stroke: #3e3e46;
+}
+.dark .sf .sf-dot {
+  fill: var(--sf-dot-d);
+}
+.dark .sf .sf-ring {
+  stroke: var(--sf-ring-d);
+  stroke-opacity: 0.5;
+}
+.dark .sf .sf-sp-a {
+  fill: #ffe58a;
+}
+.dark .sf .sf-sp-b {
+  fill: var(--sf-sp-d);
+}
+.dark .sf .sf-chip {
+  fill: #eceae5;
+}
+.dark .sf .sf-chip-fg {
+  fill: #2b2823;
+}
+.dark .sf .sf-spin-arc {
+  stroke: var(--sf-spin-d);
+}
+
+/* Motion only when the system allows it (prefers-reduced-motion: reduce gets still, designed frames). */
+@media (prefers-reduced-motion: no-preference) {
+  /* Idle: a blink now and then; a slow breath at hero sizes. */
+  .sf--anim.sf--idle .sf-blink {
+    animation: sf-blink 5.2s infinite;
+    animation-delay: var(--sf-d, 0s);
+  }
+  .sf--anim.sf--idle.sf--lg .sf-breathe {
+    animation: sf-breathe 4.8s ease-in-out infinite;
+    animation-delay: var(--sf-d, 0s);
+  }
+  /* Thinking: the dots rise in turn, the eyes wander a little. */
+  .sf--anim.sf--thinking .sf-td {
+    animation: sf-dot 1.3s ease-in-out infinite;
+  }
+  .sf--anim.sf--thinking .sf-td2 {
+    animation-delay: 0.16s;
+  }
+  .sf--anim.sf--thinking .sf-td3 {
+    animation-delay: 0.32s;
+  }
+  .sf--anim.sf--thinking .sf-gaze {
+    animation: sf-ponder 5s ease-in-out infinite;
+  }
+  /* Working: the satellite circles, the eyes scan the work. */
+  .sf--anim.sf--working .sf-sat-f {
+    animation: sf-orb-f 2.2s linear infinite;
+  }
+  .sf--anim.sf--working .sf-sat-b {
+    animation: sf-orb-b 2.2s linear infinite;
+  }
+  .sf--anim.sf--working .sf-gaze {
+    animation: sf-scan 2.6s ease-in-out infinite;
+  }
+  .sf--anim.sf--working .sf-spin {
+    animation: sf-spin 1.1s linear infinite;
+  }
+  /* Needs you: leans in once, the glow and the badge arrive, then it holds. */
+  .sf--anim.sf--needs .sf-move {
+    animation: sf-lean 0.8s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+  }
+  .sf--anim.sf--needs .sf-halo {
+    animation: sf-halo 0.65s ease-out both;
+  }
+  .sf--anim.sf--needs .sf-badge,
+  .sf--anim.sf--done .sf-badge,
+  .sf--anim.sf--error .sf-badge {
+    animation: sf-pop 0.45s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+  }
+  /* Done: one hop and three sparkles. */
+  .sf--anim.sf--done .sf-move {
+    animation: sf-hop 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+  }
+  .sf--anim.sf--done .sf-shadow {
+    animation: sf-hop-shadow 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+  }
+  .sf--anim.sf--done .sf-sp {
+    animation: sf-spark 0.9s ease-out both;
+  }
+  .sf--anim.sf--done .sf-sp2 {
+    animation-delay: 0.12s;
+  }
+  .sf--anim.sf--done .sf-sp3 {
+    animation-delay: 0.24s;
+  }
+}
+
+@keyframes sf-blink {
+  0%,
+  93%,
+  97.5%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+@keyframes sf-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.012, 1.024);
+  }
+}
+@keyframes sf-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-2.2px);
+    opacity: 1;
+  }
+}
+@keyframes sf-ponder {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(-1.5px, 0.6px);
+  }
+  70% {
+    transform: translate(0.8px, -0.4px);
+  }
+}
+@keyframes sf-scan {
+  0%,
+  100% {
+    transform: translateX(-1.8px);
+  }
+  50% {
+    transform: translateX(1.8px);
+  }
+}
+@keyframes sf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes sf-lean {
+  0% {
+    transform: rotate(6deg);
+  }
+  64% {
+    transform: rotate(-1.5deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes sf-pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes sf-halo {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes sf-hop {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  21% {
+    transform: translateY(1px) scale(1.05, 0.94);
+  }
+  50% {
+    transform: translateY(-9px) scale(0.97, 1.04);
+  }
+  79% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+@keyframes sf-hop-shadow {
+  0%,
+  21%,
+  79%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.72);
+    opacity: 0.55;
+  }
+}
+@keyframes sf-spark {
+  0% {
+    transform: scale(0) rotate(-30deg);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.2) rotate(0);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* The satellite's path (rx 44, ry 12.5): in front of the body for the lower half, behind it for the upper half. */
+@keyframes sf-orb-f {
+  0% {
+    transform: translate(38.61px, 5.99px);
+    opacity: 1;
+  }
+  4.17% {
+    transform: translate(31.84px, 8.63px);
+    opacity: 1;
+  }
+  8.33% {
+    transform: translate(22.89px, 10.67px);
+    opacity: 1;
+  }
+  12.5% {
+    transform: translate(12.39px, 11.99px);
+    opacity: 1;
+  }
+  16.67% {
+    transform: translate(1.04px, 12.5px);
+    opacity: 1;
+  }
+  20.83% {
+    transform: translate(-10.38px, 12.15px);
+    opacity: 1;
+  }
+  25% {
+    transform: translate(-21.09px, 10.97px);
+    opacity: 1;
+  }
+  29.17% {
+    transform: translate(-30.37px, 9.04px);
+    opacity: 1;
+  }
+  33.33% {
+    transform: translate(-37.58px, 6.5px);
+    opacity: 1;
+  }
+  37.5% {
+    transform: translate(-42.22px, 3.52px);
+    opacity: 1;
+  }
+  41.67% {
+    transform: translate(-43.99px, 0.29px);
+    opacity: 1;
+  }
+  45.83% {
+    transform: translate(-42.76px, -2.95px);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-38.61px, -5.99px);
+    opacity: 0;
+  }
+  54.17% {
+    transform: translate(-31.84px, -8.63px);
+    opacity: 0;
+  }
+  58.33% {
+    transform: translate(-22.89px, -10.67px);
+    opacity: 0;
+  }
+  62.5% {
+    transform: translate(-12.39px, -11.99px);
+    opacity: 0;
+  }
+  66.67% {
+    transform: translate(-1.04px, -12.5px);
+    opacity: 0;
+  }
+  70.83% {
+    transform: translate(10.38px, -12.15px);
+    opacity: 0;
+  }
+  75% {
+    transform: translate(21.09px, -10.97px);
+    opacity: 0;
+  }
+  79.17% {
+    transform: translate(30.37px, -9.04px);
+    opacity: 0;
+  }
+  83.33% {
+    transform: translate(37.58px, -6.5px);
+    opacity: 0;
+  }
+  87.5% {
+    transform: translate(42.22px, -3.52px);
+    opacity: 0;
+  }
+  91.67% {
+    transform: translate(43.99px, -0.29px);
+    opacity: 0;
+  }
+  95.83% {
+    transform: translate(42.76px, 2.95px);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(38.61px, 5.99px);
+    opacity: 1;
+  }
+}
+@keyframes sf-orb-b {
+  0% {
+    transform: translate(38.61px, 5.99px);
+    opacity: 0;
+  }
+  4.17% {
+    transform: translate(31.84px, 8.63px);
+    opacity: 0;
+  }
+  8.33% {
+    transform: translate(22.89px, 10.67px);
+    opacity: 0;
+  }
+  12.5% {
+    transform: translate(12.39px, 11.99px);
+    opacity: 0;
+  }
+  16.67% {
+    transform: translate(1.04px, 12.5px);
+    opacity: 0;
+  }
+  20.83% {
+    transform: translate(-10.38px, 12.15px);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-21.09px, 10.97px);
+    opacity: 0;
+  }
+  29.17% {
+    transform: translate(-30.37px, 9.04px);
+    opacity: 0;
+  }
+  33.33% {
+    transform: translate(-37.58px, 6.5px);
+    opacity: 0;
+  }
+  37.5% {
+    transform: translate(-42.22px, 3.52px);
+    opacity: 0;
+  }
+  41.67% {
+    transform: translate(-43.99px, 0.29px);
+    opacity: 0;
+  }
+  45.83% {
+    transform: translate(-42.76px, -2.95px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-38.61px, -5.99px);
+    opacity: 1;
+  }
+  54.17% {
+    transform: translate(-31.84px, -8.63px);
+    opacity: 1;
+  }
+  58.33% {
+    transform: translate(-22.89px, -10.67px);
+    opacity: 1;
+  }
+  62.5% {
+    transform: translate(-12.39px, -11.99px);
+    opacity: 1;
+  }
+  66.67% {
+    transform: translate(-1.04px, -12.5px);
+    opacity: 1;
+  }
+  70.83% {
+    transform: translate(10.38px, -12.15px);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(21.09px, -10.97px);
+    opacity: 1;
+  }
+  79.17% {
+    transform: translate(30.37px, -9.04px);
+    opacity: 1;
+  }
+  83.33% {
+    transform: translate(37.58px, -6.5px);
+    opacity: 1;
+  }
+  87.5% {
+    transform: translate(42.22px, -3.52px);
+    opacity: 1;
+  }
+  91.67% {
+    transform: translate(43.99px, -0.29px);
+    opacity: 1;
+  }
+  95.83% {
+    transform: translate(42.76px, 2.95px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(38.61px, 5.99px);
+    opacity: 0;
+  }
+}
+
+/* --------------------------------- Logo --------------------------------- */
+.yo-logo {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  overflow: visible;
+}
+.yo-logo .yo-logo-look,
+.yo-logo .yo-logo-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.yo-logo--waiting .yo-logo-look {
+  transform: translateY(-3.4px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .yo-logo .yo-logo-look {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .yo-logo--anim .yo-logo-blink {
+    animation: sf-blink 5.6s infinite;
+  }
+  .yo-logo--anim.yo-logo--working .yo-logo-look {
+    animation: yo-logo-scan 2.6s ease-in-out infinite;
+  }
+}
+@keyframes yo-logo-scan {
+  0%,
+  100% {
+    transform: translateX(-3.4px);
+  }
+  38%,
+  50% {
+    transform: translateX(3.4px);
+  }
+  88% {
+    transform: translateX(-3.4px);
+  }
+}
