@@ -36,7 +36,7 @@
  *                                personal (held in Personal) | auto (follows the work hours, Mon–Fri 11–7) |
  *                                old (a core from before spaces: no switch)
  *             &spacesIntro=1     show the one-time "Meet Pip" intro (otherwise it counts as seen)
- *             &mockBrief=1       the first brief.claim (opening the chat) posts the morning brief
+ *             &mockBrief=1       the brief is on, and the first brief.claim (opening the chat) posts it
  *
  * Chat keywords pick a scenario: "buy/order/purchase" -> approval card, "flight/trip/travel" ->
  * ask-user card, "fail/error" -> error, "save … mac" -> exact-file approval for a change on the paired
@@ -303,6 +303,8 @@ export class MockClient implements YoClient {
     this.scale = q.has("fast") ? 0.15 : 1;
     this.codexCodeOff = q.get("mockCodexCode") === "off";
     this.briefPending = q.get("mockBrief") === "1";
+    // The brief is opt-in: `&mockBrief=1` plays a user who turned it on.
+    if (this.briefPending) this.s.settings.morningBrief = true;
     const theme = q.get("theme");
     if (theme === "light" || theme === "dark" || theme === "system") this.s.settings.theme = theme;
     const space = q.get("space");
@@ -1061,6 +1063,10 @@ export class MockClient implements YoClient {
   }
 
   private pickScript(text: string, agentId: string): (ctx: RunCtx) => Promise<void> {
+    // A Start tap (startRequestText) frames Yo's quoted title: pick the scenario from the title alone, so the
+    // frame's own words ("morning brief") don't replay the brief.
+    const started = /^I tapped Start on [^:]*: "([^"]*)"/.exec(text);
+    if (started) return this.pickScript(started[1] ?? "", agentId);
     const t = text.toLowerCase();
     const draft = this.bugDrafts.get(agentId);
     if (draft && /^\s*(report it|yes|yep|yeah|sure|ok|okay|go ahead|please do)\b/.test(t))
@@ -2842,7 +2848,7 @@ export class MockClient implements YoClient {
 
     // `&mockBrief=1`: the first open of the chat posts the morning brief (like core: a quiet notice, then the run).
     "brief.claim": () => {
-      if (!this.briefPending || this.s.settings.morningBrief === false) return { posted: false };
+      if (!this.briefPending || this.s.settings.morningBrief !== true) return { posted: false };
       const s = this.s.settings;
       const lead = agentForSpace(this.s.agents, resolveSpace(Date.now(), s).space, s.spacesOn === true);
       if (!lead || this.runs.has(lead.id)) return { posted: false };

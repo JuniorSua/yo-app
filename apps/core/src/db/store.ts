@@ -287,13 +287,14 @@ export class Store {
   }
 
   /**
-   * An agent's ledger, oldest first: what it still owes (not done, cancelled, or a suggestion still waiting or
-   * hidden), or with `all` every one.
+   * An agent's ledger, oldest first: what it still owes (not done, cancelled, a suggestion still waiting or
+   * hidden, or a task the user saved for Up next and hasn't started), or with `all` every one. A saved task joins
+   * the ledger once the user taps Start (it's in progress then).
    */
   listTasks(ownerId: string, opts: { all?: boolean } = {}): LedgerTask[] {
     const rows = this.db
       .prepare(
-        `SELECT * FROM tasks WHERE owner_id = ?${opts.all ? "" : " AND status NOT IN ('done','cancelled','suggested','hidden')"} ORDER BY created_at ASC, rowid ASC`,
+        `SELECT * FROM tasks WHERE owner_id = ?${opts.all ? "" : " AND status NOT IN ('done','cancelled','suggested','hidden') AND NOT (status = 'open' AND origin = 'user')"} ORDER BY created_at ASC, rowid ASC`,
       )
       .all(ownerId) as Row[];
     return rows.map((r) => this.toTask(r));

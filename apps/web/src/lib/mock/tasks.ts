@@ -4,7 +4,7 @@
  * suggestions and one the user saved for later. Starting one posts what the user saw (a suggestion's title, or
  * the title and details they wrote) into the chat as their message (the chat.send path), like core.
  */
-import { type LedgerTask, newId } from "@yo/contracts";
+import { type LedgerTask, newId, startRequestText } from "@yo/contracts";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -140,8 +140,9 @@ export class MockTasks {
     if (t.status === "open" && t.origin !== "user")
       throw new Error("That one is on Yo's own list. It isn't started from here.");
     if (t.status !== "suggested" && t.status !== "open") throw new Error("That task has already started.");
-    // Like core: the user's message is what they saw; a suggestion's plan becomes its note.
-    const text = t.origin === "user" ? t.prompt?.trim() || t.title : t.title;
+    // Like core: a saved task sends the user's own words; a suggestion's title goes quoted as data, and its plan
+    // becomes its note.
+    const text = t.origin === "user" ? t.prompt?.trim() || t.title : startRequestText("suggestion", t.title);
     const plan = t.origin === "suggestion" && !t.note && t.prompt ? t.prompt : undefined;
     const started = this.set(t, { status: "in_progress", ...(plan ? { note: plan } : {}) });
     this.d.send(t.ownerId, text);

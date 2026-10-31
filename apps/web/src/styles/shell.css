@@ -63,6 +63,12 @@ body {
 .shell-icon-button.is-on {
   color: var(--fg);
 }
+/* In the chat's top bar they sit beside the agent's ⋯ menu, so they take its shape: 32px circles. */
+.shell-bar-buttons .shell-icon-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+}
 .shell-icon-button.is-small {
   width: 24px;
   height: 24px;

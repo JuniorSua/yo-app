@@ -37,7 +37,8 @@ export function claimBriefToday(now = new Date()) {
  */
 export function useMorningBriefClaim(agent: AgentView | undefined, ready: boolean) {
   const lead = useActiveAgent();
-  const on = useApp((s) => s.settings.morningBrief !== false && s.settings.onboarded !== false);
+  // Opt-in (absent = off): the app only claims a brief once the user turned it on in Settings.
+  const on = useApp((s) => s.settings.morningBrief === true && s.settings.onboarded !== false);
   const mine = !!agent && agent.id === lead?.id && agent.kind !== "helper";
   useEffect(() => {
     if (ready && on && mine) claimBriefToday();

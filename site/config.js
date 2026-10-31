@@ -11,7 +11,7 @@ const SUPPORT_EMAIL = "support@theyoapp.com";
 // off) in site/index.html (every Download href, plus install.ps1 and install.sh), site/support.html
 // (install.ps1 and install.sh) and site/thanks.html (the Download href). The smoke test reads this constant
 // and checks those links. It does not keep its own copy of the tag.
-const DOWNLOAD_TAG = "v0.1.778";
+const DOWNLOAD_TAG = "v2.0.790";
 
 // SUPPORT_ONCE_LINK: the Stripe Payment Link behind "Chip in" (Support Yo), a one-time, pay-what-you-want price,
 // e.g. "https://buy.stripe.com/<id>". Its "After payment" setting should redirect to https://theyoapp.com/thanks.

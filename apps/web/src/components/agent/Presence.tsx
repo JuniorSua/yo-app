@@ -262,7 +262,7 @@ function AgentMenu({ agent }: { agent: AgentView }) {
  */
 export function ChatBar({ agent }: { agent: AgentView }) {
   return (
-    <div className="chat-bar app-drag">
+    <div className="chat-bar">
       <PresenceChips />
       <AgentMenu agent={agent} />
       <TopBarButtons agent={agent} />
@@ -283,7 +283,7 @@ export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boole
   const Tag = hero ? "div" : "header";
   return (
     <Tag
-      className={cn("chat-head", !hero && "app-drag", compact && "is-compact", hero && "is-hero")}
+      className={cn("chat-head", compact && "is-compact", hero && "is-hero")}
       data-testid={hero ? "presence-hero" : "presence-header"}
       data-tone={tone}
     >

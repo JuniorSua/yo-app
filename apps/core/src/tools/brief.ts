@@ -77,7 +77,7 @@ export function sendBriefRequest(
 }
 
 /**
- * brief.claim: the chat of the active space's main agent opened. Posts the daily brief when it's on, `localDate`
+ * brief.claim: the chat of the active space's main agent opened (or Yo Phone said hello). Posts the daily brief when the user turned it on, `localDate`
  * is a real date within a day of the server's, today's hasn't been claimed (by any tab or device), it isn't
  * the user's first day with Yo, and the agent exists. `posted` = this call started it.
  */
@@ -85,7 +85,8 @@ export async function claimBrief(d: BriefClaimDeps, localDate: unknown): Promise
   const no = { posted: false };
   const now = d.now?.() ?? Date.now();
   const s = d.store.getSettings();
-  if (s.morningBrief === false || !s.onboarded || s.computerSetup === "pending") return no;
+  // Opt-in: only when the user turned it on (Settings → Notifications). Absent, or an older core's default, is off.
+  if (s.morningBrief !== true || !s.onboarded || s.computerSetup === "pending") return no;
   if (typeof localDate !== "string") return no;
   const day = utcMidnightOf(localDate);
   // Every place on Earth is within a day of UTC's date: further out is a wrong clock, which would claim a

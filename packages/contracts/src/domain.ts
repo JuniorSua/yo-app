@@ -155,15 +155,15 @@ export const LedgerTask = z.object({
   why: z.string().nullable().optional(),
   /**
    * Tasks the user added: their title and details, sent together by Start. Suggestions: Yo's plan, which Start
-   * puts on the task as its note (Start sends only the title, what the user saw).
+   * puts on the task as its note (Start sends the title quoted as data, never as the user's instruction).
    */
   prompt: z.string().nullable().optional(),
 });
 export type LedgerTask = z.infer<typeof LedgerTask>;
 
 /**
- * One row of the morning brief (post_brief). Start sends "Take care of: {title}" (what the row shows); `start` is
- * only Yo's own note on how it would do it (it stays in its post_brief call).
+ * One row of the morning brief (post_brief). Start sends the row's title quoted as data (startRequestText);
+ * `start` is only Yo's own note on how it would do it (it stays in its post_brief call).
  */
 export const BriefItem = z.object({
   title: z.string(),
@@ -415,7 +415,10 @@ export type ComputerOverview = z.infer<typeof ComputerOverview>;
 
 export const Settings = z.object({
   userName: z.string(),
-  /** Post the morning brief the first time the user opens Yo each day. Absent = on. */
+  /**
+   * Post the morning brief the first time the user opens Yo each day (an agent turn that reads mail and calendar).
+   * Opt-in: absent = off, and migration 15 cleared the old default-on value.
+   */
   morningBrief: z.boolean().optional(),
   timezone: z.string(),
   theme: z.enum(["dark", "light", "system"]),
@@ -468,7 +471,7 @@ export function localTimeZone(
 
 export const DEFAULT_SETTINGS: Settings = {
   userName: "",
-  morningBrief: true,
+  morningBrief: false,
   timezone: "America/New_York",
   theme: "dark",
   onboarded: false,

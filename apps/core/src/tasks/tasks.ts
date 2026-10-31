@@ -2,7 +2,7 @@
  * The Tasks page on the core: the ledger as the user sees it (tasks.*), and the suggestions Yo offers
  * (suggest_task). Every change is pushed to the apps as task.updated by the store's listener (see main.ts).
  */
-import type { ApiMethods, LedgerTask } from "@yo/contracts";
+import { type ApiMethods, type LedgerTask, startRequestText } from "@yo/contracts";
 import type { Store } from "../db/store";
 import type { Orchestrator } from "../orchestrator/Orchestrator";
 import { activeSpaceAgent } from "../team/spaces";
@@ -85,16 +85,21 @@ export function createTasksApi(d: {
   const { store } = d;
   const now = d.now ?? Date.now;
 
+  /** A task the Tasks page can act on: one on a main agent's list (not a helper's, not an archived agent's). */
   const taskOf = (id: string) => {
     const t = store.getTask(String(id));
     if (!t) throw new Error("That task isn't on the list any more.");
+    const owner = store.getAgent(t.ownerId);
+    if (!owner || owner.archivedAt || owner.kind === "helper")
+      throw new Error("That task isn't on one of your agents' lists.");
     return t;
   };
 
   /**
-   * Start: the owner gets, as the user's message (queued if it's busy), exactly what the user saw: the title of a
-   * suggestion, or the title and details the user wrote. A suggestion's plan (Yo's own words) goes on the task as
-   * its note, so Yo sees it in its ledger but never as the user's voice. The task is Working.
+   * Start: the owner gets the user's message (queued if it's busy). A task the user saved sends the title and
+   * details they wrote. A suggestion's title is Yo's own words (written from mail, pages, files), so it goes as the
+   * user's tap with the title quoted as data (startRequestText), never as their instruction. Its plan goes on the
+   * task as its note, so Yo sees it in its ledger but never in the user's voice. The task is Working.
    */
   const start = async (t: LedgerTask): Promise<LedgerTask> => {
     if (!startable(t))
@@ -103,7 +108,7 @@ export function createTasksApi(d: {
           ? "That one is on Yo's own list. It isn't started from here."
           : "That task has already started.",
       );
-    const text = t.origin === "user" ? t.prompt?.trim() || t.title : t.title;
+    const text = t.origin === "user" ? t.prompt?.trim() || t.title : startRequestText("suggestion", t.title);
     const plan =
       t.origin === "suggestion" && !t.note?.trim() && t.prompt?.trim() ? t.prompt.trim() : undefined;
     // Marked first, so a second tap (or another window) can't start it twice while the message is on its way.

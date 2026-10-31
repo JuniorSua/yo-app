@@ -58,7 +58,7 @@ export function Modal({
               {!hideClose && (
                 <BDialog.Close
                   aria-label="Close"
-                  className="-mt-1 -mr-1 grid size-7 place-items-center rounded-lg text-muted transition-colors hover:bg-hover hover:text-fg"
+                  className="-mt-1 -mr-1 grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-fg"
                 >
                   <X className="size-4" />
                 </BDialog.Close>

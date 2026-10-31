@@ -158,6 +158,10 @@
   flex-direction: column;
   align-items: center;
   padding: 10px 24px 6px;
+  /* No drag area of its own: the Mac app applies app-region in page order, and the head comes after the top bar,
+     so an inherited drag here would cover the bar's buttons. .chat-top's drag area already covers the head. */
+  -webkit-app-region: none;
+  app-region: none;
 }
 .chat-head-avatar {
   position: relative;

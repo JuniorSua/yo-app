@@ -403,7 +403,9 @@ html[data-glass="off"] .air-overlay {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
-.no-drag {
+.no-drag,
+/* Popups open in a portal at the end of the page, outside any .app-drag, so they need their own no-drag. */
+:is([role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]) {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }

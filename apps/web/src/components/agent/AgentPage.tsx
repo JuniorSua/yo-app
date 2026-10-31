@@ -213,7 +213,8 @@ export function AgentPage() {
   return (
     <div className="flex h-full min-h-0">
       <div className="chat chat-column air-page flex min-w-0 flex-1 flex-col" style={accent}>
-        <div className="chat-top">
+        {/* One drag area for the whole top, so the bar's buttons (later in the page) stay clickable in the Mac app. */}
+        <div className="chat-top app-drag">
           <ChatBar agent={agent} />
           {!hero && <PresenceHeader agent={agent} />}
         </div>

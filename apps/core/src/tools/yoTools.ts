@@ -226,6 +226,17 @@ export function createYoTools(d: YoToolDeps) {
           throw new Error(
             `The user hid "${t.title}". Leave it hidden, and don't take it on unless they ask.`,
           );
+        // Saved for Up next: the user's to start. Yo may only clear it (done or cancelled) when they say so.
+        if (
+          t.status === "open" &&
+          t.origin === "user" &&
+          p.status &&
+          p.status !== "done" &&
+          p.status !== "cancelled"
+        )
+          throw new Error(
+            `"${t.title}" is saved for later by the user: only they can start it (Start on the Tasks page). Don't take it on unless they ask in the chat.`,
+          );
         const u = d.store.updateTask(t.id, { status: p.status, note: p.note })!;
         return `Task ${u.id} "${u.title}" is ${u.status.replace("_", " ")}${u.note ? `: ${u.note}` : ""}.`;
       }
@@ -233,7 +244,7 @@ export function createYoTools(d: YoToolDeps) {
         const all = args.include_done === true;
         const tasks = d.store.listTasks(agentId, { all });
         const line = (t: (typeof tasks)[number]) =>
-          `[${t.id}] ${t.title} (${t.status === "hidden" ? "suggestion the user hid" : t.status.replace("_", " ")}${t.helperId ? `, helper ${t.helperId}` : ""})${t.note ? `: ${t.note}` : ""}`;
+          `[${t.id}] ${t.title} (${t.status === "hidden" ? "suggestion the user hid" : t.status === "open" && t.origin === "user" ? "saved by the user for later, not yours to start" : t.status.replace("_", " ")}${t.helperId ? `, helper ${t.helperId}` : ""})${t.note ? `: ${t.note}` : ""}`;
         // Suggestions waiting for the user aren't owed yet: listed apart (with include_done they're in the list).
         const offered = all
           ? []

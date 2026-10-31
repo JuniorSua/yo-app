@@ -1,4 +1,4 @@
-import type { BriefItem, MorningBrief, TimelineEntry } from "@yo/contracts";
+import { type BriefItem, type MorningBrief, startRequestText, type TimelineEntry } from "@yo/contracts";
 import { ArrowRight, Check } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useApp } from "../../stores/app";
@@ -135,8 +135,8 @@ function PlainRow({ item }: { item: BriefItem }) {
 }
 
 /**
- * The morning brief (post_brief): the date, a greeting, what needs the user (each with Start, which sends Yo
- * "Take care of: {title}" as the user's message), what can wait, today's calendar, and what Yo couldn't check.
+ * The morning brief (post_brief): the date, a greeting, what needs the user (each with Start, which sends Yo the
+ * user's tap with the row's title quoted as data), what can wait, today's calendar, and what Yo couldn't check.
  */
 export function BriefCard({ entry, brief }: { entry: TimelineEntry; brief: MorningBrief }) {
   const userName = useApp((s) => s.settings.userName?.trim());
@@ -145,8 +145,9 @@ export function BriefCard({ entry, brief }: { entry: TimelineEntry; brief: Morni
   const at = entry.createdAt || Date.now();
   const start = (item: BriefItem) => {
     if (!composerBus.sendPlain) return;
-    // Exactly what the row shows: Yo's own `start` note stays in its post_brief call, never in the user's voice.
-    composerBus.sendPlain(`Take care of: ${item.title}`);
+    // The row's title is Yo's own words (from mail, pages, files): quoted as data, never sent as the user's
+    // instruction. Yo's own `start` note stays in its post_brief call.
+    composerBus.sendPlain(startRequestText("brief", item.title));
     const next = [...started, item.title];
     setStarted(next);
     saveStarted(entry.id, next);

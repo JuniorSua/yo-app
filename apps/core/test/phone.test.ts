@@ -6,7 +6,13 @@ import { createHash, createHmac, createPrivateKey, createPublicKey, randomBytes,
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { type Decision, MORNING_BRIEF_FRAME, newId, type PendingRequest } from "@yo/contracts";
+import {
+  type Decision,
+  MORNING_BRIEF_FRAME,
+  newId,
+  type PendingRequest,
+  startRequestText,
+} from "@yo/contracts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   briefFallbackText,
@@ -1681,7 +1687,7 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
     expect(ids.every((id) => store.getTask(id)!.status === "suggested")).toBe(true);
   });
 
-  it("Start sends only the suggestion's title, as the phone's own turn, and its reply comes back", async () => {
+  it("Start sends the user's tap with the suggestion's title quoted as data, as the phone's own turn, and its reply comes back", async () => {
     const s = task("Plan the trip", {
       status: "suggested",
       origin: "suggestion",
@@ -1690,7 +1696,9 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
     });
     const phone = await pairPhone();
     const out = await ask(phone, { t: "task", taskId: s.id, action: "start" });
-    expect(orch.sent).toEqual([{ agentId: primaryId, text: "Plan the trip" }]);
+    expect(orch.sent).toEqual([
+      { agentId: primaryId, text: startRequestText("suggestion", "Plan the trip") },
+    ]);
     expect(orch.sentOpts[0]).toMatchObject({ noSteer: true });
     expect(store.getTask(s.id)).toMatchObject({ status: "in_progress", note: "Check flights, then hotels" });
     expect(out.map((o) => o.t)).toEqual(["status", "tasks"]);
@@ -1761,9 +1769,10 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
     expect(store.getTask(theirs.id)!.status).toBe("suggested");
   });
 
-  /** A Yo that's been set up since before today, and a channel whose clock is two days on. */
-  async function briefSetup() {
+  /** A Yo that's been set up since before today (the brief turned on, unless `on` is false), and a channel whose clock is two days on. */
+  async function briefSetup({ on = true }: { on?: boolean } = {}) {
     store.updateSettings({ onboarded: true, computerSetup: "done", timezone: "UTC", spacesOn: false });
+    if (on) store.updateSettings({ morningBrief: true });
     await channel.stop();
     const at = Date.now() + 2 * DAY;
     channel = makeChannel({ tasksPushMs: 20, now: () => at });
@@ -1806,6 +1815,15 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
     await ask(phone, { t: "hello", localDate: "2026-02-30" });
     store.updateSettings({ morningBrief: false });
     await ask(phone, { t: "hello", localDate: today });
+    expect(orch.sent).toEqual([]);
+  });
+
+  it("hello never starts the brief while it's off by default (the user never turned it on)", async () => {
+    const today = await briefSetup({ on: false });
+    expect(store.getSettings().morningBrief).toBe(false);
+    const phone = await pairPhone();
+    const out = await ask(phone, { t: "hello", localDate: today });
+    expect(out.map((o) => o.t)).toEqual(["hello"]);
     expect(orch.sent).toEqual([]);
   });
 

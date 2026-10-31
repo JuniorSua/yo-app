@@ -634,7 +634,7 @@ function Rules() {
 
 function Notifications() {
   const on = useApp((s) => s.settings.notifications);
-  const brief = useApp((s) => s.settings.morningBrief !== false);
+  const brief = useApp((s) => s.settings.morningBrief === true);
   return (
     <div>
       <H desc="Get notified when work is ready or Yo needs you.">Notifications</H>
@@ -655,7 +655,10 @@ function Notifications() {
             }}
           />
         </Row>
-        <Row title="Morning brief" desc="Post a short brief the first time you open Yo each day.">
+        <Row
+          title="Morning brief"
+          desc="Off until you turn it on. Once a day, the first time you open Yo, Yo checks your mail, calendar and tasks and posts a short brief. It's a turn of its own, so it uses your plan like any other."
+        >
           <Switch
             checked={brief}
             label="Morning brief"
@@ -792,7 +795,7 @@ export function SettingsDialog() {
         </nav>
         <DialogClose
           aria-label="Close settings"
-          className="absolute top-3.5 right-3.5 z-10 grid size-8 place-items-center rounded-lg text-muted transition-colors hover:bg-hover hover:text-fg max-sm:top-2 max-sm:right-2 max-sm:bg-elevated"
+          className="absolute top-3 right-3 z-10 grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-focus max-sm:top-2 max-sm:right-2 max-sm:bg-elevated"
         >
           <X className="size-4" />
         </DialogClose>

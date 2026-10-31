@@ -321,6 +321,14 @@ const MIGRATIONS: string[] = [
   /* 14 — the Make page: what kind of page create_page made (page, dashboard, slides, doc, design). */ `
   ALTER TABLE artifacts ADD COLUMN page_kind TEXT;
   `,
+  /*
+   * 15 — the morning brief is opt-in. 0.1.778 and Yo 2 both stored it on by default, so a stored "on" can't be
+   * told from the default: it's cleared, and the brief stays off until the user turns it on in Settings →
+   * Notifications. The DELETE is idempotent, and the version table runs it once, so a later opt-in stays on.
+   * Yo 2 added no migration of its own, so this stays 15.
+   */ `
+  DELETE FROM settings WHERE key = 'morningBrief' AND value_json = 'true';
+  `,
 ];
 
 export type Db = DatabaseSync;

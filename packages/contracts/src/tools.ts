@@ -404,7 +404,7 @@ export const YO_TOOLS: YoToolDef[] = [
   {
     name: "suggest_task",
     description:
-      "Offer to take something on that the user didn't ask for: a concrete next step you noticed (a reply to draft, a renewal to check, a price to watch). It shows under Up next on the Tasks page and above the message box with Start and Hide; nothing happens until the user taps Start, which sends you the title as their message and keeps `prompt` (your plan) on the task as your note. One clear, useful suggestion beats several. Don't suggest something the user already asked for, already hid, or that's already on the list (task_list include_done).",
+      "Offer to take something on that the user didn't ask for: a concrete next step you noticed (a reply to draft, a renewal to check, a price to watch). It shows under Up next on the Tasks page and above the message box with Start and Hide; nothing happens until the user taps Start, which sends you their tap with the title quoted as data and keeps `prompt` (your plan) on the task as your note. One clear, useful suggestion beats several. Don't suggest something the user already asked for, already hid, or that's already on the list (task_list include_done).",
     inputSchema: obj(
       {
         title: {
@@ -425,7 +425,7 @@ export const YO_TOOLS: YoToolDef[] = [
   {
     name: "post_brief",
     description:
-      "Post the morning brief card: what needs the user today (each with Start, which sends you \"Take care of: <title>\" as their message), what can wait, today's calendar, and what you couldn't check (e.g. mail not connected). Gather first (mail, calendar, your task ledger, recent chat), then call it once. Keep rows short: a title and at most one sentence of detail. After it, write at most one sentence. Use it when asked for a brief or a morning summary, and when Yo asks you for the daily brief.",
+      "Post the morning brief card: what needs the user today (each with Start, which sends you the title quoted as data, as their tap on that row), what can wait, today's calendar, and what you couldn't check (e.g. mail not connected). Gather first (mail, calendar, your task ledger, recent chat), then call it once. Keep rows short: a title and at most one sentence of detail. After it, write at most one sentence. Use it when asked for a brief or a morning summary, and when Yo asks you for the daily brief.",
     inputSchema: obj(
       {
         needs_you: {
@@ -438,7 +438,7 @@ export const YO_TOOLS: YoToolDef[] = [
               start: {
                 type: "string",
                 description:
-                  "Your own note on how you'd take care of it, for when the user taps Start (Start sends you \"Take care of: <title>\", not this): 'Draft a reply to Ana confirming Friday's ship date'.",
+                  "Your own note on how you'd take care of it, for when the user taps Start (Start sends you the title, not this): 'Draft a reply to Ana confirming Friday's ship date'.",
               },
             },
             ["title"],

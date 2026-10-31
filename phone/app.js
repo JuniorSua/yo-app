@@ -1112,8 +1112,8 @@ const briefDateFmt = new Intl.DateTimeFormat(undefined, { weekday: "long", month
 const briefOpen = new Set();
 
 /**
- * The brief card: the date, a greeting, what needs the user (each with Start, which sends "Take care of: {title}"
- * as their own message), what can wait, today's calendar, and what Yo couldn't check.
+ * The brief card: the date, a greeting, what needs the user (each with Start, which sends the user's tap with
+ * the row's title quoted as data), what can wait, today's calendar, and what Yo couldn't check.
  */
 function renderBrief(m, fresh) {
   const b = m.brief;
