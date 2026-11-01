@@ -36,12 +36,12 @@ export function Modal({
   return (
     <BDialog.Root open={open} onOpenChange={(o) => onOpenChange(o)}>
       <BDialog.Portal>
-        <BDialog.Backdrop className="fixed inset-0 z-50 bg-scrim backdrop-blur-[2px] transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+        <BDialog.Backdrop className="fixed inset-0 z-50 bg-scrim transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
         <BDialog.Popup
           data-testid={testId}
           style={style}
           className={cn(
-            "air-raised fixed top-1/2 left-1/2 z-50 max-h-[calc(100vh-48px)] w-[min(520px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] border border-border-strong/60 bg-elevated shadow-dialog outline-none transition-[opacity,transform] duration-200 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",
+            "air-raised fixed top-1/2 left-1/2 z-50 max-h-[calc(100vh-48px)] w-[min(520px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] border border-border-strong/60 bg-elevated shadow-dialog outline-none motion-spring data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",
             !bare && "flex flex-col",
             className,
           )}
@@ -230,7 +230,7 @@ export function Popover({
           <BPopover.Popup
             aria-label={label}
             className={cn(
-              "air-overlay origin-[var(--transform-origin)] rounded-2xl border border-border-strong/60 bg-elevated shadow-pop outline-none transition-[opacity,transform] duration-150 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",
+              "air-overlay origin-[var(--transform-origin)] rounded-2xl border border-border-strong/60 bg-elevated shadow-pop outline-none motion-spring data-[ending-style]:scale-[0.96] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.95] data-[starting-style]:opacity-0",
               className,
             )}
           >
@@ -307,7 +307,7 @@ export function Menu({
           <BMenu.Popup
             data-testid={testId}
             className={cn(
-              "air-overlay min-w-44 origin-[var(--transform-origin)] rounded-2xl border border-border-strong/60 bg-elevated p-1.5 shadow-pop outline-none transition-[opacity,transform] duration-150 ease-out-soft data-[ending-style]:translate-y-[3px] data-[ending-style]:opacity-0 data-[starting-style]:translate-y-[5px] data-[starting-style]:opacity-0",
+              "air-overlay min-w-44 origin-[var(--transform-origin)] rounded-2xl border border-border-strong/60 bg-elevated p-1.5 shadow-pop outline-none motion-spring data-[ending-style]:translate-y-[3px] data-[ending-style]:opacity-0 data-[starting-style]:translate-y-[5px] data-[starting-style]:opacity-0",
               className,
             )}
           >

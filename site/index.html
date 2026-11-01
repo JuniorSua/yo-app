@@ -31,6 +31,7 @@
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/instrument-serif-latin-italic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/styles.css" />
     <script>
       // The team hops onto the window once per visit (site.js), never with reduced motion.
@@ -71,7 +72,7 @@
             <span class="sr-only">Yo on GitHub</span>
             <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
           </a>
-          <a class="btn btn-ink btn-sm" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-download>Download</a>
+          <a class="btn btn-ink btn-sm" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-download>Download</a>
           <button class="nav-menu" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" data-menu>
             <span></span><span></span>
           </button>
@@ -85,7 +86,7 @@
         <a href="#support">Support Yo</a>
         <a href="#faq">FAQ</a>
         <a href="/support">Help</a>
-        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-download>Download</a>
+        <a class="btn btn-ink" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-download>Download</a>
       </div>
     </header>
 
@@ -93,15 +94,15 @@
       <!-- Hero: the pitch, then the team standing on the app -->
       <section class="hero" id="top">
         <div class="hero-copy">
-          <p class="hero-kicker">Yo 2 · Free and open source</p>
-          <h1 class="hero-title">Switch models,<br /> not apps<span class="dot">.</span></h1>
+          <p class="hero-kicker">Yo 2 · Free, open source and out today</p>
+          <h1 class="hero-title">Switch models,<br /> <em class="serif">not apps<span class="dot">.</span></em></h1>
           <p class="hero-sub">
             Yo is a free, open-source home for a team of AI agents that run on the subscriptions you already have:
             Claude, ChatGPT or Grok.
           </p>
           <p class="hero-line">One agent, front and centre. Ask for several things and helpers pop in.</p>
           <div class="hero-actions">
-            <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-download>
+            <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-download>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
               Download
             </a>
@@ -200,7 +201,7 @@
       <!-- Meet the team -->
       <section class="section" id="team">
         <div class="section-head">
-          <h2>Meet the team.</h2>
+          <h2>Meet the <em class="serif">team.</em></h2>
           <p class="lead">
             Yo leads and talks to you. Add a teammate whenever a job deserves its own: research, building, your inbox,
             writing, keeping watch. Each one has a name, its own memory and the model you pick. They message each
@@ -239,7 +240,7 @@
       <section class="section" id="models">
         <div class="split">
           <div class="split-copy">
-            <h2>Bring your own subscription.</h2>
+            <h2>Bring your own<br /> <em class="serif">subscription.</em></h2>
             <p class="lead">
               Sign in with the Claude, ChatGPT or Grok plan you already pay for, and give each agent its own model.
               When a better one ships, you change a dropdown. Your agents keep their names, their memory and their
@@ -292,7 +293,7 @@
       <!-- Its own computer -->
       <section class="section" id="computer">
         <div class="section-head">
-          <h2>Its own computer. Not yours.</h2>
+          <h2>Its own computer.<br /> <em class="serif">Not yours.</em></h2>
           <p class="lead">
             Your agents work on their own Linux computer, with a browser, a terminal and files. It runs on your Mac, or
             on a PC at home that stays on, and it never touches your own browser. Watch it work, or take over when a
@@ -336,6 +337,25 @@
         </ul>
       </section>
 
+      <!-- Your data stays on your Mac -->
+      <section class="section" id="private">
+        <div class="section-head">
+          <h2>Your data stays<br /> <em class="serif">on your Mac.</em></h2>
+          <p class="lead">
+            Yo runs on your own machine, on the subscriptions you already have. There's no Yo account and no analytics,
+            and your prompts never pass through us.
+          </p>
+        </div>
+        <ul class="trust">
+          <li><b>On your machine.</b> Your chats, memory and files stay on your Mac, or on your own PC at home.</li>
+          <li><b>Straight to your provider.</b> Requests go from your machine to Claude, ChatGPT or Grok, under your own account. Never through us.</li>
+          <li><b>Off until you say so.</b> Calendar, Mail and the rest of your Mac stay off until you turn each one on.</li>
+          <li><b>Nothing to buy.</b> Free and open source under Apache-2.0. No paywall, no premium tier, no second bill.</li>
+          <li><b>Read every line.</b> The code is on GitHub. Every release is built on GitHub's servers, in the open.</li>
+          <li><b>Out today.</b> No waitlist and no sign-up. Download it for your Mac, or run it in your browser on Windows and Linux.</li>
+        </ul>
+      </section>
+
       <!-- Phone -->
       <section class="section" id="phone">
         <div class="phone-split">
@@ -354,7 +374,7 @@
           </div>
           <div class="phone-copy">
             <p class="soon">Coming soon</p>
-            <h2>On your phone too.</h2>
+            <h2>On your phone <em class="serif">too.</em></h2>
             <p class="lead">
               Text your agents from your phone, answer what they ask, and check in while you're out. Messages are
               end-to-end encrypted, and nothing at home is opened to the internet. We're testing it now, and it isn't
@@ -368,7 +388,7 @@
       <section class="section" id="open-source">
         <div class="oss">
           <div class="oss-copy">
-            <h2>So what are we selling you? <span>Nothing.</span></h2>
+            <h2>So what are we selling you? <em class="serif">Nothing.</em></h2>
             <p class="lead">
               Yo is free and open source under the Apache-2.0 licence. You can't pay us for AI: your prompts go from
               your machine straight to your provider, never through us. Every line is on GitHub. Read it, fix it, or
@@ -397,7 +417,7 @@
       <section class="section" id="support">
         <div class="give">
           <div class="give-copy">
-            <h2>Yo is free.<br /> It always will be.</h2>
+            <h2>Yo is free.<br /> <em class="serif">It always will be.</em></h2>
             <p class="lead">
               No paywall, no premium tier, and we don't sell AI. You bring your own. If Yo gives you back a little time,
               you can give a little back. It keeps the lights on and new things shipping.
@@ -429,27 +449,26 @@
       <!-- FAQ -->
       <section class="section faq" id="faq">
         <div class="faq-grid">
-          <h2>Questions.</h2>
+          <h2>Questions.<br /> <em class="serif">Short answers.</em></h2>
           <div class="faq-list">
             <details>
               <summary>Is it really free?</summary>
               <p>
-                Yes. Yo is free and open source under Apache-2.0. There's no paywall, no premium tier and no Yo account.
-                You pay your AI provider for your subscription, as you already do. If you'd like to,
-                <a href="#support">you can support Yo</a>; everything stays the same either way.
+                Yes. Yo is free and open source under Apache-2.0: no paywall, no premium tier, no Yo account. You keep
+                paying your AI provider for the plan you already have. If you like, <a href="#support">you can support
+                Yo</a>. Nothing changes either way.
               </p>
             </details>
             <details>
               <summary>Is using my Claude or ChatGPT subscription allowed?</summary>
               <p>
-                Yo doesn't log in for you or hold your password. On Yo's computer you sign in with each provider's own
-                tool and page (Claude Code, Codex or the Grok CLI), and your agents drive that tool, the way other
-                open-source apps do. Each provider sets its own rules and limits, and they change, so check them:
+                Yo never logs in for you or holds your password. You sign in with each provider's own tool (Claude Code,
+                Codex or the Grok CLI), and your agents drive it, like other open-source apps do. Each provider sets its
+                own rules and limits, and they change, so check them:
                 <a href="https://code.claude.com/docs/en/legal-and-compliance">Anthropic</a>,
                 <a href="https://openai.com/policies/terms-of-use/">OpenAI</a> and
-                <a href="https://x.ai/legal/terms-of-service">xAI</a>. Agents can use up a plan's limits faster than
-                chatting does. If a provider changes its rules, move that agent to another one. It's a dropdown, not a
-                new app.
+                <a href="https://x.ai/legal/terms-of-service">xAI</a>. Agents use a plan's limits faster than chatting
+                does. If a provider's rules change, move that agent to another. It's a dropdown, not a new app.
               </p>
             </details>
             <details id="requirements">
@@ -466,12 +485,18 @@
               </p>
             </details>
             <details>
-              <summary>Is it private?</summary>
+              <summary>Where does my data go?</summary>
               <p>
-                Yo runs on your machine. Your chats, memory and files stay there, and there's no Yo account and no
-                analytics. Your requests go from your machine to the provider you picked, under your own account.
-                Calendar, Mail and the rest of your Mac stay off until you turn each one on.
+                Nowhere new. Your chats, memory and files stay on your machine, and there's no Yo account and no
+                analytics. Requests go from your machine to the provider you picked, under your own account.
                 <a href="/privacy">Privacy policy</a>
+              </p>
+            </details>
+            <details>
+              <summary>Can I try it today?</summary>
+              <p>
+                Yes. Download it for a Mac with Apple silicon, or run it in your browser on a Windows or Linux PC.
+                There's no waitlist and no sign-up. Only the phone app is still in testing.
               </p>
             </details>
             <details id="first-open">
@@ -515,10 +540,10 @@
           <img src="/assets/softies/clove.svg" alt="" width="62" height="62" loading="lazy" />
           <img src="/assets/softies/kiki.svg" alt="" width="68" height="68" loading="lazy" />
         </div>
-        <h2>Your team is waiting.</h2>
+        <h2>Your team is <em class="serif">waiting.</em></h2>
         <p class="lead">Free, open source, and on the subscription you already have.</p>
         <div class="final-actions">
-          <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-download>
+          <a class="btn btn-ink btn-lg" href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-download>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></svg>
             Download
           </a>
@@ -584,7 +609,7 @@
           </p>
           <p class="dl-note" role="status" aria-live="polite" data-setup-note></p>
           <input class="setup-fallback" data-setup-fallback readonly hidden aria-label="Setup prompt to copy" />
-          <p>Didn't start? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-dl-direct>Download it here</a>.</p>
+          <p>Didn't start? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-dl-direct>Download it here</a>.</p>
         </div>
       </div>
       <div data-dl-other hidden>
@@ -614,7 +639,7 @@
                     <span data-dl-copy-label>Copy</span>
                   </button>
                 </div>
-                <code class="dl-cmd-code">irm https://github.com/JuniorSua/yo-app/releases/download/v2.0.800/install.ps1 | iex</code>
+                <code class="dl-cmd-code">irm https://github.com/JuniorSua/yo-app/releases/download/v2.0.846/install.ps1 | iex</code>
               </div>
               <div class="dl-cmd" data-os="linux both">
                 <div class="dl-cmd-head">
@@ -625,7 +650,7 @@
                     <span data-dl-copy-label>Copy</span>
                   </button>
                 </div>
-                <code class="dl-cmd-code">curl -fsSL https://github.com/JuniorSua/yo-app/releases/download/v2.0.800/install.sh | bash</code>
+                <code class="dl-cmd-code">curl -fsSL https://github.com/JuniorSua/yo-app/releases/download/v2.0.846/install.sh | bash</code>
               </div>
               <p class="dl-note" role="status" aria-live="polite" data-dl-note></p>
             </div>
@@ -639,7 +664,7 @@
             What your PC needs, and more help:
             <a href="https://github.com/JuniorSua/yo-app#windows-and-linux-in-your-browser">Full instructions</a>.
           </p>
-          <p>Downloading it for a Mac? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.800" data-dl-direct>Get the Mac app</a>.</p>
+          <p>Downloading it for a Mac? <a href="https://github.com/JuniorSua/yo-app/releases/tag/v2.0.846" data-dl-direct>Get the Mac app</a>.</p>
         </div>
       </div>
     </div>

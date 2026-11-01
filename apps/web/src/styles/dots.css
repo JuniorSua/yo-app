@@ -119,15 +119,16 @@ body {
 .team-popover .shell-sidebar-scroll {
   padding-bottom: 10px;
 }
-/* Faces you can recognise at a glance (Grok Bot's contact list): 48px, the rows taller to match. */
+/* Faces you can recognise at a glance, in step with the head's Dots size: 40px, clearly smaller than the 104px
+   head, the rows sized to match. */
 .team-popover .roster-row {
-  min-height: 62px;
-  gap: 12px;
+  min-height: 54px;
+  gap: 11px;
   padding: 6px 8px 6px 6px;
 }
 .team-popover .roster-avatar {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 /* ------------------------------------------ The split ------------------------------------------ */
@@ -146,7 +147,7 @@ body {
 /* The chat's width beside the workspace: the default here, or the width it was dragged to (an inline --chat-w on the
    split, still clamped to the window: lib/chatWidth.ts). */
 .dots-split[data-workspace] {
-  --chat-w: clamp(400px, 38vw, 580px);
+  --chat-w: clamp(400px, 48vw, 700px);
 }
 .dots-split[data-workspace] > .chat-column {
   --chat-measure: 100%;
@@ -174,9 +175,11 @@ body {
   content: "";
   position: absolute;
   border-radius: 999px;
+  /* The grip firms up on a spring; let go of a drag and it settles back with a touch of bounce (the drag carried
+     momentum). Scale, not height: it stays on the compositor. */
   transition:
     opacity 0.15s var(--ease-out-soft),
-    height 0.15s var(--ease-out-soft),
+    scale var(--spring-bounce-dur) var(--spring-bounce),
     background-color 0.15s;
 }
 .chat-resizer::before {
@@ -201,7 +204,7 @@ body {
     transition-delay: 0.08s;
   }
   .chat-resizer:hover::after {
-    height: 40px;
+    scale: 1 1.43;
     background: var(--fg-2);
     transition-delay: 0.08s;
   }
@@ -213,7 +216,7 @@ body {
 }
 .chat-resizer.is-dragging::after,
 .chat-resizer:focus-visible::after {
-  height: 40px;
+  scale: 1 1.43;
   background: var(--fg-2);
   transition-delay: 0s;
 }
@@ -243,23 +246,24 @@ body {
 .chat-column {
   --head-zone: 52px;
 }
-/* The head zone, top to bottom: the big head (176px box), its name pill and its status line on a solid ground
-   (--head-solid ends just under the status pill), then a short translucent fade (--head-fade) where the messages
-   show through softly as they scroll away. Nothing ever shows behind the head, the name or the status line. */
+/* The head zone, top to bottom: the head (a 104px box draws a Softie about 80px tall, Dots' size at 1440×900),
+   then its small name pill and one grey status line, all on the page's own opaque ground (--head-solid ends
+   just under the status line), then a short fade (--head-fade) where the messages ease out as they scroll away. Opaque and calm:
+   no blur, no tint, nothing readable behind the head or its card. */
 .chat-column[data-head] {
-  --head-solid: 226px;
-  --head-fade: 40px;
+  --head-solid: 134px;
+  --head-fade: 18px;
   --head-zone: calc(var(--head-solid) + var(--head-fade));
 }
 @media (max-height: 800px) {
   .chat-column[data-head] {
-    --head-solid: 198px;
+    --head-solid: 126px;
   }
 }
 @media (max-height: 640px) {
   .chat-column[data-head] {
-    --head-solid: 170px;
-    --head-fade: 32px;
+    --head-solid: 114px;
+    --head-fade: 16px;
   }
 }
 .chat-top {
@@ -268,9 +272,9 @@ body {
   z-index: 3;
   min-height: 52px;
 }
-/* The head floats over the conversation, and the messages scroll on under it (Dots), but on a solid ground: the
-   head, its name and its status line never have text behind them. Below the status line a short fade lets the
-   messages show through, veiled and softly blurred, until they're gone.
+/* The head floats over the conversation and the messages scroll on under it (Dots), behind an opaque ground that
+   ends in a short, soft edge: a plain gradient from the page colour to transparent, so a message in the fade is
+   sharp, only fainter.
    - The fade is a click- and scroll-through ::before, so a message you can see in it stays clickable.
    - The box itself covers only the solid part: that's the window's drag area in the Mac app. A wheel or trackpad
      scroll over it still scrolls the chat (ChatTop forwards it). */
@@ -283,40 +287,50 @@ body {
   inset: 0 0 auto;
   z-index: -1;
   height: var(--head-zone);
+  /* Eased stops (not a straight ramp), so the edge has no visible start or end line. */
   background: linear-gradient(
     to bottom,
     var(--glass-page) 0,
     var(--glass-page) var(--head-solid),
-    color-mix(in srgb, var(--glass-page) 72%, transparent) calc(var(--head-solid) + var(--head-fade) * 0.45),
-    color-mix(in srgb, var(--glass-page) 36%, transparent) 100%
+    color-mix(in srgb, var(--glass-page) 60%, transparent) calc(var(--head-solid) + var(--head-fade) * 0.3),
+    color-mix(in srgb, var(--glass-page) 22%, transparent) calc(var(--head-solid) + var(--head-fade) * 0.65),
+    transparent 100%
   );
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  /* The fade's last stretch takes the whole layer (tint and blur) out, so there's no line where the zone ends. */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    #000 calc(var(--head-solid) + var(--head-fade) * 0.4),
-    transparent
-  );
-  mask-image: linear-gradient(to bottom, #000 calc(var(--head-solid) + var(--head-fade) * 0.4), transparent);
   pointer-events: none;
 }
-/* Less transparency asked for (or more contrast): no see-through part, just a soft edge. */
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .chat-top.has-head::before {
-    background: linear-gradient(to bottom, var(--glass-page) calc(100% - 22px), transparent);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    -webkit-mask-image: none;
-    mask-image: none;
+.chat-bar {
+  height: 56px;
+  padding: 0 14px;
+}
+/* Dots' round buttons top right: 36px white discs on a hairline and a soft shadow, so they hold their own over
+   whatever's under the head zone. */
+.chat-bar .shell-bar-buttons {
+  gap: 8px;
+}
+.chat-bar .shell-bar-buttons .shell-icon-button {
+  width: 36px;
+  height: 36px;
+  background: var(--card);
+  color: var(--fg-2);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 4px rgb(0 0 0 / 0.06);
+}
+.dark .chat-bar .shell-bar-buttons .shell-icon-button {
+  background: var(--elevated);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 6px rgb(0 0 0 / 0.35);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-bar .shell-bar-buttons .shell-icon-button:hover {
+    background: color-mix(in srgb, var(--card) 94%, var(--fg));
+    color: var(--fg);
   }
 }
-.chat-bar {
-  height: 52px;
-  padding: 0 12px;
-}
-.chat-bar .shell-bar-buttons {
-  gap: 4px;
+/* On (its tab is showing): the icon goes full strength, the disc stays the same. No ring: Dots keeps them calm. */
+.chat-bar .shell-bar-buttons .shell-icon-button.is-on {
+  color: var(--fg);
 }
 /* The first thing under the top (a setup chat, an error): starts below the head. The timeline scrolls under it. */
 .chat-column > .chat-top + :not(.chat-timeline) {
@@ -333,7 +347,7 @@ body {
 }
 /* The big head starts right under the window's top edge: the bar's buttons sit at the right, clear of it. */
 .chat-top .chat-head:not(.is-compact) {
-  padding-top: 6px;
+  padding-top: 4px;
 }
 .chat-head-stack {
   position: relative;
@@ -341,7 +355,7 @@ body {
   display: grid;
   place-items: center;
 }
-/* Yo's own touch: the agent's colour glows softly behind its head, and breathes a little while it works. */
+/* Yo's own touch: the agent's colour glows softly behind its head. Still: the Softie itself breathes. */
 .chat-top .chat-head-stack::before {
   content: "";
   position: absolute;
@@ -352,66 +366,66 @@ body {
   height: calc(var(--head-size) * 0.95);
   translate: -50% -50%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
   pointer-events: none;
 }
 .dark .chat-top .chat-head-stack::before {
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 24%, transparent), transparent);
-}
-.chat-top .chat-head[data-tone="working"] .chat-head-stack::before {
-  animation: head-glow 3.2s ease-in-out infinite;
-}
-@keyframes head-glow {
-  50% {
-    opacity: 0.55;
-    scale: 0.94;
-  }
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 16%, transparent), transparent);
 }
 .chat-head-avatar {
   border-radius: 999px;
 }
-.chat-head-name {
-  /* An <h1> (the chat's title for screen readers); it keeps the pill's look. */
-  margin-bottom: 0;
+/* Under the head (Dots): a small name pill tucked over the head's chin, then one tiny grey status line on the page's
+   own ground. Light, so the head is the thing you look at. */
+.chat-head-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  max-width: min(300px, calc(100% - 16px));
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: -18px;
 }
-.chat-head-name {
-  margin-top: -12px;
-  padding: 1px 12px 2px;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
-  border-radius: 999px;
-  box-shadow:
-    0 0 0 1px var(--border),
-    0 2px 10px rgb(0 0 0 / 0.06);
-}
-/* The status line sits on its own soft pill, so it stays legible over whatever scrolls under the head. */
-.chat-head-status {
-  justify-content: center;
-  gap: 6px;
+.chat-head-card .chat-head-name {
+  /* An <h1> (the chat's title for screen readers). */
   max-width: 100%;
-  margin-top: 4px;
-  padding: 2px 10px;
+  margin: 0;
+  padding: 1px 10px 2px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--glass-page) 86%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fg) 5%, transparent);
+  background: var(--card);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 4px rgb(0 0 0 / 0.06);
+  font-size: 13.5px;
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: -0.006em;
 }
-.dark .chat-head-status {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fg) 7%, transparent);
+.dark .chat-head-card .chat-head-name {
+  background: var(--elevated);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 6px rgb(0 0 0 / 0.35);
 }
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .chat-head-status {
-    background: var(--glass-page);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+.chat-head-card .chat-head-status {
+  justify-content: center;
+  max-width: 100%;
+}
+.chat-head.is-hero .chat-head-card {
+  margin-top: -16px;
+}
+.chat-head.is-hero .chat-head-card .chat-head-name {
+  padding: 2px 14px 3px;
+  font-size: 16px;
+  line-height: 22px;
 }
 .chat-head-line {
   max-width: 100%;
-  font-size: 12px;
-  line-height: 16px;
+  font-size: 11.5px;
+  line-height: 15px;
+  letter-spacing: 0.004em;
   color: var(--muted);
 }
 .chat-head-line.is-live {
@@ -448,15 +462,26 @@ body {
   position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-left: -10px;
+  width: 30px;
+  height: 30px;
+  margin-left: -7px;
   border-radius: 999px;
   background: var(--bg);
   box-shadow:
-    0 0 0 2px var(--bg),
-    0 2px 8px rgb(0 0 0 / 0.12);
-  animation: helper-pop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+    0 0 0 1.5px var(--bg),
+    0 1px 5px rgb(0 0 0 / 0.12);
+  /* Arrives on the default spring from the big head's side; leaves the same way it came (data-leaving). */
+  animation: helper-pop var(--spring-dur) var(--spring) backwards;
+  transition:
+    opacity 160ms ease-in,
+    scale 200ms var(--ease-out-soft),
+    translate 200ms var(--ease-out-soft);
+}
+.chat-helper-head[data-leaving] {
+  opacity: 0;
+  scale: 0.6;
+  translate: -6px 0;
+  pointer-events: none;
 }
 .chat-helper-head:first-child {
   margin-left: 0;
@@ -465,7 +490,8 @@ body {
   transition: translate 0.15s var(--ease-out-soft);
 }
 .chat-helper-head:active {
-  scale: 0.94;
+  scale: 0.92;
+  transition-duration: 80ms;
 }
 .chat-helper-head:focus-visible {
   outline: 2px solid var(--focus);
@@ -474,7 +500,7 @@ body {
 .chat-helper-head::after {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -2.5px;
   border-radius: 999px;
   border: 1.5px solid transparent;
   border-top-color: var(--online);
@@ -487,8 +513,8 @@ body {
 @keyframes helper-pop {
   from {
     opacity: 0;
-    scale: 0.4;
-    translate: -10px 0;
+    scale: 0.6;
+    translate: -6px 0;
   }
 }
 @keyframes helper-ring {
@@ -500,7 +526,7 @@ body {
 .chat-top.has-head .chat-head {
   pointer-events: none;
 }
-.chat-top.has-head :is(.chat-head-avatar, .chat-head-name, .chat-head-status, .chat-helper-head) {
+.chat-top.has-head :is(.chat-head-avatar, .chat-head-card, .chat-helper-head) {
   pointer-events: auto;
 }
 /* The profile popover: the old inspector as a Dots card under the head. */
@@ -566,12 +592,12 @@ body {
   align-items: flex-start;
   max-width: 100%;
 }
+/* Dots' bubble at 1440×900: 15px type on 21px lines, 10 × 16 padding, a 20px radius (a one-liner is a pill). */
 .chat-reply-bubble {
-  max-width: min(100%, 560px);
+  max-width: min(100%, 600px);
   min-width: 0;
-  padding: 9px 14px;
-  border-radius: 18px;
-  border-top-left-radius: 9px;
+  padding: 10px 16px;
+  border-radius: 20px;
   background: var(--bubble);
 }
 .chat-reply-bubble > * + * {
@@ -587,8 +613,20 @@ body {
   background: var(--bg);
 }
 .chat-bubble {
-  max-width: min(560px, 86%);
-  padding: 9px 14px;
+  max-width: min(600px, 86%);
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-size: 15px;
+  line-height: 21px;
+  letter-spacing: -0.009em;
+}
+.chat .chat-reply.prose-yo {
+  font-size: 15px;
+  line-height: 21px;
+  letter-spacing: -0.009em;
+}
+.chat-column .chat-feed {
+  gap: 16px;
 }
 .chat-read {
   margin-top: -8px;
@@ -599,11 +637,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Helpers in the chat: one light row each (Dots), a hairline instead of a filled card, quiet small actions. */
+/* Helpers in the chat: a soft fill, no border, tight padding: rows, not cards (Dots' airiness). */
 .chat-column .chat-task {
-  padding: 8px 10px;
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--border);
+  padding: 6px 10px 6px 6px;
+  background: var(--chat-fill);
+  box-shadow: none;
+}
+/* The suggestion over the composer: a hairline and the faintest shadow, not a second card frame. */
+.chat-column .ysuggest {
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 2px 8px -2px rgb(0 0 0 / 0.05);
+}
+.chat-column .ysuggest.is-bar {
+  padding: 8px 8px 8px 14px;
 }
 .chat-column .chat-mini-pill {
   height: 24px;
@@ -611,14 +658,14 @@ body {
   font-size: 11.5px;
   color: var(--muted);
 }
-/* Faces you recognise at a glance (Grok Bot's presence): a helper's in a 46px disc on its own soft colour, a
-   teammate's 22px in its handoff line. */
+/* Faces you recognise at a glance: a helper's 34px in a 40px disc on its own soft colour (in step with the 104px
+   head), a teammate's 22px in its handoff line. */
 .chat-column .chat-task-face {
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
 }
 .chat-column .chat-task-toggle {
-  margin-left: 52px;
+  margin-left: 40px;
 }
 .chat-column .chat-handoff-row {
   height: 30px;
@@ -629,11 +676,38 @@ body {
 @container (max-width: 560px) {
   .chat-column .chat-task-actions {
     margin-top: 2px;
-    padding-left: 56px;
+    padding-left: 44px;
   }
 }
 
 /* ------------------------------------------ Composer ------------------------------------------ */
+
+/* Dots' composer: a 56px pill on a soft shadow and a hairline, no border; the round send at its right. */
+.chat-column .chat-composer {
+  border-radius: 28px;
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 2px 12px -2px rgb(0 0 0 / 0.07);
+}
+.chat-column .chat-composer:focus-within {
+  box-shadow:
+    0 0 0 0.5px var(--fg-2),
+    0 4px 16px -2px rgb(0 0 0 / 0.09);
+}
+.dark .chat-column .chat-composer {
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 4px 16px -2px rgb(0 0 0 / 0.4);
+}
+.chat-column .chat-composer-row {
+  min-height: 56px;
+  padding: 8px 10px;
+}
+.chat-column .chat-composer-input {
+  font-size: 15px;
+  line-height: 21px;
+  letter-spacing: -0.009em;
+}
 
 .chat-composer-row .chat-model-chip {
   flex-shrink: 1;
@@ -709,7 +783,7 @@ body {
   transition:
     background-color 0.15s,
     color 0.15s;
-  animation: ws-tab-in 0.3s var(--ease-out-soft) backwards;
+  animation: ws-tab-in var(--spring-dur) var(--spring) backwards;
 }
 @keyframes ws-tab-in {
   from {
@@ -965,15 +1039,47 @@ body {
   height: 36px;
   padding: 0 5px 0 12px;
   border-radius: 999px;
-  background: rgb(20 20 22 / 0.78);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  backdrop-filter: blur(16px) saturate(1.2);
+  /* A dark HUD material over a live, changing screen: heavy enough (86%) that its text never depends on what's
+     under it, saturated so it reads as glass, not grey. It arrives on the spring, up from the screen's foot. */
+  background: rgb(20 20 22 / 0.86);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
   color: #fff;
   font-size: 12.5px;
+  letter-spacing: 0.006em;
   box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 0 0 0.5px rgb(255 255 255 / 0.16),
     0 8px 24px -8px rgb(0 0 0 / 0.4);
   translate: -50% 0;
+  animation: ws-control-in var(--spring-dur) var(--spring) backwards;
+}
+@keyframes ws-control-in {
+  from {
+    opacity: 0;
+    translate: -50% 10px;
+    scale: 0.96;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .ws-control {
+    background: rgb(20 20 22);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+/* A new action slides its words in on the spring: the pill's text changes, the pill doesn't jump. */
+.ws-control-label.is-doing {
+  max-width: 340px;
+  animation: ws-doing-in var(--spring-dur) var(--spring) backwards;
+}
+@keyframes ws-doing-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+.ws-control-who {
+  font-weight: 600;
 }
 .ws-control > span {
   display: inline-flex;
@@ -1035,7 +1141,7 @@ body {
   border-radius: 18px;
   background: var(--sidebar);
   box-shadow: var(--shadow-dialog);
-  animation: ws-sheet-in 0.3s var(--ease-out-soft) backwards;
+  animation: ws-sheet-in var(--spring-dur) var(--spring) backwards;
 }
 @keyframes ws-sheet-in {
   from {
@@ -1058,8 +1164,8 @@ body {
 
 @media (max-width: 600px) {
   .chat-column[data-head] {
-    --head-solid: 116px;
-    --head-fade: 32px;
+    --head-solid: 96px;
+    --head-fade: 16px;
   }
   /* An update notice (UpdateNotice) gets its own strip just above the tab bar: the chat and the pages make room. */
   :root:has(.update-notice-phone) .shell {
@@ -1067,6 +1173,11 @@ body {
   }
   .chat-head {
     padding-inline: 56px;
+  }
+  /* The phone's head is small: its helpers sit beside it, clear of the name card. */
+  .chat-head-helper-heads {
+    top: calc(var(--head-size) * 0.3);
+    left: calc(50% + var(--head-size) * 0.46);
   }
   /* Full screen, over the floating tab bar (40). */
   .ws.is-sheet {
@@ -1127,6 +1238,22 @@ body {
     scale 0.12s var(--ease-out-soft);
 }
 .ws-tab-main:active,
+/* Press feedback on pointer-down, for rows and tabs too: a small give, then a spring back on release. */
+.roster-row,
+.ws-tab {
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    scale var(--spring-dur) var(--spring);
+}
+.roster-row:active,
+.ws-tab:active {
+  scale: 0.98;
+  transition-duration: 0.15s, 0.15s, 80ms;
+}
+.roster-row:active {
+  background: var(--active);
+}
 .ws-tab-close:active,
 .ws-strip-plus:active,
 .ws-strip-close:active,
@@ -1134,20 +1261,28 @@ body {
   scale: 0.96;
 }
 
+/* Reduced motion: gentler, not gone. Things still arrive and leave, as short cross-fades with no travel, scale or
+   bounce; nothing loops. */
 @media (prefers-reduced-motion: reduce) {
   .ws,
+  .ws.is-sheet,
   .ws-tab,
-  .chat-helper-head {
-    animation: none;
+  .chat-helper-head,
+  .ws-control,
+  .ws-control-label.is-doing {
+    animation: ws-in 0.2s ease-out backwards;
   }
-  /* Gentler, not gone: the sheet fades in without sliding. */
-  .ws.is-sheet {
-    animation-name: ws-in;
+  .chat-helper-head[data-leaving] {
+    scale: 1;
+    translate: none;
+  }
+  .chat-resizer::before,
+  .chat-resizer::after {
+    transition-property: opacity, background-color;
   }
   .chat-helper-head::after,
   .ws-tab-live,
-  .chat-head-line.is-live,
-  .chat-top .chat-head-stack::before {
+  .chat-head-line.is-live {
     animation: none;
   }
   .chat-head-line.is-live {
@@ -1235,4 +1370,89 @@ body {
   .onb-cta {
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
+}
+
+/* ------------------------------------------ Made things in the chat ------------------------------------------ */
+
+/* A Page the agent made: its live preview on top, a quiet footer with Open. A hairline and a soft shadow, no inner
+   divider; the preview lifts a touch on hover and gives on press. */
+.page-card {
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 4px 16px -4px rgb(0 0 0 / 0.08);
+}
+.dark .page-card {
+  background: var(--elevated);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 6px 20px -4px rgb(0 0 0 / 0.4);
+}
+.page-card-preview {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 216px;
+  overflow: hidden;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
+}
+.page-card-preview > :first-child {
+  transition: scale var(--spring-dur) var(--spring);
+}
+@media (hover: hover) and (pointer: fine) {
+  .page-card-preview:hover > :first-child {
+    scale: 1.015;
+  }
+}
+.page-card-preview:active > :first-child {
+  scale: 0.995;
+  transition-duration: 80ms;
+}
+.page-card-preview:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+  border-radius: 20px 20px 0 0;
+}
+.page-card-live {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px 0 7px;
+  border-radius: 999px;
+  background: rgb(20 20 22 / 0.86);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.14);
+}
+.page-card-live > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--online);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--online) 30%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-card-preview > :first-child {
+    transition: none;
+  }
+}
+.ycard-file-thumb {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 0 0.5px var(--border-strong);
 }

@@ -8,6 +8,14 @@
   font-weight: 100 900;
   font-display: swap;
 }
+/* The light italic second line of a heading. Instrument Serif, SIL OFL 1.1 (fonts/instrument-serif-OFL.txt). */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  src: url("/fonts/instrument-serif-latin-italic.woff2") format("woff2");
+  font-display: swap;
+}
 @font-face {
   font-family: "Geist Mono";
   src: url("/fonts/geist-mono-latin-wght-normal.woff2") format("woff2-variations");
@@ -55,7 +63,75 @@
   --gutter: 32px;
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "Instrument Serif", "New York", ui-serif, "Iowan Old Style", Georgia, serif;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Springs, sampled into linear(): no fixed curve, they settle the way a real spring does.
+     --spring: damping 1.0, response 0.4s (no overshoot; moving and revealing things).
+     --spring-pop: damping 0.78, response 0.42s (a 2% overshoot; only for Softies arriving). */
+  --spring: linear(
+    0,
+    0.05,
+    0.158,
+    0.286,
+    0.413,
+    0.527,
+    0.626,
+    0.707,
+    0.774,
+    0.826,
+    0.868,
+    0.9,
+    0.925,
+    0.943,
+    0.958,
+    0.969,
+    0.977,
+    0.983,
+    0.987,
+    0.991,
+    0.993,
+    0.995,
+    0.996,
+    0.997,
+    1
+  );
+  --spring-pop: linear(
+    0,
+    0.027,
+    0.095,
+    0.186,
+    0.29,
+    0.396,
+    0.499,
+    0.594,
+    0.68,
+    0.754,
+    0.817,
+    0.869,
+    0.911,
+    0.944,
+    0.969,
+    0.988,
+    1.001,
+    1.01,
+    1.016,
+    1.019,
+    1.02,
+    1.02,
+    1.018,
+    1.017,
+    1.015,
+    1.013,
+    1.011,
+    1.009,
+    1.007,
+    1.005,
+    1.004,
+    1.003,
+    1
+  );
+  --spring-t: 0.54s;
+  interpolate-size: allow-keywords;
   color-scheme: light dark;
 }
 
@@ -147,6 +223,14 @@ h3 {
 }
 p {
   text-wrap: pretty;
+}
+/* A heading's second voice: light, italic, serif. Serifs read smaller at the same size and need less tightening. */
+.serif {
+  font-family: var(--serif);
+  font-size: 1.08em;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.012em;
 }
 ::selection {
   background: rgb(255 212 59 / 0.55);
@@ -268,6 +352,13 @@ p {
 }
 .nav.is-scrolled {
   border-bottom-color: var(--line);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .nav {
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 .nav-inner {
   display: grid;
@@ -500,20 +591,110 @@ p {
 }
 /* Once per visit: the team hops up onto the window (index.html sets .intro; site.js removes it). */
 .intro .team .softie {
-  animation: hop-in 0.62s var(--ease) both;
-  animation-delay: calc(240ms + var(--i) * 70ms);
+  transform-origin: 50% 100%;
+  animation:
+    hop-in var(--spring-t) var(--spring-pop) both,
+    fade-in 0.24s ease-out both;
+  animation-delay: calc(240ms + var(--i) * 60ms);
 }
 @keyframes hop-in {
-  0% {
+  from {
+    transform: translateY(30px) scale(0.88);
+  }
+}
+@keyframes fade-in {
+  from {
     opacity: 0;
-    transform: translateY(34px) scale(0.86);
   }
-  60% {
-    opacity: 1;
-    transform: translateY(-6px) scale(1.02, 0.98);
+}
+
+/* ------------------------------------------------------ Hero staging
+   The first fold is one picture: the line, then the team standing big on a big app, lit warm from behind like
+   a morning window. The backdrop runs full-bleed; the light pools where the team stands. */
+.hero {
+  position: relative;
+  isolation: isolate;
+  padding-top: 64px;
+  text-align: center;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -64px;
+  bottom: 300px;
+  left: 50%;
+  width: 100vw;
+  translate: -50% 0;
+  background:
+    radial-gradient(ellipse 42% 46% at 50% 76%, rgb(255 208 64 / 0.62), rgb(255 208 64 / 0) 72%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgb(255 170 60 / 0.16), transparent 72%),
+    linear-gradient(var(--bg), #fff8e8 46%, #ffeec4);
+  mask-image: linear-gradient(#000 78%, transparent);
+  pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  .hero::before {
+    background:
+      radial-gradient(ellipse 42% 46% at 50% 76%, rgb(255 200 40 / 0.22), rgb(255 200 40 / 0) 72%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, rgb(255 150 40 / 0.08), transparent 72%),
+      linear-gradient(var(--bg), #17140c);
   }
-  100% {
-    transform: none;
+}
+.hero-copy {
+  max-width: none;
+}
+.hero-title {
+  font-size: clamp(50px, 7vw, 100px);
+}
+.hero-sub {
+  max-width: 640px;
+  margin-inline: auto;
+}
+.hero-actions {
+  justify-content: center;
+  margin-top: 32px;
+}
+.stage {
+  --k: 1.42;
+  width: min(1320px, 100vw - var(--gutter) * 2);
+  margin-top: 208px;
+  margin-left: 50%;
+  translate: -50% 0;
+  text-align: left;
+}
+.team {
+  right: 50%;
+  transform: translateX(50%);
+}
+/* Depth: a soft, warm ambient shadow under each Softie, on top of its own contact shadow. */
+.team .softie {
+  filter: drop-shadow(0 16px 22px rgb(120 72 0 / 0.16));
+}
+.stage .app {
+  height: 700px;
+  box-shadow:
+    var(--ring),
+    0 0 0 10px rgb(255 255 255 / 0.55),
+    0 0 0 11px rgb(255 255 255 / 0.9),
+    var(--shadow-frame);
+}
+@media (prefers-color-scheme: dark) {
+  .team .softie {
+    filter: drop-shadow(0 16px 22px rgb(0 0 0 / 0.45));
+  }
+  .stage .app {
+    box-shadow:
+      var(--ring),
+      0 0 0 10px rgb(255 255 255 / 0.05),
+      0 0 0 11px rgb(255 255 255 / 0.1),
+      var(--shadow-frame);
+  }
+}
+/* One line on wide screens: "Switch models, not apps." */
+@media (min-width: 1101px) {
+  .hero-title br {
+    display: none;
   }
 }
 
@@ -869,14 +1050,9 @@ p {
   box-shadow:
     0 0 0 2px var(--card),
     0 0 0 3.5px var(--a);
-  animation: helper-pop 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 .helper-head:first-child {
   margin-left: 0;
-  animation-delay: 0.9s;
-}
-.helper-head:nth-child(2) {
-  animation-delay: 1.05s;
 }
 .helper-head img {
   width: 22px;
@@ -884,7 +1060,6 @@ p {
 }
 @keyframes helper-pop {
   from {
-    opacity: 0;
     transform: translateX(-14px) scale(0.4);
   }
 }
@@ -1065,19 +1240,6 @@ p {
   position: absolute;
   top: 46%;
   left: 62%;
-  animation: ws-cursor 6s ease-in-out infinite;
-}
-@keyframes ws-cursor {
-  0%,
-  100% {
-    transform: none;
-  }
-  40% {
-    transform: translate(-48px, -40px);
-  }
-  60% {
-    transform: translate(-48px, -40px);
-  }
 }
 .ws-pill {
   display: inline-flex;
@@ -1102,10 +1264,95 @@ p {
   font-weight: 600;
   line-height: 22px;
 }
-@media (prefers-reduced-motion: reduce) {
+/* The drawing comes alive once on load: you ask, Yo answers, two helpers pop in and open their tabs, and Yo's
+   cursor travels to the stay it picked. Transforms and opacity only, on boxes that are already laid out, so
+   nothing shifts. Then it rests; only the spinners and the Softies' blink keep moving. With reduced motion it's
+   simply the finished picture. */
+@media (prefers-reduced-motion: no-preference) {
+  .app-chat .chat-log > *,
+  .head-line,
+  .app-tab:not(.is-on),
   .helper-head,
+  .ws-cursor,
+  .ws-pill {
+    animation-fill-mode: both;
+    animation-timing-function: var(--spring);
+    animation-duration: var(--spring-t);
+  }
+  .app-chat .chat-log > * {
+    animation-name: rise, fade-in;
+    animation-duration: var(--spring-t), 0.3s;
+  }
+  .app-chat .chat-log > :nth-child(1) {
+    animation-delay: 0.3s;
+  }
+  .app-chat .chat-log > :nth-child(2) {
+    animation-delay: 0.55s;
+  }
+  .app-chat .chat-log > :nth-child(3) {
+    animation-delay: 0.85s;
+  }
+  .app-chat .chat-log > :nth-child(4) {
+    animation-delay: 1.45s;
+  }
+  .app-chat .chat-log > :nth-child(5) {
+    animation-delay: 1.57s;
+  }
+  .helper-head {
+    animation-name: helper-pop, fade-in;
+    animation-duration: var(--spring-t), 0.2s;
+    animation-timing-function: var(--spring-pop), ease-out;
+    animation-delay: 1.2s;
+  }
+  .helper-head:nth-child(2) {
+    animation-delay: 1.32s;
+  }
+  .head-line {
+    animation-name: fade-in;
+    animation-duration: 0.3s;
+    animation-delay: 1.25s;
+  }
+  .app-tab:not(.is-on) {
+    transform-origin: 0 50%;
+    animation-name: tab-in, fade-in;
+    animation-duration: var(--spring-t), 0.25s;
+    animation-delay: 1.2s;
+  }
+  .app-tab:nth-child(3) {
+    animation-delay: 1.32s;
+  }
   .ws-cursor {
-    animation: none;
+    animation-name: cursor-in, fade-in;
+    animation-duration: 0.9s, 0.3s;
+    animation-delay: 1.9s;
+  }
+  .wp-card.is-pick {
+    animation: pick 0.3s ease-out 2.65s both;
+  }
+  .ws-pill {
+    animation-name: rise, fade-in;
+    animation-duration: var(--spring-t), 0.3s;
+    animation-delay: 2.9s;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(10px);
+  }
+}
+@keyframes tab-in {
+  from {
+    transform: scale(0.92);
+  }
+}
+@keyframes cursor-in {
+  from {
+    transform: translate(90px, 70px);
+  }
+}
+@keyframes pick {
+  from {
+    box-shadow: 0 0 0 2px transparent;
   }
 }
 
@@ -1149,6 +1396,46 @@ p {
 }
 .section-head {
   max-width: 720px;
+}
+
+/* Your data stays on your Mac: six plain promises under hairlines. */
+.trust {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 48px;
+  margin: 64px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.trust li {
+  padding: 22px 0 36px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.trust b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 900px) {
+  .trust {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+}
+@media (max-width: 560px) {
+  .trust {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 40px;
+  }
+  .trust li {
+    padding-bottom: 24px;
+  }
 }
 
 /* Meet the team */
@@ -1749,7 +2036,7 @@ p {
 .oss-copy {
   max-width: 760px;
 }
-.oss h2 span {
+.oss h2 .serif {
   color: var(--yo);
 }
 .oss .lead {
@@ -1895,6 +2182,21 @@ p {
 }
 .faq details[open] summary::after {
   transform: rotate(135deg);
+}
+.faq summary:hover::after {
+  opacity: 0.7;
+}
+@supports selector(::details-content) {
+  .faq details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size var(--spring-t) var(--spring),
+      content-visibility var(--spring-t) allow-discrete;
+  }
+  .faq details[open]::details-content {
+    block-size: auto;
+  }
 }
 .faq details p {
   max-width: 660px;
@@ -2514,11 +2816,8 @@ code.dl-cmd-code {
 }
 @media (max-width: 1100px) {
   .stage {
-    margin-top: 176px;
-  }
-  .team {
-    right: 50%;
-    transform: translateX(50%);
+    --k: 1.1;
+    margin-top: 196px;
   }
   .nav-links a {
     padding: 8px 9px;
@@ -2576,6 +2875,9 @@ code.dl-cmd-code {
   .stage {
     --k: 0.62;
     margin-top: 124px;
+  }
+  .stage .app {
+    height: 560px;
   }
   .app {
     height: 560px;

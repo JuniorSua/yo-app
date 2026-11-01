@@ -1,5 +1,5 @@
 import type { AgentView } from "@yo/contracts";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { activeHelpers, lastFailure, type PresenceTone, presenceTone, runningStep } from "../../lib/presence";
 import { cn } from "../../lib/utils";
 import { chatFor, useApp } from "../../stores/app";
@@ -114,9 +114,9 @@ export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boole
     ? { title: request.title, asking: request.kind === "user_input" }
     : undefined;
   const [open, setOpen] = useState(false);
-  // The Softie fills about three quarters of its box: 176 draws a head about 136px tall (about 115px when short),
-  // as big as Grok Bot's. The head zone's solid ground (styles/dots.css --head-solid) is sized to each.
-  const size = hero ? (phone ? 104 : 160) : phone ? 68 : tiny ? 120 : short ? 148 : 176;
+  // The Softie fills about three quarters of its box: 104 draws a head about 80px tall, Dots' size at 1440×900
+  // (measured from the reference, ×1.633). The head zone's solid ground (styles/dots.css --head-solid) fits each.
+  const size = hero ? (phone ? 96 : 136) : phone ? 64 : tiny ? 84 : short ? 96 : 104;
   const Tag = hero ? "div" : "header";
   const line = statusLine(agent, tone, step, helpers.length, waiting, failure);
   return (
@@ -147,42 +147,76 @@ export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boole
         >
           <ProfileCard agent={agent} onDone={() => setOpen(false)} />
         </Popover>
-        {!hero && helpers.length > 0 && <HelperHeads helpers={helpers} />}
+        {!hero && <HelperHeads helpers={helpers} />}
       </div>
-      <h1 className="chat-head-name" data-testid="agent-title">
-        {agent.name}
-      </h1>
-      {!hero && (
-        <div className="chat-head-status" role="status">
-          <span
-            className={cn("chat-head-line", tone === "working" && "is-live")}
-            data-testid="presence-line"
-            title={line}
-          >
-            {line}
-          </span>
-        </div>
-      )}
+      {/* A small name pill tucked over the head's chin, then one tiny grey status line (Dots). */}
+      <div className="chat-head-card">
+        <h1 className="chat-head-name" data-testid="agent-title">
+          {agent.name}
+        </h1>
+        {!hero && (
+          <div className="chat-head-status" role="status">
+            <span
+              className={cn("chat-head-line", tone === "working" && "is-live")}
+              data-testid="presence-line"
+              title={line}
+            >
+              {line}
+            </span>
+          </div>
+        )}
+      </div>
     </Tag>
   );
 }
 
+/** How long a helper's head takes to leave (styles/dots.css .chat-helper-head[data-leaving]). */
+const LEAVE_MS = 220;
+
+/**
+ * The list as shown: items that just left stay a moment, marked leaving, so they go out the way they came in
+ * instead of vanishing.
+ */
+function useLeaving<T extends { id: string }>(items: T[]): { item: T; leaving: boolean }[] {
+  const [gone, setGone] = useState<T[]>([]);
+  const last = useRef(items);
+  useEffect(() => {
+    const ids = new Set(items.map((i) => i.id));
+    const left = last.current.filter((i) => !ids.has(i.id));
+    last.current = items;
+    if (!left.length) return;
+    setGone((g) => [...g.filter((i) => !ids.has(i.id)), ...left]);
+    const t = setTimeout(() => setGone((g) => g.filter((i) => !left.includes(i))), LEAVE_MS);
+    return () => clearTimeout(t);
+  }, [items]);
+  const ids = new Set(items.map((i) => i.id));
+  return [
+    ...items.map((item) => ({ item, leaving: false })),
+    ...gone.filter((i) => !ids.has(i.id)).map((item) => ({ item, leaving: true })),
+  ];
+}
+
 /** Small helper heads tucked at the big head's lower right, popping in; each opens its workspace tab. */
 function HelperHeads({ helpers }: { helpers: AgentView[] }) {
+  const shown = useLeaving(helpers);
+  if (!shown.length) return null;
   return (
     <div className="chat-head-helper-heads" data-testid="helper-heads">
-      {helpers.map((h, i) => (
+      {shown.map(({ item: h, leaving }, i) => (
         <Tip key={h.id} label={h.preview ? `${h.name} · ${h.preview}` : h.name} side="bottom">
           <button
             type="button"
             className="chat-helper-head"
-            data-testid="helper-head"
+            data-testid={leaving ? undefined : "helper-head"}
+            data-leaving={leaving || undefined}
             data-waiting={h.activity === "waiting" || undefined}
-            style={{ animationDelay: `${i * 70}ms` }}
+            style={{ animationDelay: `${i * 60}ms` }}
             aria-label={`Helper: ${h.name}`}
+            aria-hidden={leaving || undefined}
+            tabIndex={leaving ? -1 : undefined}
             onClick={() => ui.showTab(`helper:${h.id}`)}
           >
-            <AgentAvatar agent={h} size={38} quiet />
+            <AgentAvatar agent={h} size={26} quiet />
           </button>
         </Tip>
       ))}

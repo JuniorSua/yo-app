@@ -97,7 +97,12 @@ export function ArtifactCard({ entry }: { entry: TimelineEntry }) {
       : null;
   return (
     <div data-testid="artifact-card" className="ycard ycard-file animate-rise">
-      <FileTile path={path} />
+      {/* A picture shows itself; anything else gets its file tile. */}
+      {href && art?.mime.startsWith("image/") ? (
+        <img src={href} alt="" className="ycard-file-thumb" data-testid="artifact-thumb" />
+      ) : (
+        <FileTile path={path} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="line-clamp-2 font-medium leading-snug" title={title}>
           {title}
@@ -115,7 +120,7 @@ export function ArtifactCard({ entry }: { entry: TimelineEntry }) {
         </a>
       )}
       <button type="button" className="ycard-pill" onClick={() => ui.goto("artifacts")}>
-        View
+        Open
       </button>
     </div>
   );

@@ -95,7 +95,7 @@ const AgentRow = memo(function AgentRow({
       style={accent}
     >
       <span className="roster-avatar">
-        <AgentAvatar agent={agent} size={48} quiet />
+        <AgentAvatar agent={agent} size={40} quiet />
       </span>
       <span className="roster-text">
         <span className="roster-name">

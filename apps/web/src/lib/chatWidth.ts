@@ -18,9 +18,9 @@ export const chatMax = (windowWidth: number) => Math.max(CHAT_MIN, Math.round(wi
 export const clampChat = (width: number, windowWidth: number) =>
   Math.round(Math.min(chatMax(windowWidth), Math.max(CHAT_MIN, width)));
 
-/** The width with nothing saved, as the CSS works it out: clamp(400px, 38vw, 580px). */
+/** The width with nothing saved, as the CSS works it out: clamp(400px, 48vw, 700px), Dots' share of the window. */
 export const defaultChatWidth = (windowWidth: number) =>
-  Math.round(Math.min(580, Math.max(400, windowWidth * 0.38)));
+  Math.round(Math.min(700, Math.max(400, windowWidth * 0.48)));
 
 /** The column's CSS width for a saved width, clamped by the window's size at any moment. */
 export const chatWidthCss = (width: number) =>

@@ -241,6 +241,19 @@ for (const theme of ["light", "dark"] as const) {
         await dots(page, "helpers-working");
       });
 
+      test(`screenshots dots doing pill (${theme} ${w})`, async ({ page }) => {
+        await openApp(page, { theme });
+        const workspace = await openWorkspace(page);
+        await page.evaluate(() =>
+          (window as any).__yoMock.patchAgent("agt_yo", {
+            activity: "working",
+            statusLine: "Checking times on resy.com",
+          }),
+        );
+        await expect(workspace.getByTestId("ws-doing")).toContainText("Checking times on resy.com");
+        await dots(page, "doing-pill");
+      });
+
       test(`screenshots dots popovers (${theme} ${w})`, async ({ page }) => {
         await openApp(page, { theme });
         await openProfile(page);
@@ -256,6 +269,8 @@ for (const theme of ["light", "dark"] as const) {
         await send(page, "Visualize my posting activity on X by hour");
         const card = page.getByTestId("page-card");
         await expect(card).toBeVisible();
+        await card.scrollIntoViewIfNeeded();
+        await dots(page, "page-card");
         await card.getByRole("button", { name: "Open", exact: true }).click();
         const viewer = page.getByTestId("workspace");
         await expect(viewer.locator('[data-testid^="ws-tab-page:"]')).toBeVisible();

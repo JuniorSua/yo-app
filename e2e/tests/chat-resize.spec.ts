@@ -40,18 +40,18 @@ test("drag the chat's edge to resize it, within 360px and 60% of the window, and
   page,
 }) => {
   const handle = await open(page);
-  // The default: clamp(400px, 38vw, 580px) = 547px at 1440.
-  expect(await chatWidth(page)).toBe(547);
+  // The default: clamp(400px, 48vw, 700px) = 691px at 1440.
+  expect(await chatWidth(page)).toBe(691);
   await expect(handle).toHaveAttribute("role", "separator");
   await expect(handle).toHaveAttribute("aria-orientation", "vertical");
   await expect(handle).toHaveAttribute("aria-valuemin", "360");
   await expect(handle).toHaveAttribute("aria-valuemax", "864");
-  await expect(handle).toHaveAttribute("aria-valuenow", "547");
+  await expect(handle).toHaveAttribute("aria-valuenow", "691");
 
   await dragBy(page, -120);
-  await expect.poll(() => chatWidth(page)).toBe(427);
-  await expect(handle).toHaveAttribute("aria-valuenow", "427");
-  expect(await saved(page)).toBe(427);
+  await expect.poll(() => chatWidth(page)).toBe(571);
+  await expect(handle).toHaveAttribute("aria-valuenow", "571");
+  expect(await saved(page)).toBe(571);
   // The workspace takes the rest, and the handle follows the seam.
   const ws = (await page.getByTestId("workspace").boundingBox())!;
   const chat = (await page.locator("#chat-column").boundingBox())!;
@@ -73,7 +73,7 @@ test("drag the chat's edge to resize it, within 360px and 60% of the window, and
 
   // A double-click puts the default back.
   await page.getByTestId("chat-resizer").dblclick();
-  await expect.poll(() => chatWidth(page)).toBe(547);
+  await expect.poll(() => chatWidth(page)).toBe(691);
   expect(await saved(page)).toBeNull();
 });
 
@@ -82,16 +82,16 @@ test("the keyboard resizes the chat too: arrows (Shift for more), Home, End and 
   await handle.focus();
   await expect(handle).toBeFocused();
   await page.keyboard.press("ArrowRight");
-  await expect.poll(() => chatWidth(page)).toBe(563);
+  await expect.poll(() => chatWidth(page)).toBe(707);
   await page.keyboard.press("Shift+ArrowLeft");
-  await expect.poll(() => chatWidth(page)).toBe(499);
-  await expect(handle).toHaveAttribute("aria-valuenow", "499");
+  await expect.poll(() => chatWidth(page)).toBe(643);
+  await expect(handle).toHaveAttribute("aria-valuenow", "643");
   await page.keyboard.press("Home");
   await expect.poll(() => chatWidth(page)).toBe(360);
   await page.keyboard.press("End");
   await expect.poll(() => chatWidth(page)).toBe(864);
   await page.keyboard.press("Enter");
-  await expect.poll(() => chatWidth(page)).toBe(547);
+  await expect.poll(() => chatWidth(page)).toBe(691);
   expect(await saved(page)).toBeNull();
 });
 

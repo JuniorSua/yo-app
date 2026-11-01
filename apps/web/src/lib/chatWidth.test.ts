@@ -12,10 +12,10 @@ describe("the chat column's width", () => {
     expect(chatMax(400)).toBe(CHAT_MIN);
   });
 
-  it("defaults to the CSS's clamp(400px, 38vw, 580px)", () => {
-    expect(defaultChatWidth(1440)).toBe(547);
-    expect(defaultChatWidth(1100)).toBe(418);
-    expect(defaultChatWidth(1920)).toBe(580);
+  it("defaults to the CSS's clamp(400px, 48vw, 700px)", () => {
+    expect(defaultChatWidth(1440)).toBe(691);
+    expect(defaultChatWidth(1100)).toBe(528);
+    expect(defaultChatWidth(1920)).toBe(700);
   });
 
   it("is still clamped by the window in CSS", () => {

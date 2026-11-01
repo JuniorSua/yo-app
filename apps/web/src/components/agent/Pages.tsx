@@ -1,5 +1,5 @@
 import type { Artifact } from "@yo/contracts";
-import { Download, LayoutTemplate, Maximize2, Pin, PinOff, X } from "lucide-react";
+import { Download, LayoutTemplate, Pin, PinOff, X } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { api } from "../../lib/api";
@@ -108,19 +108,18 @@ export function PageCard({ artifactId, title: asked }: { artifactId: string; tit
     if (!loaded) load.artifacts().catch(() => {});
   }, [loaded]);
   return (
-    <div
-      data-testid="page-card"
-      className="group w-full max-w-[520px] overflow-hidden rounded-2xl border border-border bg-card shadow-card animate-rise"
-    >
+    <div data-testid="page-card" className="page-card group animate-rise">
       <button
         type="button"
         onClick={() => openPage(artifactId)}
         aria-label={`Open the page ${title}`}
-        className="relative block h-56 w-full cursor-zoom-in overflow-hidden border-border border-b text-left"
+        className="page-card-preview"
       >
         <PageThumb a={{ id: artifactId, title }} className="h-full w-full" />
-        <span className="absolute right-3 bottom-3 grid size-8 place-items-center rounded-lg border border-border-strong/60 bg-elevated/95 text-muted opacity-0 shadow-soft transition-opacity group-hover:opacity-100">
-          <Maximize2 className="size-4" />
+        {/* A Page is live: it runs, it isn't a picture of one. */}
+        <span className="page-card-live" data-testid="page-card-live">
+          <span aria-hidden />
+          Live
         </span>
       </button>
       <div className="flex items-center gap-3 p-3 pr-3.5">
@@ -137,7 +136,12 @@ export function PageCard({ artifactId, title: asked }: { artifactId: string; tit
           <div className="truncate text-muted text-xs">{KIND_LABEL[kind]} · kept in Make</div>
         </div>
         {art && <PinButton a={art} />}
-        <Button variant="secondary" size="sm" onClick={() => openPage(artifactId)}>
+        <Button
+          variant="primary"
+          size="sm"
+          className="rounded-full px-3.5"
+          onClick={() => openPage(artifactId)}
+        >
           Open
         </Button>
       </div>

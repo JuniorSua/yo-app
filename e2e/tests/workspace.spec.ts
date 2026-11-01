@@ -304,3 +304,23 @@ test("One calm look for every agent: neutral surfaces, and each agent's colour o
   ).toBe(pico);
   expect(await token("--bg")).toBe("#ffffff");
 });
+
+test("the pill over the agent's screen says what it's doing while it works, and who has control when idle", async ({
+  page,
+}) => {
+  await openApp(page);
+  const workspace = await openWorkspace(page);
+  const pill = workspace.getByTestId("ws-control");
+  const patch = (p: object) => page.evaluate((p) => (window as any).__yoMock.patchAgent("agt_yo", p), p);
+  await patch({ activity: "idle", statusLine: null });
+  await expect(pill).toContainText("Yo has control");
+  await expect(workspace.getByTestId("ws-doing")).toHaveCount(0);
+  // Working: one pill, its face and what it's doing, with Take over still in it.
+  await patch({ activity: "working", statusLine: "checking times on resy.com" });
+  await expect(workspace.getByTestId("ws-doing")).toHaveText("Yo · Checking times on resy.com");
+  await expect(pill.getByTestId("ws-take-over")).toBeVisible();
+  await expect(workspace.getByTestId("ws-control")).toHaveCount(1);
+  // Idle again: back to who has control.
+  await patch({ activity: "idle", statusLine: null });
+  await expect(pill).toContainText("Yo has control");
+});

@@ -13,7 +13,7 @@ import {
 } from "react";
 import { accentVars } from "../../lib/accent";
 import { api } from "../../lib/api";
-import { activeHelpers } from "../../lib/presence";
+import { activeHelpers, presenceTone, runningStep } from "../../lib/presence";
 import { cn } from "../../lib/utils";
 import { useApp } from "../../stores/app";
 import { load, run } from "../../stores/sync";
@@ -287,6 +287,8 @@ function ComputerTab({
     setBusy(false);
   };
   const host = url ? hostOf(url) : null;
+  const step = useTimeline((s) => runningStep(s.byAgent[agent.id]));
+  const doing = presenceTone(agent) === "working" ? doingLine(agent, step, host) : "";
   return (
     <div
       className="ws-body"
@@ -341,9 +343,18 @@ function ComputerTab({
                 </>
               ) : (
                 <>
-                  <span>
+                  {/* While it works, the pill says what it's doing; idle, just who has the screen. */}
+                  <span title={doing || undefined}>
                     <AgentAvatar agent={agent} size={18} quiet />
-                    <span className="ws-control-label">{agent.name} has control</span>
+                    {doing ? (
+                      <span className="ws-control-label is-doing" key={doing} data-testid="ws-doing">
+                        <span className="ws-control-who">{agent.name}</span>
+                        <span aria-hidden> · </span>
+                        {doing}
+                      </span>
+                    ) : (
+                      <span className="ws-control-label">{agent.name} has control</span>
+                    )}
                   </span>
                   <button type="button" disabled={busy} onClick={toggleControl} data-testid="ws-take-over">
                     Take over
@@ -364,6 +375,17 @@ function ComputerTab({
       </div>
     </div>
   );
+}
+
+/**
+ * What the agent is doing, for the pill over its screen: what it says it's doing, else its running step, else its
+ * plan's current item, else the site its browser is on.
+ */
+export function doingLine(agent: AgentView, step: string, host: string | null): string {
+  const plan = agent.todos.find((t) => t.status === "in_progress")?.text;
+  const task = (agent.statusLine ?? (step || plan || "")).replace(/`/g, "").trim();
+  if (task) return task.charAt(0).toUpperCase() + task.slice(1);
+  return host ? `On ${host}` : "Thinking…";
 }
 
 /** What follows the host in the address bar: the path and query (`/x?y`), nothing for the bare site. */
