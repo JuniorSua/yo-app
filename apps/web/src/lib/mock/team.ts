@@ -35,28 +35,36 @@ import type { SeedState } from "./data";
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** The teammate a message asks for ("ask Dew to…"), by whole name; never the speaker, a helper or archived. */
+/**
+ * The teammate a message asks for, by whole name; never the speaker, a helper or archived:
+ * - "ask Dew to…" (or check with / tell / message), or "@Pepe …" (the specialist view's Ask Yo);
+ * - Yo routing on its own: "take care of pending leads" goes to the Polestar desk (Pepe) when there is one.
+ */
 export function handoffTarget(
   text: string,
   agents: readonly AgentView[],
   selfId: string,
 ): AgentView | undefined {
+  const team = agents.filter((a) => a.id !== selfId && a.kind !== "helper" && !a.archivedAt);
+  const at = /^\s*@([\w-]+)/.exec(text)?.[1];
+  if (at) return team.find((a) => a.name.toLowerCase() === at.toLowerCase());
+  if (LEADS.test(text) && !/\b(ask|check with|tell|message)\b/i.test(text))
+    return team.find((a) => /polestar|sales|desk|lead/i.test(a.role));
   if (!/\b(ask|check with|tell|message)\b/i.test(text)) return undefined;
-  return agents.find(
-    (a) =>
-      a.id !== selfId &&
-      a.kind !== "helper" &&
-      !a.archivedAt &&
-      new RegExp(`\\b${escapeRe(a.name)}\\b`, "i").test(text),
-  );
+  return team.find((a) => new RegExp(`\\b${escapeRe(a.name)}\\b`, "i").test(text));
 }
+
+/** "take care of pending leads": the routing scenario (Yo hands it to the Polestar desk). */
+const LEADS = /\bpending leads\b|\bfollow up (on )?(the )?leads\b/i;
 
 /** "… and wait": message_agent with wait: true. */
 export const handoffWaits = (text: string) => /\band wait\b/i.test(text);
 
 /** What to hand over: "ask Dew to research flights to Lisbon" → "research flights to Lisbon". */
 export function handoffTopic(text: string, teammate: string): string {
+  if (LEADS.test(text) && !/^\s*@/.test(text)) return "follow up pending leads";
   return text
+    .replace(new RegExp(`^\\s*@${escapeRe(teammate)}\\b[,:]?\\s*`, "i"), "")
     .replace(/^.*?\b(ask|check with|tell|message)\b\s*(the\s+)?/i, "")
     .replace(new RegExp(`^${escapeRe(teammate)}\\s*(about|whether|if|to)?\\s*`, "i"), "")
     .replace(/\s*\band wait\b/i, "")
@@ -64,7 +72,7 @@ export function handoffTopic(text: string, teammate: string): string {
     .trim();
 }
 
-const VERB = /^(research|find|look into|check|compare|draft|write|build|get|book|plan|price)\b/i;
+const VERB = /^(research|find|look into|check|compare|draft|write|build|get|book|plan|price|follow up)\b/i;
 
 /** The topic without its verb, for the replies ("research flights to Lisbon" → "flights to Lisbon"). */
 const subject = (topic: string) => topic.replace(VERB, "").trim() || topic || "that";
@@ -87,12 +95,29 @@ export const handoffSaid = (teammate: string) =>
 
 /** The teammate's reply (its final message, which goes back to the asker). */
 export function handoffReply(topic: string): string {
+  if (LEADS.test(topic))
+    return "**3 leads followed up:**\n\n- **Ana R.:** test drive booked for Thursday at 4pm.\n- **Marcus L.:** sent the Polestar 4 price sheet and trade-in estimate.\n- **Jen K.:** left a voicemail; I'll try again tomorrow morning.";
   return `Here's what I found on ${subject(topic)}:\n\n- **Best pick:** confirmed, with times and prices checked today.\n- **Worth knowing:** two of the options book up by Thursday.\n- **Still open:** one small follow-up, which I've noted for Friday.`;
 }
 
 /** The asker's one-line summary once the reply comes in. */
 export const handoffSummary = (teammate: string, topic: string) =>
-  `${teammate} got back to me on ${subject(topic)}: the best pick is confirmed, and one small follow-up is left for Friday.`;
+  LEADS.test(topic)
+    ? `${teammate} followed up all 3 pending leads: Ana's test drive is Thursday at 4, Marcus has the price sheet, and Jen gets another call tomorrow.`
+    : `${teammate} got back to me on ${subject(topic)}: the best pick is confirmed, and one small follow-up is left for Friday.`;
+
+/** The teammate's steps while it works on the handoff. */
+export function handoffSteps(topic: string): { kind: "web" | "browser"; title: string; live?: string }[] {
+  if (LEADS.test(topic))
+    return [
+      { kind: "browser", title: "Opened the Polestar CRM: 3 pending leads", live: "Opening the CRM…" },
+      { kind: "browser", title: "Emailed Marcus the price sheet" },
+    ];
+  return [
+    { kind: "web", title: `Searched for ${topic || "it"}`, live: "Searching…" },
+    { kind: "browser", title: "Read three sources" },
+  ];
+}
 
 /** A new teammate's hello, its one question about the job, and what it says once answered. */
 export function teammateHello(a: Pick<AgentView, "name" | "role">): {

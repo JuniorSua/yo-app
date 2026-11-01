@@ -148,7 +148,7 @@ describe("the roster order and the chat a window opens on", () => {
     expect(primaryAgent(agents)?.id).toBe("agt_yo");
   });
 
-  it("opens the last agent the user had open, else the primary", () => {
+  it("keeps the open view across a reconnect, else the primary", () => {
     expect(pickAgentId(agents, "agt_home")).toBe("agt_home");
     expect(pickAgentId(agents, "agt_pepe")).toBe("agt_pepe");
     expect(pickAgentId(agents, "agt_yo")).toBe("agt_yo");

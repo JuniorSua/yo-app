@@ -789,13 +789,20 @@ export class TelegramChannel {
       return;
     }
     try {
-      const afterSeq = this.d.store.maxTimelineSeq(agent.id);
+      // A specialist picked with /use: core hands the message to Yo ("@Name …"), so Yo's reply is the one to relay.
+      const lead = agent.isPrimary ? agent : (this.d.store.primaryAgent() ?? agent);
+      const afterSeq = this.d.store.maxTimelineSeq(lead.id);
       const res = await this.d.orchestrator.send(agent.id, text);
-      const w = this.awaiting.get(agent.id);
+      const to = res.agentId ? (this.d.store.getAgent(res.agentId) ?? agent) : agent;
+      const w = this.awaiting.get(to.id);
       if (w) w.count++;
-      else this.awaiting.set(agent.id, { count: 1, afterSeq });
+      else
+        this.awaiting.set(to.id, {
+          count: 1,
+          afterSeq: to.id === lead.id ? afterSeq : this.d.store.maxTimelineSeq(to.id),
+        });
       if (res.turnId === "queued")
-        this.toOwner(`${escapeHtml(agent.name)} is busy; your message is next in line.`);
+        this.toOwner(`${escapeHtml(to.name)} is busy; your message is next in line.`);
       else this.enqueue(() => this.call("sendChatAction", { chat_id: st.chatId, action: "typing" }));
     } catch (err) {
       this.toOwner(`Couldn't send that: ${escapeHtml(err instanceof Error ? err.message : String(err))}`);

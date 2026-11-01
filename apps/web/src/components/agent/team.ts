@@ -1,4 +1,4 @@
-import { exchangeIdIn, type TimelineEntry } from "@yo/contracts";
+import { exchangeIdIn, isMessageAgentTool, type TimelineEntry } from "@yo/contracts";
 import { asText, outputText } from "./bugFields";
 
 /**
@@ -9,7 +9,7 @@ import { asText, outputText } from "./bugFields";
 
 export function isTeamEntry(e: TimelineEntry) {
   if (e.item.kind !== "tool" || !e.item.toolName) return false;
-  return /(^|__|[./:])message_agent$/.test(e.item.toolName) || e.item.toolName === "SendMessage";
+  return isMessageAgentTool(e.item.toolName) || e.item.toolName === "SendMessage";
 }
 
 export interface TeamCall {
@@ -82,4 +82,47 @@ export function teamReply(e: TimelineEntry): TeamReply {
   if (e.item.status === "failed" || /^Error:|couldn't finish/.test(out))
     return { state: "failed", text: out.replace(/^Error:\s*/, "") || "Something went wrong." };
   return out ? { state: "replied", text: out } : { state: "delivered" };
+}
+
+const clip = (text: string, max: number) =>
+  text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+
+/** Markdown down to plain words, on one line. */
+function plainLine(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`>#~]+/g, "")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * What Yo asked a specialist for, in a few words: "Hi Pepe! Could you follow up pending leads for me? …" →
+ * "follow up pending leads". A "@Pepe …" message loses its mention. The first sentence, greeting and pleasantries off.
+ */
+export function askSummary(message: string, teammate?: string | null): string {
+  let t = plainLine(message);
+  if (teammate)
+    t = t.replace(new RegExp(`^@?${teammate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b[,:]?\\s*`, "i"), "");
+  t = t.replace(/^(hi|hey|hello)\b[^!.,:]*[!.,:]\s*/i, "");
+  const first = /^(.+?[.!?])(\s|$)/.exec(t)?.[1] ?? t;
+  const ask = first
+    .replace(/^(could|can|would) you( please)?\s+/i, "")
+    .replace(/^please\s+/i, "")
+    .replace(/\s+for me(?=[?.!]?$)/i, "")
+    .replace(/[?.!]+$/, "")
+    .trim();
+  return clip(ask || t, 72);
+}
+
+/** A specialist's report in a few words: its first real line ("3 leads followed up"), headings and markdown off. */
+export function replySummary(text: string): string {
+  const lines = stripReplyMarkers(text)
+    .split("\n")
+    .map((l) => plainLine(l))
+    .filter(Boolean);
+  const first = (lines[0] ?? "").replace(/:$/, "");
+  return clip(first, 80);
 }

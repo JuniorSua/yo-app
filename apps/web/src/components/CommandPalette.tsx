@@ -100,9 +100,9 @@ export function CommandPalette() {
     return [
       ...sortAgents(agents).map((a) => ({
         id: `agent-${a.id}`,
-        // Yo is the main assistant; everyone else is a teammate.
-        group: a.isPrimary ? "Your assistant" : "Teammates",
-        label: a.name,
+        // Yo is the one you talk to; the others are its specialists (each opens its read-only view).
+        group: a.isPrimary ? "Your assistant" : "Yo's specialists",
+        label: a.isPrimary ? a.name : `View ${a.name}`,
         hint: a.role,
         icon: <AgentAvatar agent={a} size={20} quiet />,
         run: () => ui.openAgent(a.id),

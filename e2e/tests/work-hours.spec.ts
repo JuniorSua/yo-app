@@ -1,8 +1,8 @@
 /**
- * No more Work & Personal spaces: every agent is a teammate in the Team popover, the window reopens the last chat,
+ * No more Work & Personal spaces: every agent is one of Yo's specialists in the Team popover, the window opens on Yo,
  * nothing changes with the time of day, and the work hours live in Settings → Profile as context for every agent.
- * Against the mock; `&mockTeam=owner` adds Pepe (no memory focus) to Yo, Pip and the usual teammates. The e2e
- * browser runs in America/New_York, like the mock's settings.
+ * Against the mock; `&mockTeam=owner` is the owner's team: Yo and its specialists Pepe (no memory focus), Pip and
+ * Scout. The e2e browser runs in America/New_York, like the mock's settings.
  */
 import { expect, type Page, test } from "@playwright/test";
 import { openAgent, openSettings, openTeam, openWorkspacePage } from "./helpers";
@@ -37,7 +37,7 @@ test("no space switch anywhere: rail, Team popover, shortcut, palette, settings,
   // ⌘⇧M does nothing now.
   await page.keyboard.press("ControlOrMeta+Shift+KeyM");
   await expect(title(page)).toHaveText("Yo");
-  // The palette has no space actions; Pip is listed as a teammate.
+  // The palette has no space actions; Pip is listed as one of Yo's specialists.
   await page.keyboard.press("ControlOrMeta+k");
   await palette(page).getByRole("textbox").fill("personal");
   await expect(palette(page)).not.toContainText("Switch to Personal");
@@ -45,7 +45,7 @@ test("no space switch anywhere: rail, Team popover, shortcut, palette, settings,
   await expect(palette(page)).not.toContainText("Follow my work hours");
   await expect(palette(page)).toContainText("Your work hours");
   await palette(page).getByRole("textbox").fill("pip");
-  await expect(palette(page)).toContainText("Teammates");
+  await expect(palette(page)).toContainText("Yo's specialists");
   await page.keyboard.press("Escape");
   // Settings: Profile instead of Work & Personal.
   await openSettings(page);
@@ -72,38 +72,40 @@ test("nothing changes at the end of work hours: no switch, no toast", async ({ p
   await expect(page.getByTestId("rail-tasks")).toHaveAttribute("aria-current", "page");
 });
 
-test("Pip and Pepe are teammates in the Team popover, Yo first; Pip can be archived like anyone", async ({
+test("the owner's team: Pepe, Pip and Scout are Yo's specialists, each with a job, and any can be removed", async ({
   page,
 }) => {
   await open(page, { query: "mockTeam=owner" });
   const roster = await openTeam(page);
   const rows = roster.locator('[data-testid^="agent-row-"]');
-  await expect(rows.first()).toHaveAttribute("data-testid", "agent-row-Yo");
-  await expect(rows.first().getByLabel("Main agent")).toBeVisible();
-  await expect(roster.getByTestId("agent-row-Pip")).toBeVisible();
-  await expect(roster.getByTestId("agent-row-Pepe")).toBeVisible();
-  await expect(roster.getByTestId("agent-row-Pip").getByLabel("Main agent")).toHaveCount(0);
-  await roster.getByTestId("agent-row-Pip").hover();
-  await roster.getByRole("button", { name: "Pip options", exact: true }).click();
-  await expect(page.getByRole("menuitem", { name: "Archive" })).toBeVisible();
+  await expect(rows).toHaveCount(3);
+  await expect(roster.getByTestId("agent-row-Yo")).toHaveCount(0);
+  for (const [name, job] of [
+    ["Pepe", "Polestar desk"],
+    ["Pip", "Personal"],
+    ["Scout", "Content manager"],
+  ])
+    await expect(roster.getByTestId(`agent-row-${name}`).getByTestId("agent-job-line")).toHaveText(job!);
+  await roster.getByTestId("agent-row-Pip").getByTestId("agent-edit").click();
+  await expect(page.getByRole("menuitem", { name: "Remove Pip" })).toBeVisible();
   await page.keyboard.press("Escape");
-  // Each opens its own chat.
+  // Each opens its own read-only view.
   await openAgent(page, "Pepe");
   await openAgent(page, "Pip");
-  await expect(page.getByTestId("composer-input")).toHaveAttribute("placeholder", "Message Pip…");
+  await expect(page.getByTestId("composer-input")).toHaveCount(0);
+  await expect(page.getByTestId("specialist-bar")).toContainText(
+    "Pip works for Yo. To give Pip work, ask Yo.",
+  );
 });
 
-test("the app reopens the last agent the user had open, else Yo", async ({ page }) => {
+test("the app always opens on Yo: a specialist's view is a side trip", async ({ page }) => {
   await open(page, { query: "mockTeam=owner" });
   await expect(title(page)).toHaveText("Yo");
   await openAgent(page, "Pip");
   await page.reload();
-  await expect(title(page)).toHaveText("Pip");
-  await openAgent(page, "Pepe");
-  await page.reload();
-  await expect(title(page)).toHaveText("Pepe");
-  // The saved chat's agent is gone (archived or deleted elsewhere): back to Yo.
-  await page.evaluate(() => localStorage.setItem("yo.ui", JSON.stringify({ agentId: "agt_gone" })));
+  await expect(title(page)).toHaveText("Yo");
+  // An old saved chat (from before One Yo) doesn't reopen a specialist either.
+  await page.evaluate(() => localStorage.setItem("yo.ui", JSON.stringify({ agentId: "agt_pepe" })));
   await page.reload();
   await expect(title(page)).toHaveText("Yo");
 });

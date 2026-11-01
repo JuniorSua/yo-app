@@ -67,10 +67,13 @@ describe("tool sets", () => {
     for (const t of ["remember", "ask_user", "request_approval", "request_takeover", "playbook_list"])
       expect(helper).toContain(t);
     expect(names("primary")).toEqual(expect.arrayContaining(["start_helper", "message_agent", "task_add"]));
-    // Yo keeps create_agent (approval card) only for the life map's rare permanent-agent suggestion.
+    // One Yo: only Yo adds specialists (approval card) and talks with the user in chat; specialists message Yo.
     expect(names("primary")).toContain("create_agent");
-    expect(names("agent")).toContain("create_agent");
+    expect(names("agent")).not.toContain("create_agent");
+    expect(names("agent")).toContain("message_agent");
     expect(names("agent")).not.toContain("start_helper");
+    expect(names("primary")).toContain("suggest_replies");
+    expect(names("agent")).not.toContain("suggest_replies");
     // Yo Phone links: the main agent only.
     for (const t of ["create_phone_link", "turn_off_phone"]) {
       expect(names("primary")).toContain(t);

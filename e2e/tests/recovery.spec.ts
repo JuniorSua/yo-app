@@ -110,7 +110,6 @@ test("failed memory writes preserve drafts and existing rows", async ({ page }) 
 test("failed send preserves the message", async ({ page }) => {
   await failMethods(page, ["chat.send"]);
   await openApp(page);
-  await openAgent(page, "Dew");
   await send(page, "Compare the three cheapest flights to Lisbon");
   await expect(page.getByText("Couldn't send message")).toBeVisible();
   await expect(page.getByTestId("composer-input")).toHaveValue(

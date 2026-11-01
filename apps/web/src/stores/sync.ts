@@ -57,7 +57,7 @@ export async function bootstrap() {
     // Older cores don't send it: device features are then shown as unavailable.
     execution: b.execution ?? null,
   });
-  // The chat the user last had open (saved on this device), unless it's gone: then the primary's.
+  // The view that's open (kept across a reconnect), unless it's gone; on a fresh start, Yo's chat (Yo is home).
   const { agentId } = useUI.getState();
   const pick = pickAgentId(agents, agentId);
   if (pick && pick !== agentId) useUI.setState({ agentId: pick });

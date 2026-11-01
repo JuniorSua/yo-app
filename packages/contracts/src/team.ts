@@ -1,6 +1,7 @@
 /**
- * The team: the main agent (Yo, the front door) plus named, long-lived teammates, each with one job and its own
- * memory, computer seat and subscription. One-off helpers (start_helper) are the task layer below them.
+ * The team (docs/one-yo.md): the primary agent (Yo, the only one the user talks to) plus named, long-lived
+ * specialists, each with one job and its own memory focus, computer seat and subscription. Yo routes work to them;
+ * one-off helpers (start_helper) are the task layer below. ("Teammate" in older code means a specialist.)
  */
 import type { Agent, Avatar } from "./domain";
 
@@ -43,4 +44,20 @@ export function teammateAvatar(team: readonly Pick<Agent, "avatar" | "archivedAt
  */
 export function exchangeIdIn(text: string | null | undefined): string | null {
   return text ? (/\(exchange (xch_[a-z0-9]+)\)/.exec(text)?.[1] ?? null) : null;
+}
+
+/** A message_agent step, whatever prefix the provider puts on its tool names ("mcp__yo__message_agent"). */
+export function isMessageAgentTool(toolName: string | null | undefined): boolean {
+  return !!toolName && /(^|__|[./:])message_agent$/.test(toolName);
+}
+
+/**
+ * The user can't message a specialist directly: what they wrote goes to Yo as "@Name text", so Yo routes it
+ * (docs/one-yo.md, Visibility). Text that already names them first isn't named twice.
+ */
+export function toSpecialistViaYo(name: string, text: string): string {
+  const tag = `@${name}`;
+  const t = text.trim();
+  if (t.toLowerCase().startsWith(tag.toLowerCase()) && !/[\p{L}\p{N}]/u.test(t.charAt(tag.length))) return t;
+  return t ? `${tag} ${t}` : tag;
 }

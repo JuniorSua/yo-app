@@ -94,16 +94,23 @@ test.describe("Mac window: every visible button is clickable", () => {
       await expectAllClickable(page, "the profile popover");
       await page.keyboard.press("Escape");
 
-      await openTeam(page);
+      const team = await openTeam(page);
       await expectAllClickable(page, "the Team popover");
+      // A specialist's Edit menu (rename, job, model, avatar, remove).
+      await team.getByTestId("agent-row-Pico").getByTestId("agent-edit").click();
+      await expect(page.getByTestId("edit-remove")).toBeVisible();
+      await expectAllClickable(page, "a specialist's Edit menu");
       await page.keyboard.press("Escape");
+      await expect(page.getByTestId("edit-remove")).toHaveCount(0);
+      if (await team.isVisible()) await page.keyboard.press("Escape");
+      await expect(team).toHaveCount(0);
 
       await page.getByTestId("model-picker-trigger").click();
       await expectAllClickable(page, "the model picker");
       await page.keyboard.press("Escape");
 
       await openAgent(page, "Pico");
-      await expectAllClickable(page, "Pico's chat");
+      await expectAllClickable(page, "Pico's read-only view");
 
       for (const name of ["tasks", "activity", "approvals", "routines", "memory", "artifacts"] as const) {
         await openWorkspacePage(page, name);
@@ -187,6 +194,23 @@ test.describe("Mac window: every visible button is clickable", () => {
       [strip.x + strip.width - 12, strip.y + strip.height / 2],
     );
     expect(hit).toBe("drag");
+  });
+
+  test("One Yo: the team faces by Yo's head, exchange rows and a specialist's view", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openApp(page, { query: "mockTeam=leads" });
+    await expect(page.getByTestId("chat-team")).toBeVisible();
+    await expect(page.getByTestId("team-ask-row").last()).toBeVisible();
+    await expectAllClickable(page, "Yo's chat with its team and an exchange row");
+    await page.getByTestId("chat-team").click();
+    await expect(page.getByTestId("roster")).toBeVisible();
+    await expectAllClickable(page, "the Team popover from the head");
+    await page.keyboard.press("Escape");
+    await page.getByTestId("team-ask-row").last().click();
+    await expect(page.getByTestId("agent-title")).toHaveText("Pepe");
+    for (const id of ["back-to-yo", "specialist-edit", "ask-yo"])
+      await expect(page.getByTestId(id)).toBeVisible();
+    await expectAllClickable(page, "Pepe's view");
   });
 
   test("workspace as a sheet on a narrow window", async ({ page }) => {

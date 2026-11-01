@@ -119,23 +119,25 @@ describe("memory focus", () => {
   });
 });
 
-describe("only the primary is the main agent", () => {
+describe("only the primary is the main agent (One Yo)", () => {
   it("Yo gets helpers, playbooks, Yo Phone and the life map", () => {
     const p = buildSystemAppend(ctx({ name: "Yo", isPrimary: true, space: "work" }));
-    expect(p).toContain("You are Sam's main assistant.");
+    expect(p).toContain("You are Sam's main assistant and the only agent they talk to");
     expect(p).toContain("# Helpers");
     expect(p).toContain("# Yo Phone");
   });
 
-  it("Pip, with a memory focus, is a teammate with its own helpers; Yo stays the front door", () => {
+  it("Pip, with a memory focus, is a specialist with no helpers of its own; it works for Yo", () => {
     const team = [
       { name: "Yo", role: "", status: "idle" as const, model: "Claude · Sonnet 5.5", main: true },
       { name: "Pip", role: "", status: "idle" as const, model: "Grok · Grok 4.7", main: false, you: true },
     ];
     const p = buildSystemAppend(ctx({ name: "Pip", isPrimary: false, space: "personal" }, { team }));
     expect(p).not.toContain("main assistant");
-    expect(p).toContain("# Your team\nYo is the main agent: Sam's front door. You're Pip, a teammate.");
-    expect(p).toContain("# Helpers");
+    expect(p).toContain("# Your team\nYou're Pip, a specialist on Yo's team. You run on Grok · Grok 4.7.");
+    expect(p).toContain("Sam talks to Yo, not to you.");
+    expect(p).toContain("# Reporting to Yo");
+    expect(p).not.toContain("# Helpers");
     expect(p).not.toContain("# Yo Phone");
     expect(p).not.toContain("# Playbooks");
   });

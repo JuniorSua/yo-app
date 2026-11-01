@@ -110,6 +110,7 @@ export type AgentActivity = z.infer<typeof AgentActivity>;
 
 /* --------------------------------- Domain --------------------------------- */
 
+/** "agent": a long-lived agent (the primary, or a specialist: docs/one-yo.md); "helper": a one-off helper. */
 export const AgentKind = z.enum(["agent", "helper"]);
 export type AgentKind = z.infer<typeof AgentKind>;
 
@@ -228,6 +229,16 @@ export const AgentView = Agent.extend({
    * OK: Book the 8 PM table"). Null when it isn't working or waiting. Absent from older cores.
    */
   statusLine: z.string().nullable().optional(),
+  /**
+   * Its place on the team (docs/one-yo.md): "main" is Yo, the one the user talks to; a "specialist" works for Yo
+   * and is watched, not chatted with; a "helper" does one job. Absent from older cores (then: isPrimary).
+   */
+  teamRole: z.enum(["main", "specialist", "helper"]).optional(),
+  /**
+   * What it's working on, for the team list: the request it's on now (Yo's handoff, a routine…), else its oldest
+   * task in progress on its ledger, else null. Absent from older cores.
+   */
+  currentTask: z.string().nullable().optional(),
 });
 export type AgentView = z.infer<typeof AgentView>;
 

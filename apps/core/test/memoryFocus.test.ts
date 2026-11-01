@@ -1,5 +1,5 @@
 /**
- * After Work & Personal spaces: every agent is a normal teammate, Yo is the primary, work hours are prompt context,
+ * After Work & Personal spaces: every other agent is a specialist (docs/one-yo.md), Yo is the primary, work hours are prompt context,
  * and each agent keeps its memory focus (Yo: work, Pip: personal, Pepe: none). Migration 16 upgrades a database
  * shaped like the owner's (spaces on) and like a friend's (spaces turned off, Pip archived).
  */
@@ -36,7 +36,7 @@ async function until(fn: () => boolean, ms = 5000, label = "condition") {
   throw new Error(`timed out waiting for ${label}`);
 }
 
-async function boot(): Promise<Core> {
+async function boot(opts: { directSpecialistChats?: boolean } = {}): Promise<Core> {
   process.env.YO_AGENTD_TOKEN = TOKEN;
   const core = await startCore(
     {
@@ -49,7 +49,7 @@ async function boot(): Promise<Core> {
       secrets: "file" as const,
       webDist: null,
     },
-    { secrets: new MemorySecretStore() },
+    { secrets: new MemorySecretStore(), ...opts },
   );
   cores.push(core);
   await core.agentd.waitReady(5000);
@@ -237,11 +237,12 @@ describe("booting after the upgrade", () => {
     );
   });
 
-  it("Pip's session: Personal and Everywhere memories, the work-hours line, a main agent's tools", async () => {
+  it("Pip's session: Personal and Everywhere memories, the work-hours line, a specialist's tools", async () => {
     const db = new DatabaseSync(path.join(dataDir, "yo.sqlite"));
     const { pip } = oldInstall(db);
     db.close();
-    const core = await boot();
+    // The test drives Pip's turn directly (in the app, the user's message would go to Yo).
+    const core = await boot({ directSpecialistChats: true });
     await until(() => core.store.listAccounts().some((a) => a.status === "authenticated"));
     // Pip runs on the default account's model here (the test has no Grok sign-in).
     core.store.updateAgent(pip.id, { model: null });
@@ -256,12 +257,15 @@ describe("booting after the upgrade", () => {
       /- Sam's work hours: every day 11:00–19:00 \(America\/New_York\)\. It's now \w{3} /,
     );
     expect(prompt).toContain("don't bring up work unless Sam does");
-    expect(prompt).toContain("# Your team\nYo is the main agent: Sam's front door. You're Pip, a teammate");
-    expect(prompt).toContain("# Helpers");
+    expect(prompt).toContain(
+      "# Your team\nYou're Pip, a specialist on Yo's team (your job: your personal-time agent)",
+    );
+    expect(prompt).toContain("Sam talks to Yo, not to you.");
+    expect(prompt).not.toContain("# Helpers");
     expect(prompt).not.toContain("# Yo Phone");
     expect(prompt).not.toContain("# Your space");
     const start = mock.requests.find((r) => r.type === "session.start" && r.agentId === pip.id) as any;
-    expect(start.toolset).toBe("primary");
+    expect(start.toolset).toBe("agent");
     await until(() => mock.turnTexts.some((t) => t.endsWith("hello")), 5000, "the turn");
     expect(mock.turnTexts.find((t) => t.endsWith("hello"))).toMatch(
       / · (work hours|outside work hours)\] hello$/,

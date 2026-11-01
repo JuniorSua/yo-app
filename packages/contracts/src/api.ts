@@ -161,8 +161,12 @@ export interface ApiMethods
 
   "chat.send": {
     params: { agentId: string; text: string; attachments?: Attachment[]; route?: RoutePreference };
-    /** `turnId` "queued": it waits behind the running task as `queuedId` (see queue.*). */
-    result: { turnId: string; queuedId?: string };
+    /**
+     * `turnId` "queued": it waits behind the running task as `queuedId` (see queue.*). Aimed at a specialist, the
+     * message goes to Yo as "@Name text" instead (docs/one-yo.md): `agentId` then names Yo, whose turn or queue
+     * `turnId`/`queuedId` belong to. Absent: the agent it was sent to (older cores always).
+     */
+    result: { turnId: string; queuedId?: string; agentId?: string };
   };
   "chat.interrupt": { params: { agentId: string }; result: { ok: true } };
 

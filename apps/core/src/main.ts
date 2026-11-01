@@ -44,6 +44,8 @@ export async function startCore(
     lostTurnGraceMs?: number;
     /** How long message_agent waits for a teammate's reply (tests shorten it). */
     agentReplyWaitMs?: number;
+    /** Tests only: the user's messages reach specialists directly instead of going to Yo (docs/one-yo.md). */
+    directSpecialistChats?: boolean;
     /** How long a card waits on the user, and the longest a task may run (tests shorten them). */
     userWaitMs?: number;
     maxTurnMs?: number;
@@ -230,6 +232,7 @@ export async function startCore(
     onActivity,
     lostTurnGraceMs: overrides.lostTurnGraceMs,
     agentReplyWaitMs: overrides.agentReplyWaitMs,
+    directSpecialistChats: overrides.directSpecialistChats,
     userWaitMs: overrides.userWaitMs,
     maxTurnMs: overrides.maxTurnMs,
     stuckTurnMs: overrides.stuckTurnMs,

@@ -11,13 +11,16 @@ import {
   cleanSecureValues,
   DEVICE_TOOLS,
   type Decision,
+  exchangeIdIn,
   type FsEntry,
   fieldList as fieldWords,
   type HelperState,
   type InputPart,
   type Item,
   isLead,
+  isMessageAgentTool,
   isPublicSuffix,
+  isSpecialist,
   isSpecificSite,
   type LeaseHolder,
   type LedgerTask,
@@ -42,10 +45,12 @@ import {
   secureFillKinds,
   secureFormTitle,
   siteHost,
+  type TeamExchange,
   type TimelineEntry,
   type TodoEntry,
   teammateAvatar,
   toolAllowed,
+  toSpecialistViaYo,
   workHoursNow,
   type YoToolset,
 } from "@yo/contracts";
@@ -128,6 +133,8 @@ const STUCK_TURN_MS = 10 * 60 * 1000;
 const AGENT_REPLY_WAIT_MS = 30 * 60 * 1000;
 /** Longest teammate reply handed back to the asker (message_agent). */
 const MAX_TEAMMATE_REPLY = 12_000;
+/** Longest text on a compact exchange row (Item.exchange); the full message stays in the item. */
+const EXCHANGE_TEXT_CHARS = 280;
 /** Agent-to-agent messages in a row before Yo stops the chain (agents could otherwise talk forever). */
 const MAX_AGENT_HOPS = 6;
 /**
@@ -328,6 +335,11 @@ export interface OrchestratorDeps {
   lostTurnGraceMs?: number;
   /** How long message_agent waits for a teammate's reply before carrying on (tests shorten it). */
   agentReplyWaitMs?: number;
+  /**
+   * Tests only: the user's messages reach specialists directly, so tests can drive a specialist's turn. In the app
+   * they always go to Yo (docs/one-yo.md).
+   */
+  directSpecialistChats?: boolean;
   /** How long a card waits on the user before the agent stops waiting (tests shorten it). */
   userWaitMs?: number;
   /** Longest a single task may run (tests shorten it). */
@@ -572,7 +584,25 @@ export class Orchestrator {
       todos: r.todos,
       lastActiveAt,
       statusLine: this.statusLine(agentId),
+      teamRole: a.kind === "helper" ? "helper" : isLead(a) ? "main" : "specialist",
+      currentTask: this.currentTask(a),
     };
+  }
+
+  /**
+   * What the agent is on, for the team list (AgentView.currentTask): the request of the task it's running (Yo's
+   * handoff, a routine, a message), else its oldest ledger task in progress, else null.
+   */
+  private currentTask(a: Agent): string | null {
+    if (a.kind === "helper") return a.brief ? oneLine(a.brief, 100) : null;
+    const q = this.rt(a.id).input;
+    if (this.rt(a.id).runningTurn && q && !q.compact && ["user", "agent", "routine"].includes(q.trigger)) {
+      if (q.trigger === "routine") return q.label ? `Routine: ${oneLine(q.label, 90)}` : "A routine";
+      const first = q.from?.reply ? "" : oneLine(q.text.split("\n").find((l) => l.trim()) ?? "", 100);
+      if (first) return first;
+    }
+    const doing = this.d.store.listTasks(a.id).find((t) => t.status === "in_progress");
+    return doing ? oneLine(doing.title, 100) : null;
   }
 
   /**
@@ -594,7 +624,7 @@ export class Orchestrator {
     if (r.seatWait) return "Waiting for a free screen";
     const waitingOn = [...this.exchanges.values()].find((x) => x.fromAgentId === agentId && x.resolve);
     if (waitingOn)
-      return `Waiting for ${this.d.store.getAgent(waitingOn.toAgentId)?.name ?? "a teammate"}'s reply`;
+      return `Waiting for ${this.d.store.getAgent(waitingOn.toAgentId)?.name ?? "a specialist"}'s reply`;
     const step = r.todos.find((t) => t.status === "in_progress")?.text;
     if (step) return oneLine(step, 80);
     if (q.compact) return "Tidying up the conversation";
@@ -603,7 +633,7 @@ export class Orchestrator {
     if (q.from) return `For ${q.from.name}: ${oneLine(q.text.split("\n")[0] ?? "", 60)}`;
     if (q.trigger === "routine") return q.label ? `Routine: ${oneLine(q.label, 60)}` : "Running a routine";
     if (q.trigger === "helper") return "Reading a helper's report";
-    if (q.trigger === "oversight") return "Checking on a teammate";
+    if (q.trigger === "oversight") return "Checking on a specialist";
     return oneLine(q.text.split("\n")[0] ?? "", 60) || "Working on your request";
   }
 
@@ -692,7 +722,7 @@ export class Orchestrator {
     if (!r.runningTurn) return null;
     const name = this.d.store.getAgent(r.agentId)?.name ?? "Yo";
     if (r.input?.compact) return `${name} is compacting the conversation right now.`;
-    if (r.input?.from || r.input?.oversight) return `${name} is answering a teammate right now.`;
+    if (r.input?.from || r.input?.oversight) return `${name} is answering another agent right now.`;
     if (!r.sessionKey || !r.turnSentAt || !this.liveSessions.has(r.sessionKey))
       return `${name} is still getting this task started.`;
     const provider = this.d.store.getSession(r.sessionKey)?.provider;
@@ -953,11 +983,26 @@ export class Orchestrator {
     route: RoutePreference = "auto",
     /** `notice`: the chat shows this quiet line instead of the message (a request nobody typed: the brief). */
     opts: { noSteer?: boolean; notice?: string } = {},
-  ) {
+  ): Promise<{ turnId: string; queuedId?: string; agentId?: string }> {
     const agent = this.d.store.getAgent(agentId);
     if (!agent) throw new Error("Unknown agent");
     if (agent.kind === "helper" && agent.archivedAt)
       throw new UserFacingError("This helper has finished. Ask your main agent instead.");
+    // One Yo (docs/one-yo.md): the user talks only to Yo. A message aimed at a specialist (an older client, the
+    // phone, Telegram, a task's Start) goes to Yo as "@Name text", and Yo routes it. Nothing is refused.
+    const lead = trigger === "user" && !opts.notice ? this.leadFor(agent) : null;
+    if (lead) {
+      const res: { turnId: string; queuedId?: string } = await this.send(
+        lead.id,
+        toSpecialistViaYo(agent.name, text),
+        attachments,
+        trigger,
+        label,
+        route,
+        opts,
+      );
+      return { ...res, agentId: lead.id };
+    }
     this.d.onActivity();
     for (const a of attachments) {
       if (!isZipAttachment(a)) continue;
@@ -990,6 +1035,13 @@ export class Orchestrator {
       ...(opts.noSteer ? { noSteer: true } : {}),
       ...(trigger === "user" ? { own: { id: newId("qmsg"), createdAt: Date.now() } } : {}),
     });
+  }
+
+  /** Yo, when the user's message for `agent` (a specialist) must go to Yo instead; else null. */
+  private leadFor(agent: Agent): Agent | null {
+    if (!isSpecialist(agent) || this.d.directSpecialistChats) return null;
+    const lead = this.d.store.primaryAgent();
+    return lead && lead.id !== agent.id && !lead.archivedAt ? lead : null;
   }
 
   /**
@@ -1122,6 +1174,7 @@ export class Orchestrator {
                 {
                   ...from,
                   waiting: !!from.exchangeId && !!this.exchanges.get(from.exchangeId)?.resolve,
+                  lead: !!this.d.store.getAgent(from.agentId)?.isPrimary && !agent.isPrimary,
                 },
                 this.d.store.getSettings().userName,
               )}\n`
@@ -2049,6 +2102,10 @@ export class Orchestrator {
         }
         const entryId = this.entryId(sessionKey, item.id);
         const previous = this.d.store.getEntry(entryId);
+        if (item.kind === "tool" && isMessageAgentTool(item.toolName)) {
+          const exchange = this.exchangeTo(agentId, item, previous?.item.exchange?.at);
+          if (exchange) item.exchange = exchange;
+        }
         this.upsert({
           id: entryId,
           agentId,
@@ -2950,7 +3007,7 @@ export class Orchestrator {
     const hops = (this.rt(fromId).input?.hops ?? 0) + 1;
     if (hops > MAX_AGENT_HOPS)
       throw new Error(
-        "You and your teammates have passed messages back and forth too many times in a row. Finish with what you have, or ask the user.",
+        "You and the other agents have passed messages back and forth too many times in a row. Finish with what you have, or ask the user.",
       );
     if (wait && this.waitsOn(target.id, fromId))
       throw new Error(
@@ -3027,6 +3084,13 @@ export class Orchestrator {
     r.lastError = null;
     const from = { agentId: sender.id, name: sender.name };
     const reply = o.reply ? { reply: true } : {};
+    const exchange: TeamExchange = {
+      direction: "from",
+      ...from,
+      text: oneLine(text, EXCHANGE_TEXT_CHARS),
+      at: Date.now(),
+      exchangeId: o.exchangeId,
+    };
     this.enqueue(
       toId,
       {
@@ -3035,6 +3099,7 @@ export class Orchestrator {
         status: "completed",
         text,
         from: { ...from, exchangeId: o.exchangeId, ...reply },
+        exchange,
       },
       {
         text: o.modelText ?? text,
@@ -3046,6 +3111,32 @@ export class Orchestrator {
         ...(o.checkIn ? { fromCheckIn: true } : {}),
       },
     );
+  }
+
+  /**
+   * The compact "to" row for a message_agent step in `fromId`'s chat (Item.exchange): who it went to, what it said,
+   * and the exchange its reply will carry. Null when the step names nobody Yo knows (yet).
+   */
+  private exchangeTo(fromId: string, item: Item, at?: number): TeamExchange | null {
+    const input = (item.input && typeof item.input === "object" ? item.input : {}) as Record<string, unknown>;
+    const to = typeof input.to === "string" ? input.to : "";
+    const message = typeof input.message === "string" ? input.message : "";
+    if (!to.trim()) return null;
+    let target: Agent;
+    try {
+      target = this.findTeammate(fromId, to);
+    } catch {
+      return null;
+    }
+    const exchangeId = exchangeIdIn(item.output);
+    return {
+      direction: "to",
+      agentId: target.id,
+      name: target.name,
+      text: oneLine(message, EXCHANGE_TEXT_CHARS),
+      at: at ?? Date.now(),
+      ...(exchangeId ? { exchangeId } : {}),
+    };
   }
 
   /** A teammate by name (or id) for `fromId`. */
@@ -3060,11 +3151,11 @@ export class Orchestrator {
       (q.length >= 3 ? others.find((a) => a.name.toLowerCase().startsWith(q)) : undefined);
     if (found) return found;
     const self = this.d.store.getAgent(fromId);
-    if (self && self.name.toLowerCase() === q) throw new Error("That's you. Pick a teammate.");
+    if (self && self.name.toLowerCase() === q) throw new Error("That's you. Pick another agent.");
     throw new Error(
       others.length
         ? `No teammate named "${to}". Your teammates: ${others.map((a) => a.name).join(", ")}.`
-        : "You have no teammates yet. The user can add one, or you can propose one with create_agent.",
+        : "There are no specialists yet. Yo can suggest one to the user and add it with create_agent once they agree.",
     );
   }
 
@@ -3222,6 +3313,9 @@ export class Orchestrator {
     const parsed = CreateAgentInput.safeParse(p.args);
     if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid create_agent call");
     const { name, role = "", instructions = "" } = parsed.data;
+    const caller = this.d.store.getAgent(agentId);
+    if (!caller || !isLead(caller))
+      throw new Error("Only Yo adds specialists. Tell Yo in your report if your area needs one.");
     const team = this.d.store.listAgents();
     if (team.some((a) => a.name.toLowerCase() === name.toLowerCase()))
       throw new Error(`There's already an agent named ${name}. Message them with message_agent instead.`);

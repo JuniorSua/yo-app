@@ -49,61 +49,26 @@ body {
 .shell-rail-links {
   gap: 2px;
 }
-/* The team: up to three stacked mini faces, the newest news as a dot. */
-.shell-rail-team {
+/* The team: one icon (the faces live by Yo's head), a dot when a specialist needs you. */
+.shell-rail-team-link {
   position: relative;
-  display: flex;
-  margin-top: 14px;
-  flex-direction: column;
-  align-items: center;
-  padding: 5px 4px;
-  border-radius: 14px;
-  transition:
-    background-color 0.15s,
-    scale 0.12s var(--ease-out-soft);
-}
-.shell-rail-team.is-open {
-  background: var(--hover);
-}
-@media (hover: hover) and (pointer: fine) {
-  .shell-rail-team:hover {
-    background: var(--hover);
-  }
-}
-.shell-rail-team:active {
-  scale: 0.95;
-}
-.shell-rail-team:focus-visible {
-  outline: 2px solid var(--focus);
-}
-.shell-rail-team-face {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: var(--card);
-  box-shadow:
-    0 0 0 2px var(--rail),
-    0 0 0 3px var(--border);
-}
-.shell-rail-team-face + .shell-rail-team-face {
-  margin-top: -12px;
+  margin-top: 10px;
 }
 .shell-rail-team-dot {
   position: absolute;
-  top: 3px;
-  right: 2px;
-  width: 9px;
-  height: 9px;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: var(--unread);
   box-shadow: 0 0 0 2px var(--rail);
 }
-/* The Team popover: the roster as a card. */
+/* The Team popover: every specialist as a card row, scrolling when there are many. */
 .team-popover {
-  width: 316px;
-  max-height: min(560px, calc(100dvh - 32px));
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  max-height: min(600px, var(--available-height, calc(100dvh - 32px)));
   overflow: hidden;
   display: flex;
 }
@@ -111,24 +76,179 @@ body {
   width: 100%;
   min-height: 0;
   background: none;
+  box-shadow: none;
 }
-.team-popover .shell-sidebar-head {
-  padding: 10px 10px 4px 14px;
-  height: auto;
+.team-panel-head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 10px 6px 16px;
 }
-.team-popover .shell-sidebar-scroll {
-  padding-bottom: 10px;
+.team-panel-sub {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
 }
-/* Faces you can recognise at a glance, in step with the head's Dots size: 40px, clearly smaller than the 104px
-   head, the rows sized to match. */
-.team-popover .roster-row {
-  min-height: 54px;
+.team-popover .team-panel-scroll {
+  padding: 2px 8px 6px;
+}
+.team-panel-foot {
+  flex-shrink: 0;
+  padding: 6px 8px 8px;
+  box-shadow: inset 0 0.5px 0 var(--border);
+}
+.team-ask-add {
+  display: flex;
+  width: 100%;
+  height: 36px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 10px;
+  border-radius: 10px;
+  color: var(--fg-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    scale 0.1s var(--ease-out-soft);
+}
+.team-ask-add > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-ask-add:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+}
+.team-ask-add:active {
+  scale: 0.98;
+}
+.team-ask-add:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+/* A row: the face and three short lines (name and status, job, what it's on), then View and Edit. */
+.team-popover .roster-row.team-row {
+  min-height: 64px;
+  gap: 6px;
+  padding: 6px 6px 6px 4px;
+}
+.team-row-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
   gap: 11px;
-  padding: 6px 8px 6px 6px;
+  padding: 2px;
+  border-radius: 8px;
+  text-align: left;
+}
+.team-row-main:focus-visible {
+  outline: 2px solid var(--focus);
 }
 .team-popover .roster-avatar {
+  position: relative;
   width: 40px;
   height: 40px;
+}
+.team-row-face[data-working]::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  border-top-color: var(--online);
+  animation: helper-ring 1.4s linear infinite;
+}
+.roster-row[data-tone="waiting"] .team-row-face::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  border: 1.5px solid var(--warning);
+  opacity: 0.7;
+}
+.team-status {
+  flex-shrink: 0;
+  margin-left: 4px;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+.team-status[data-tone="working"],
+.team-status[data-tone="thinking"] {
+  color: var(--online);
+}
+.team-status[data-tone="waiting"] {
+  color: var(--warning);
+}
+.team-status[data-tone="error"] {
+  color: var(--danger);
+}
+.team-job {
+  overflow: hidden;
+  color: var(--fg-2);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.team-job.is-empty {
+  color: var(--faint);
+  font-style: italic;
+}
+.team-row .roster-line {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.team-row-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+.team-row-button,
+.team-row-hint {
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 13px;
+  color: var(--fg-2);
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    scale 0.1s var(--ease-out-soft);
+}
+.team-row-button {
+  background: var(--active);
+}
+.team-row-hint {
+  color: var(--accent-text);
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-row-button:hover,
+  .team-row-hint:hover {
+    background: color-mix(in srgb, var(--active) 70%, var(--fg) 8%);
+    color: var(--fg);
+  }
+}
+.team-row-button[data-popup-open] {
+  color: var(--fg);
+}
+.team-row-button:active,
+.team-row-hint:active {
+  scale: 0.95;
+}
+.team-row-button:focus-visible,
+.team-row-hint:focus-visible {
+  outline: 2px solid var(--focus);
 }
 
 /* ------------------------------------------ The split ------------------------------------------ */
@@ -510,6 +630,237 @@ body {
   border-top-color: var(--warning);
   animation-duration: 3s;
 }
+/* Yo's specialists: small faces at the big head's lower left, mirroring the helpers. Working ones carry the same
+   ring as a helper (amber while one needs you); idle ones sit still. One button: it opens the Team popover. */
+.chat-team-faces {
+  position: absolute;
+  top: calc(var(--head-size) * 0.62);
+  right: calc(50% + var(--head-size) * 0.28);
+  display: flex;
+}
+.chat-team-button {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  transition: scale 0.12s var(--ease-out-soft);
+}
+.chat-team-button:active {
+  scale: 0.94;
+  transition-duration: 80ms;
+}
+.chat-team-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.chat-team-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: -8px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1.5px var(--bg),
+    0 1px 5px rgb(0 0 0 / 0.1);
+  transition: translate 0.15s var(--ease-out-soft);
+}
+.chat-team-face:last-child {
+  margin-left: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-team-button:hover .chat-team-face,
+  .chat-team-button.is-open .chat-team-face {
+    translate: 0 -1px;
+  }
+}
+.chat-team-face:is([data-working], [data-waiting])::after {
+  content: "";
+  position: absolute;
+  inset: -2.5px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  border-top-color: var(--online);
+  animation: helper-ring 1.4s linear infinite;
+}
+.chat-team-face[data-waiting]::after {
+  border-top-color: var(--warning);
+  animation-duration: 3s;
+}
+.chat-team-more {
+  color: var(--fg-2);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chat-head.is-hero .chat-team-faces {
+  top: calc(var(--head-size) * 0.66);
+}
+/* A specialist's view: the way home to Yo, top left, as a quiet pill in the bar's style. */
+.chat-back {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  padding: 0 12px 0 6px;
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--fg-2);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 4px rgb(0 0 0 / 0.06);
+  transition:
+    background-color 0.15s,
+    scale 0.1s var(--ease-out-soft);
+}
+.chat-back > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+.dark .chat-back {
+  background: var(--elevated);
+  box-shadow:
+    0 0 0 0.5px var(--border-strong),
+    0 1px 6px rgb(0 0 0 / 0.35);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-back:hover {
+    background: color-mix(in srgb, var(--card) 94%, var(--fg));
+    color: var(--fg);
+  }
+}
+.chat-back:active {
+  scale: 0.96;
+}
+.chat-back:focus-visible {
+  outline: 2px solid var(--focus);
+}
+/* A specialist's job under its name, with Edit beside it. */
+.chat-head-job {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 5px;
+  color: var(--fg-2);
+  font-size: 12px;
+  line-height: 16px;
+}
+.chat-head-job > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-head-job .is-empty {
+  color: var(--faint);
+  font-style: italic;
+}
+.chat-head-job > span[aria-hidden] {
+  color: var(--faint);
+}
+.chat-head-job > button {
+  flex-shrink: 0;
+  margin: -2px -5px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: var(--accent-text, var(--fg-2));
+  font-weight: 500;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-head-job > button:hover {
+    background: var(--hover);
+  }
+}
+.chat-head-job > button:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.chat-head.is-specialist .chat-head-card {
+  margin-top: -12px;
+}
+.chat-column[data-head][data-specialist] {
+  --head-solid: 124px;
+}
+/* In place of the message box: one calm line and the way to give the specialist work (through Yo). */
+.chat-specialist-bar {
+  display: flex;
+  width: 100%;
+  max-width: calc(var(--chat-measure) + 8px);
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 8px 8px 8px 16px;
+  border-radius: 24px;
+  background: var(--chat-fill);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.chat-specialist-bar > p {
+  min-width: 0;
+  flex: 1;
+}
+.chat-specialist-bar b {
+  font-weight: 500;
+  color: var(--fg-2);
+}
+.chat-specialist-ask {
+  display: inline-flex;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    opacity 0.15s,
+    scale 0.1s var(--ease-out-soft);
+}
+.chat-specialist-ask > svg {
+  width: 15px;
+  height: 15px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-specialist-ask:hover {
+    opacity: 0.88;
+  }
+}
+.chat-specialist-ask:active {
+  scale: 0.96;
+}
+.chat-specialist-ask:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.chat-specialist-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 24px 32px;
+  font-size: 13.5px;
+  text-align: center;
+  color: var(--fg-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-team-face:is([data-working], [data-waiting])::after,
+  .team-row-face[data-working]::after {
+    animation: none;
+  }
+}
 @keyframes helper-pop {
   from {
     opacity: 0;
@@ -526,7 +877,7 @@ body {
 .chat-top.has-head .chat-head {
   pointer-events: none;
 }
-.chat-top.has-head :is(.chat-head-avatar, .chat-head-card, .chat-helper-head) {
+.chat-top.has-head :is(.chat-head-avatar, .chat-head-card, .chat-helper-head, .chat-team-faces) {
   pointer-events: auto;
 }
 /* The profile popover: the old inspector as a Dots card under the head. */
@@ -1185,24 +1536,13 @@ body {
     width: 100%;
     border-radius: 0;
   }
-  .shell-rail-team {
+  /* Phones: the team opens from the faces by Yo's head. */
+  .shell-rail-team-link {
     display: none;
   }
-  /* The team opens from the chat's top-left instead: one face, finger-sized. */
-  .chat-bar .shell-rail-team {
-    display: flex;
-    flex-direction: row;
-    min-width: 44px;
-    height: 44px;
-    margin: 0 auto 0 -6px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 8px;
-    border-radius: 22px;
-  }
-  .chat-bar .shell-rail-team-face + .shell-rail-team-face {
-    margin-top: 0;
-    margin-left: -12px;
+  .chat-team-faces {
+    top: calc(var(--head-size) * 0.3);
+    right: calc(50% + var(--head-size) * 0.46);
   }
 }
 

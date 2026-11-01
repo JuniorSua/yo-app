@@ -1,8 +1,9 @@
-import type { AgentView, TimelineEntry } from "@yo/contracts";
+import { type AgentView, isLead, type TimelineEntry } from "@yo/contracts";
 import {
   CalendarClock,
   CloudOff,
   Gift,
+  MessageCircle,
   Phone,
   Plane,
   RotateCw,
@@ -22,6 +23,7 @@ import { useUI, WORKSPACE_QUERY } from "../../stores/ui";
 import { SetupBanner, SetupChat, useSetupChat } from "../setup/SetupChat";
 import { ChatResizer } from "../shell/ChatResizer";
 import { Workspace } from "../shell/Workspace";
+import { askYo } from "../Team";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/controls";
 import { Composer, composerBus } from "./Composer";
@@ -107,6 +109,41 @@ function EmptyState({ agent }: { agent: AgentView }) {
             </button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** A specialist with nothing done yet: a quiet note, no suggestions (Yo hands it work). */
+function SpecialistEmpty({ agent }: { agent: AgentView }) {
+  return (
+    <div className="chat-specialist-empty" data-testid="specialist-empty">
+      <p>{agent.name} hasn't done any work yet.</p>
+      <p className="text-muted">When Yo hands {agent.name} something, it shows up here.</p>
+    </div>
+  );
+}
+
+/**
+ * In place of a message box in a specialist's view: it works for Yo, so its work comes through Yo. "Ask Yo" goes to
+ * Yo's chat with "@Pepe " ready in the box.
+ */
+function SpecialistBar({ agent }: { agent: AgentView }) {
+  return (
+    <div className="chat-dock">
+      <div className="chat-specialist-bar" data-testid="specialist-bar">
+        <p>
+          <b>{agent.name}</b> works for Yo. To give {agent.name} work, ask Yo.
+        </p>
+        <button
+          type="button"
+          className="chat-specialist-ask"
+          data-testid="ask-yo"
+          onClick={() => askYo(`@${agent.name} `)}
+        >
+          <MessageCircle aria-hidden />
+          Ask Yo
+        </button>
       </div>
     </div>
   );
@@ -216,9 +253,11 @@ export function AgentPage() {
   }, [agentId]);
 
   if (!agent) return null;
+  // Yo is the one you talk to; a specialist's view is read-only (its work and its exchanges with Yo).
+  const specialist = !isLead(agent);
   const empty = loaded && !hasEntries;
   // An empty chat shows the agent's head big, in the middle, with its greeting.
-  const hero = empty && !setupChat;
+  const hero = empty && !setupChat && !specialist;
   // Until a chat with nothing on screen has loaded, the spinner shows alone: the head arrives once, in its place.
   const settling = !loaded && !hasEntries && !loadError && !setupChat;
   const head = !hero && !settling;
@@ -234,6 +273,7 @@ export function AgentPage() {
         id="chat-column"
         className="chat chat-column air-page flex min-w-0 flex-col"
         data-head={head || undefined}
+        data-specialist={specialist || undefined}
         style={accent}
       >
         {/* One drag area for the whole top, so its buttons (later in the page) stay clickable in the Mac app. */}
@@ -252,6 +292,8 @@ export function AgentPage() {
           <div className="grid flex-1 place-items-center text-muted" role="status" aria-label="Loading">
             <Spinner className="size-5" />
           </div>
+        ) : empty && specialist ? (
+          <SpecialistEmpty agent={agent} />
         ) : empty ? (
           <EmptyState agent={agent} />
         ) : (
@@ -263,7 +305,7 @@ export function AgentPage() {
           </>
         )}
         {!setupChat && <SetupBanner />}
-        {!setupChat && <Composer agent={agent} />}
+        {!setupChat && (specialist ? <SpecialistBar agent={agent} /> : <Composer agent={agent} />)}
       </div>
       {split && <Workspace agent={agent} />}
       {/* Last, so its no-drag wins in the Mac app over the drag areas it overlaps. */}

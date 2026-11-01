@@ -86,7 +86,8 @@ const savedSignIn: SignInAfterSetup | null =
 
 export const useUI = create<UIState>(() => ({
   page: "agent",
-  agentId: saved.agentId ?? null,
+  // Yo is home: every window opens on Yo's chat (a specialist's view is a side trip, never reopened).
+  agentId: null,
   workPaneOpen: saved.workPaneOpen ?? true,
   workspaceSheet: false,
   chatWidth: typeof saved.chatWidth === "number" && saved.chatWidth > 0 ? saved.chatWidth : null,
@@ -112,7 +113,6 @@ export const useUI = create<UIState>(() => ({
 // Only the remembered fields are written (not every keystroke in the agent search).
 useUI.subscribe((s, prev) => {
   if (
-    s.agentId === prev.agentId &&
     s.workPaneOpen === prev.workPaneOpen &&
     s.chatWidth === prev.chatWidth &&
     s.signInAfterSetup === prev.signInAfterSetup
@@ -122,7 +122,6 @@ useUI.subscribe((s, prev) => {
     localStorage.setItem(
       "yo.ui",
       JSON.stringify({
-        agentId: s.agentId,
         workPaneOpen: s.workPaneOpen,
         chatWidth: s.chatWidth,
         signInAfterSetup: s.signInAfterSetup,

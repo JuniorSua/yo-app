@@ -359,7 +359,7 @@ test("settings: theme toggle", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass("dark");
 });
 
-test("command palette switches agents", async ({ page }) => {
+test("command palette opens a specialist's view", async ({ page }) => {
   await openApp(page);
   await page.keyboard.press("ControlOrMeta+k");
   await expect(page.getByTestId("command-palette")).toBeVisible();
@@ -468,10 +468,10 @@ test("The next routine in the profile refreshes when a routine is added or remov
   await page.evaluate(() => (window as any).__yoMock.simulateReconnect());
   await page.waitForTimeout(300);
   // The agent schedules something (same server push as its schedule_task tool).
-  const agentId = await page.evaluate(() => {
-    const ui = JSON.parse(localStorage.getItem("yo.ui") ?? "{}");
-    return ui.agentId as string;
-  });
+  // Yo's (the window always opens on Yo).
+  const agentId = await page.evaluate(
+    () => (window as any).__yoMock.s.agents.find((a: { isPrimary: boolean }) => a.isPrimary).id as string,
+  );
   const id = await page.evaluate(
     async (agentId) =>
       (

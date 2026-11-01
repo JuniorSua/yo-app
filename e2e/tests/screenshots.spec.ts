@@ -51,12 +51,47 @@ for (const theme of ["dark", "light"] as const) {
       await openAgent(page, "Pico");
       await expect(page.getByTestId("team-exchange").first()).toHaveAttribute("data-state", "replied");
       await shot(page, theme, "19-team-chat");
-      // The quiet handoff row opened: the whole exchange with the teammate.
-      await page.getByTestId("team-toggle").first().click();
-      await shot(page, theme, "19a-team-handoff-open");
-      await openAgent(page, "Dew");
+      // The exchange's row opens the other specialist's view: what it was asked, in full, and its work.
+      await page.getByTestId("team-ask-row").first().click();
       await expect(page.getByTestId("teammate-message")).toBeVisible();
       await shot(page, theme, "19b-team-chat-teammate");
+    });
+
+    /** One Yo: the team by Yo's head, the Team popover, a specialist's read-only view and Yo routing work. */
+    test(`one yo (${theme})`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openApp(page, { theme, query: "mockTeam=leads" });
+      // Routing: Yo asked Pepe about the pending leads; Pepe's face by Yo's head has a working ring.
+      await expect(page.getByTestId("team-ask-row").last()).toBeVisible();
+      await shot(page, theme, "50-one-yo-routing");
+      await page.getByTestId("chat-team").click();
+      await expect(page.getByTestId("roster")).toBeVisible();
+      await shot(page, theme, "51-one-yo-team-popover");
+      await page.getByTestId("roster").getByTestId("agent-row-Scout").getByTestId("agent-edit").click();
+      await expect(page.getByTestId("edit-remove")).toBeVisible();
+      await shot(page, theme, "52-one-yo-edit-menu");
+      await page.keyboard.press("Escape");
+      if (await page.getByTestId("roster").isVisible()) await page.keyboard.press("Escape");
+      // Pepe's read-only view: his work for Yo, and Ask Yo in place of a message box.
+      await page.getByTestId("team-ask-row").last().click();
+      await expect(page.getByTestId("specialist-bar")).toBeVisible();
+      await shot(page, theme, "53-one-yo-specialist-view");
+    });
+
+    test(`one yo exchange rows (${theme})`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await openApp(page, { theme, query: "mockTeam=owner" });
+      await send(page, "Take care of pending leads");
+      await expect(page.getByTestId("team-reply-row").last()).toContainText("3 leads followed up", {
+        timeout: 20_000,
+      });
+      await expect(page.getByText("Pepe followed up all 3 pending leads")).toBeVisible({ timeout: 20_000 });
+      await shot(page, theme, "54-one-yo-exchange-rows");
+      // Ask Yo from a view: Yo's chat with "@Pepe " ready.
+      await openAgent(page, "Pepe");
+      await page.getByTestId("ask-yo").click();
+      await expect(page.getByTestId("composer-input")).toHaveValue("@Pepe ");
+      await shot(page, theme, "55-one-yo-ask-yo");
     });
 
     test(`main screens (${theme})`, async ({ page }) => {
@@ -191,7 +226,7 @@ for (const theme of ["dark", "light"] as const) {
 
       await newTeammate(page);
       await expect(page.getByTestId("new-agent-dialog")).toBeVisible();
-      await shot(page, theme, "43-new-teammate");
+      await shot(page, theme, "43-new-specialist");
       await page.keyboard.press("Escape");
 
       // A teammate's look: Softie, colour, or a photo (Settings for the agent).

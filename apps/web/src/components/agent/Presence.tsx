@@ -1,14 +1,15 @@
-import type { AgentView } from "@yo/contracts";
+import { type AgentView, isLead } from "@yo/contracts";
+import { ChevronLeft } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { activeHelpers, lastFailure, type PresenceTone, presenceTone, runningStep } from "../../lib/presence";
 import { cn } from "../../lib/utils";
-import { chatFor, useApp } from "../../stores/app";
+import { chatFor, primaryAgent, useApp } from "../../stores/app";
 import { useTimeline } from "../../stores/timeline";
 import { ui, WORKSPACE_QUERY } from "../../stores/ui";
 import { AgentAvatar } from "../brand";
 import { ProfileCard } from "../shell/Inspector";
-import { TeamButton } from "../shell/Rail";
 import { TopBarButtons } from "../shell/TopBar";
+import { editSpecialist, jobLine, TeamFaces } from "../Team";
 import { Popover, Tip } from "../ui/overlay";
 
 export function useMedia(query: string) {
@@ -29,10 +30,9 @@ export const PANE_QUERY = WORKSPACE_QUERY;
 /**
  * The chat's top: one drag area for the window, the round buttons top-right (computer, workspace), and the agent's
  * head floating at top centre over the conversation, which fades out under it. With no head (an empty chat shows
- * it big in the middle) only the buttons stay.
+ * it big in the middle) only the buttons stay. A specialist's view adds the way back to Yo, top left.
  */
 export function ChatTop({ agent, head }: { agent: AgentView; head: boolean }) {
-  const phone = useMedia("(max-width: 600px)");
   return (
     <div
       className={cn("chat-top app-drag", head && "has-head")}
@@ -44,12 +44,31 @@ export function ChatTop({ agent, head }: { agent: AgentView; head: boolean }) {
       }}
     >
       <div className="chat-bar">
-        {/* Phones have no rail Team: the team opens from here. */}
-        {phone && <TeamButton compact />}
+        {/* A specialist's view is a side trip: the way home to Yo, top left. */}
+        {!isLead(agent) && <BackToYo />}
         <TopBarButtons agent={agent} />
       </div>
       {head && <PresenceHeader agent={agent} />}
     </div>
+  );
+}
+
+/** "‹ Yo": back to Yo's chat from a specialist's view. */
+function BackToYo() {
+  const yo = useApp((s) => primaryAgent(s.agents));
+  if (!yo) return null;
+  return (
+    <button
+      type="button"
+      className="chat-back"
+      data-testid="back-to-yo"
+      aria-label={`Back to ${yo.name}`}
+      onClick={() => ui.openAgent(yo.id)}
+    >
+      <ChevronLeft aria-hidden />
+      <AgentAvatar agent={yo} size={22} quiet />
+      <span>{yo.name}</span>
+    </button>
   );
 }
 
@@ -85,6 +104,8 @@ export function statusLine(
       const plan = agent.todos.find((t) => t.status === "in_progress")?.text;
       const task = (agent.statusLine ?? (step || plan || "")).replace(/`/g, "");
       if (!task) return crew ? `Working with ${crew}` : "Thinking…";
+      // Work for another agent reads as core says it ("For Yo: follow up pending leads").
+      if (/^For \S+:/.test(task)) return `${task}${crew ? ` · ${crew}` : ""}`;
       return `Working on ${task.charAt(0).toLowerCase()}${task.slice(1)}${crew ? ` · ${crew}` : ""}`;
     }
     default:
@@ -116,12 +137,29 @@ export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boole
   const [open, setOpen] = useState(false);
   // The Softie fills about three quarters of its box: 104 draws a head about 80px tall, Dots' size at 1440×900
   // (measured from the reference, ×1.633). The head zone's solid ground (styles/dots.css --head-solid) fits each.
-  const size = hero ? (phone ? 96 : 136) : phone ? 64 : tiny ? 84 : short ? 96 : 104;
+  // A specialist's view has a smaller head: it's a side view, Yo is the one to talk to.
+  const specialist = !isLead(agent);
+  const size = hero
+    ? phone
+      ? 96
+      : 136
+    : specialist
+      ? phone
+        ? 52
+        : 72
+      : phone
+        ? 64
+        : tiny
+          ? 84
+          : short
+            ? 96
+            : 104;
+  const job = specialist ? jobLine(agent) : "";
   const Tag = hero ? "div" : "header";
   const line = statusLine(agent, tone, step, helpers.length, waiting, failure);
   return (
     <Tag
-      className={cn("chat-head", hero && "is-hero")}
+      className={cn("chat-head", hero && "is-hero", specialist && "is-specialist")}
       data-testid={hero ? "presence-hero" : "presence-header"}
       data-tone={tone}
     >
@@ -148,12 +186,23 @@ export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boole
           <ProfileCard agent={agent} onDone={() => setOpen(false)} />
         </Popover>
         {!hero && <HelperHeads helpers={helpers} />}
+        {/* Yo's specialists, Dots-style: small faces at the head's other side (working ones with a ring). */}
+        {!specialist && <TeamFaces size={phone ? 22 : 26} />}
       </div>
       {/* A small name pill tucked over the head's chin, then one tiny grey status line (Dots). */}
       <div className="chat-head-card">
         <h1 className="chat-head-name" data-testid="agent-title">
           {agent.name}
         </h1>
+        {specialist && !hero && (
+          <div className="chat-head-job" data-testid="specialist-job">
+            <span className={cn(!job && "is-empty")}>{job || "No job set"}</span>
+            <span aria-hidden>·</span>
+            <button type="button" onClick={() => editSpecialist(agent.id)} data-testid="specialist-edit">
+              Edit
+            </button>
+          </div>
+        )}
         {!hero && (
           <div className="chat-head-status" role="status">
             <span

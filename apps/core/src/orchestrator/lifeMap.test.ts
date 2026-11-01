@@ -77,7 +77,7 @@ describe("life map in the main assistant's prompt", () => {
     expect(prompt).toContain("different model or has different cost");
     expect(prompt).toContain("at most once per area per month");
     expect(prompt).toContain("about 450 MB");
-    expect(prompt).toContain("Only add the teammate");
+    expect(prompt).toContain("Only add the specialist");
     expect(prompt).toContain("after Sam says yes");
   });
 

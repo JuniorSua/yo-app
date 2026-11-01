@@ -129,8 +129,8 @@ export function usePrimaryAgent(): AgentView | undefined {
 }
 
 /**
- * The chat a window opens on: the one the user last had open on this device, unless it's gone (archived or
- * deleted); else the primary.
+ * The chat a window shows: the one open now (kept across a reconnect), unless it's gone (archived or deleted); else
+ * the primary. A window starts with none open, so it always opens on Yo.
  */
 export function pickAgentId(agents: Record<string, AgentView>, saved: string | null): string | null {
   const a = saved ? agents[saved] : undefined;

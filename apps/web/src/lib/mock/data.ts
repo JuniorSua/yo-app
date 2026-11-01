@@ -420,6 +420,7 @@ export function seed(onboarded: boolean): SeedState {
         title: "Messaged Dew",
         input: { to: "Dew", message: askDew },
         output: `Dew replied:\n\n${dewReply}`,
+        exchange: { direction: "to", agentId: "agt_research", name: "Dew", text: askDew, at: k0 + 3000 },
       },
       { turnId: "turn_c2" },
     ),
@@ -442,6 +443,7 @@ export function seed(onboarded: boolean): SeedState {
       status: "completed",
       text: askDew,
       from: { agentId: "agt_pico", name: "Pico" },
+      exchange: { direction: "from", agentId: "agt_pico", name: "Pico", text: askDew, at: k0 + 3500 },
     }),
     entry(
       "agt_research",
@@ -932,6 +934,9 @@ export function seed(onboarded: boolean): SeedState {
     },
     { id: "rule_2", agentId: "agt_pico", match: "message", decision: "deny", createdAt: now - 6 * DAY },
   ];
+
+  // Like core's AgentView.teamRole (docs/one-yo.md): Yo is the main agent, the rest are specialists or helpers.
+  for (const a of agents) a.teamRole = a.kind === "helper" ? "helper" : a.isPrimary ? "main" : "specialist";
 
   return {
     settings,

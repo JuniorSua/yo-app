@@ -10,8 +10,9 @@ test("⌘N brings you to Yo's message box without creating an assistant or losin
     const m = (window as any).__yoMock;
     return { count: m.s.agents.length, messages: m.s.timelines.agt_yo.length };
   });
+  // From a specialist's view (no message box there), ⌘N goes home to Yo.
   await openAgent(page, "Dew");
-  await page.getByTestId("composer-input").blur();
+  await expect(page.getByTestId("composer-input")).toHaveCount(0);
   await page.keyboard.press("ControlOrMeta+n");
   await expect(page.getByTestId("agent-title")).toHaveText("Yo");
   await expect(page.getByTestId("composer-input")).toBeFocused();
@@ -76,10 +77,11 @@ test("The Team popover is the team: the main agent first, every teammate (Pip to
   });
   const roster = await openTeam(page);
   const rows = roster.locator('[data-testid^="agent-row-"]');
-  await expect(rows).toHaveCount(names.length);
-  await expect(rows.first()).toHaveAttribute("data-testid", "agent-row-Yo");
-  await expect(rows.first().getByLabel("Main agent")).toBeVisible();
-  for (const name of names) await expect(roster.getByTestId(`agent-row-${name}`)).toBeVisible();
+  // Yo's specialists, every one of them (Yo is the one you talk to, not a row).
+  const specialists = names.filter((n: string) => n !== "Yo");
+  await expect(rows).toHaveCount(specialists.length);
+  await expect(roster.getByTestId("agent-row-Yo")).toHaveCount(0);
+  for (const name of specialists) await expect(roster.getByTestId(`agent-row-${name}`)).toBeVisible();
   // Each row says what the agent is doing now, in a few plain words.
   await expect(roster.getByTestId("agent-row-Pico").getByTestId("agent-state")).toHaveText("Waiting for you");
   await page.evaluate(() =>
@@ -96,7 +98,7 @@ test("The Team popover is the team: the main agent first, every teammate (Pip to
   for (const name of helpers) await expect(page.getByTestId(`agent-row-${name}`)).toHaveCount(0);
   for (const name of helpers) await expect(page.getByTestId("sidebar")).not.toContainText(name);
   for (const name of helpers) await expect(roster).not.toContainText(name);
-  // The faces are the navigation: a row opens that agent's chat, and stays marked as open.
+  // View opens that specialist's read-only view, and its row stays marked as open.
   await openAgent(page, "Pico");
   await expect(roster).toHaveCount(0);
   await openTeam(page);
@@ -286,7 +288,7 @@ test("One calm look for every agent: neutral surfaces, and each agent's colour o
   await expect(page.locator("html")).not.toHaveAttribute("data-hue");
   // Every teammate brings its own colour to its row (its unread dot, "Waiting for you").
   await openTeam(page);
-  const colours = new Set([await accent("Yo"), await accent("Dew"), await accent("Pico")]);
+  const colours = new Set([await accent("Pip"), await accent("Dew"), await accent("Pico")]);
   expect(colours.size).toBe(3);
   const pico = await accent("Pico");
   // Opening a teammate tints its profile and workspace, not the app.

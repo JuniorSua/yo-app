@@ -69,7 +69,7 @@ for (const theme of ["light", "dark"] as const) {
       });
       await page.waitForTimeout(600);
       await openAgent(page, "Scout");
-      await expect(page.getByTestId("empty-state")).toBeVisible();
+      await expect(page.getByTestId("specialist-empty")).toBeVisible();
       await shot(page, theme, "02-empty-state");
     });
 

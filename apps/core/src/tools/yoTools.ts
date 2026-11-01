@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  isSpecialist,
   labelOfArea,
   MemoryLabel,
   normalizePlaybook,
@@ -106,7 +107,9 @@ export function createYoTools(d: YoToolDeps) {
       }
       case "notify_user": {
         const agent = d.store.getAgent(agentId);
-        d.hub.push("notify", { agentId, title: agent?.name ?? "Yo", body: str("message"), kind: "info" });
+        // A specialist's update says whose it is (docs/one-yo.md): the user talks to Yo, so name the sender.
+        const body = agent && isSpecialist(agent) ? `${agent.name}: ${str("message")}` : str("message");
+        d.hub.push("notify", { agentId, title: agent?.name ?? "Yo", body, kind: "info" });
         return "Notification sent.";
       }
       case "schedule_task": {

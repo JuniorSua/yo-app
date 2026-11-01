@@ -44,6 +44,8 @@ async function boot(
     oversightCooldownMs?: number;
     helperTurnMs?: number;
     secrets?: MemorySecretStore;
+    /** Off: One Yo routing, the user's messages for a specialist go to Yo (default on: tests drive specialists). */
+    directSpecialistChats?: boolean;
   } = {},
 ) {
   process.env.YO_AGENTD_TOKEN = TOKEN;
@@ -69,6 +71,7 @@ async function boot(
     oversightLongMs: opts.oversightLongMs,
     oversightCooldownMs: opts.oversightCooldownMs,
     helperTurnMs: opts.helperTurnMs,
+    directSpecialistChats: opts.directSpecialistChats ?? true,
   });
   cores.push(core);
   await core.agentd.waitReady(5000);
@@ -1520,7 +1523,7 @@ describe("yo-core", () => {
         webDist: null,
         githubApi: "https://github.test",
       },
-      { secrets: new MemorySecretStore(), fetch: fakeFetch },
+      { secrets: new MemorySecretStore(), fetch: fakeFetch, directSpecialistChats: true },
     );
     cores.push(core);
     await core.agentd.waitReady(5000);
@@ -1660,8 +1663,8 @@ describe("team chat (agent to agent)", () => {
     expect(incoming.item).toMatchObject({ text: "hello Pepe", from: { agentId: yo.id, name: "Yo" } });
     expect(said(core, pepe.id)).toEqual(["echo: hello Pepe"]);
     // Pepe's model is told who is talking and that its answer goes back.
-    const pepeTurn = mock.turnTexts.find((t) => t.includes("hello Pepe") && t.includes("[Message from"))!;
-    expect(pepeTurn).toContain("[Message from your teammate Yo");
+    const pepeTurn = mock.turnTexts.find((t) => t.includes("hello Pepe") && t.includes("[Work from"))!;
+    expect(pepeTurn).toContain("[Work from Yo (your personal agent), the main agent");
     expect(pepeTurn).toContain("Yo is waiting: your final message is sent back to them as your reply");
     // Pepe's side doesn't pop a notification (the exchange shows in Yo's chat), but it's marked unread.
     await until(() => core.orchestrator.activityOf(yo.id) === "done");
@@ -1699,7 +1702,7 @@ describe("team chat (agent to agent)", () => {
         .filter((e) => e.item.kind === "notice")
         .map((e) => e.item.text);
     await until(() => notes(pepe.id).includes("Nothing to send back to Yo."), 8000, "Pepe's quiet answer");
-    expect(mock.turnTexts.find((t) => t.includes("[Message from"))).toContain("reply exactly NO_RESPONSE");
+    expect(mock.turnTexts.find((t) => t.includes("[Work from"))).toContain("reply exactly NO_RESPONSE");
     await new Promise((r) => setTimeout(r, 300));
     expect(said(core, yo.id)).toHaveLength(1);
     expect(core.store.listTimeline(yo.id).some((e) => e.item.from)).toBe(false);
@@ -1792,7 +1795,7 @@ describe("team chat (agent to agent)", () => {
     const q = await core.api["queue.list"]({ agentId: pepe.id });
     const res = await core.api["queue.steer"]({ agentId: pepe.id, id: q[1]!.id });
     expect(res.steered).toBe(false);
-    expect(res.note).toBe("Pepe is answering a teammate right now. It's next in line instead.");
+    expect(res.note).toBe("Pepe is answering another agent right now. It's next in line instead.");
     expect(res.items.map((x) => x.text)).toEqual(["two", "one"]);
     expect(mock.steers).toHaveLength(0);
   });
@@ -1887,12 +1890,10 @@ describe("team chat (agent to agent)", () => {
       text: "echo: hello",
       from: { agentId: pepe.id, name: "Pepe", exchangeId: xch, reply: true },
     });
-    const pepeTurn = mock.turnTexts.find((t) => t.includes("[Message from your teammate Yo"))!;
+    const pepeTurn = mock.turnTexts.find((t) => t.includes("[Work from Yo"))!;
     expect(pepeTurn).toContain("Yo has carried on with their work");
-    const yoTurn = mock.turnTexts.find((t) => t.includes("[Reply from your teammate Pepe"))!;
-    expect(yoTurn).toContain(
-      "[Reply from your teammate Pepe (Head of Polestar) to the message you sent them earlier.",
-    );
+    const yoTurn = mock.turnTexts.find((t) => t.includes("[Reply from Pepe"))!;
+    expect(yoTurn).toContain("[Reply from Pepe (Head of Polestar) to the message you sent them earlier.");
     expect(yoTurn).toContain('<teammate_reply from="Pepe">\necho: hello\n</teammate_reply>');
     expect(said(core, yo.id)[1]).toContain("echo: hello");
     // What Yo says after the reply is for the user (a popup); Pepe's side stays quiet.
@@ -2003,7 +2004,10 @@ describe("team chat (agent to agent)", () => {
     const dewStart = mock.requests.find((r) => r.type === "session.start" && r.agentId === dew.id) as any;
     expect(dewStart.toolset).toBe("agent");
     expect(dewStart.systemAppend).toContain(
-      "Yo is the main agent: the user's front door. You're Dew, a teammate (your job: Research).",
+      "You're Dew, a specialist on Yo's team (your job: Research). You run on",
+    );
+    expect(dewStart.systemAppend).toContain(
+      "Yo is the main agent: the user talks only to Yo, and Yo hands you work.",
     );
     // The next one gets the next Softie.
     const pico = await hire("Pico", "Builder");
@@ -2669,7 +2673,7 @@ describe("lead team checks", () => {
       decision: "allow",
       answers: { q: "B" },
     });
-    await until(() => mock.turnTexts.some((t) => t.includes("[Reply from your teammate Pepe")));
+    await until(() => mock.turnTexts.some((t) => t.includes("[Reply from Pepe")));
     // The late reply itself is ordinary text in the mock and finishes immediately. Its runtime metadata
     // is covered by the exchange marker; also ensure there was no second automatic check when Pepe ended.
     await settle();
@@ -3194,12 +3198,151 @@ describe("one-off helpers (start_helper)", () => {
     await until(() => replies(core, pepe.id).length === 1);
     const ps = mock.last("session.start")!;
     expect(ps.toolset).toBe("agent");
-    expect(ps.systemAppend).toContain("# Your team\nYo is the main agent");
+    expect(ps.systemAppend).toContain("# Your team\nYou're Pepe, a specialist on Yo's team");
     await core.api["chat.send"]({ agentId: yo.id, text: "hi" });
     await until(() => replies(core, yo.id).length === 1);
     const ys = mock.last("session.start")!;
     expect(ys.systemAppend).toContain("# Your team\nYou're the main agent");
     expect(ys.systemAppend).toContain("- Pepe (Head of Polestar): ");
     expect(ys.systemAppend).toContain("# Leading the team");
+  });
+});
+
+describe("One Yo: the user talks only to Yo (docs/one-yo.md)", () => {
+  const AVATAR: Avatar = { shape: "bubble", color: "emerald", eyes: "capsule", accessory: "headset" };
+
+  async function oneYo() {
+    const core = await boot({ directSpecialistChats: false });
+    await until(() => core.store.listAccounts().some((a) => a.status === "authenticated"));
+    const yo = primary(core);
+    const pepe = await core.api["agent.create"]({
+      name: "Pepe",
+      role: "Head of Polestar",
+      instructions: "",
+      avatar: AVATAR,
+    });
+    return { core, yo, pepe };
+  }
+  const userTexts = (core: Awaited<ReturnType<typeof startCore>>, agentId: string) =>
+    core.store
+      .listTimeline(agentId)
+      .filter((e) => e.item.kind === "user_message" && !e.item.from)
+      .map((e) => e.item.text);
+
+  it("chat.send aimed at a specialist goes to Yo as '@Name text', and says so in its result", async () => {
+    const { core, yo, pepe } = await oneYo();
+    const res = await core.api["chat.send"]({ agentId: pepe.id, text: "take care of pending leads" });
+    expect(res.agentId).toBe(yo.id);
+    await until(() => userTexts(core, yo.id).length === 1, 5000, "Yo got it");
+    expect(userTexts(core, yo.id)).toEqual(["@Pepe take care of pending leads"]);
+    expect(userTexts(core, pepe.id)).toEqual([]);
+    await until(() => mock.turnTexts.some((t) => t.endsWith("@Pepe take care of pending leads")));
+    // Yo itself is reached as before (no agentId: the agent it was sent to).
+    const direct = await core.api["chat.send"]({ agentId: yo.id, text: "hi" });
+    expect(direct.agentId).toBeUndefined();
+  });
+
+  it("a specialist's task Start goes to Yo too; routines still run on the specialist", async () => {
+    const { core, yo, pepe } = await oneYo();
+    const t = core.store.addTask({ ownerId: pepe.id, title: "Chase the Lund lead", origin: "user" });
+    await core.api["tasks.start"]({ id: t.id });
+    await until(() => userTexts(core, yo.id).length === 1, 5000, "Yo got the task");
+    expect(userTexts(core, yo.id)[0]).toBe("@Pepe Chase the Lund lead");
+    await core.orchestrator.send(pepe.id, "check the inbox", [], "routine", "Inbox");
+    await until(() => mock.turnTexts.some((t) => t.includes("[Scheduled routine: Inbox] check the inbox")));
+  });
+
+  it("Yo's timeline shows the exchange: a 'to' row on message_agent and a 'from' row on the reply", async () => {
+    const { core, yo, pepe } = await oneYo();
+    await core.api["chat.send"]({
+      agentId: yo.id,
+      text: 'tool message_agent {"to":"Pepe","message":"hello"}',
+    });
+    await until(
+      () => core.store.listTimeline(yo.id).some((e) => e.item.from?.reply),
+      8000,
+      "Pepe's reply in Yo's chat",
+    );
+    const reply = core.store.listTimeline(yo.id).find((e) => e.item.from?.reply)!;
+    expect(reply.item.exchange).toMatchObject({
+      direction: "from",
+      agentId: pepe.id,
+      name: "Pepe",
+      text: "echo: hello",
+      exchangeId: reply.item.from!.exchangeId,
+    });
+    expect(typeof reply.item.exchange!.at).toBe("number");
+    // Pepe's chat: Yo's request, as a "from Yo" row.
+    const incoming = core.store.listTimeline(pepe.id).find((e) => e.item.from)!;
+    expect(incoming.item.exchange).toMatchObject({
+      direction: "from",
+      agentId: yo.id,
+      name: "Yo",
+      text: "hello",
+    });
+    // The message_agent step a provider reports gets the "to" row, with the exchange its reply carries.
+    const sessionKey = mock.sessionKeyOf(yo.id)!;
+    mock.emit(sessionKey, {
+      type: "item.completed",
+      item: {
+        id: "tool_ma_1",
+        kind: "tool",
+        status: "completed",
+        toolName: "mcp__yo__message_agent",
+        input: { to: "pepe", message: "Follow up\non the leads" },
+        output: "Sent to Pepe. Carry on with your own work. (exchange xch_abc123)",
+      },
+    });
+    await until(() => !!core.store.listTimeline(yo.id).find((e) => e.item.id === "tool_ma_1"));
+    const step = core.store.listTimeline(yo.id).find((e) => e.item.id === "tool_ma_1")!;
+    expect(step.item.exchange).toMatchObject({
+      direction: "to",
+      agentId: pepe.id,
+      name: "Pepe",
+      text: "Follow up on the leads",
+      exchangeId: "xch_abc123",
+    });
+  });
+
+  it("the team list: each specialist's role, job, status and current task", async () => {
+    const { core, yo, pepe } = await oneYo();
+    expect(core.orchestrator.view(yo.id)).toMatchObject({ teamRole: "main", currentTask: null });
+    expect(core.orchestrator.view(pepe.id)).toMatchObject({
+      teamRole: "specialist",
+      role: "Head of Polestar",
+      currentTask: null,
+    });
+    core.store.addTask({ ownerId: pepe.id, title: "Draft the Q4 lead list", status: "in_progress" });
+    expect(core.orchestrator.view(pepe.id)?.currentTask).toBe("Draft the Q4 lead list");
+    // While it works on Yo's handoff, that's its current task.
+    await core.api["chat.send"]({
+      agentId: yo.id,
+      text: 'tool message_agent {"to":"Pepe","message":"slow"}',
+    });
+    await until(() => core.orchestrator.activityOf(pepe.id) === "working", 8000, "Pepe working");
+    expect(core.orchestrator.view(pepe.id)?.currentTask).toBe("slow");
+    expect(core.orchestrator.view(pepe.id)?.statusLine).toBe("For Yo: slow");
+  });
+
+  it("only Yo adds specialists, and a specialist's notification says whose it is", async () => {
+    const { core, pepe } = await oneYo();
+    const pushes = capture(core);
+    await core.orchestrator.send(
+      pepe.id,
+      'tool create_agent {"name":"Dew","role":"Research"}',
+      [],
+      "routine",
+    );
+    await until(() => mock.turnTexts.some((t) => t.includes("create_agent")));
+    await until(() =>
+      core.store
+        .listTimeline(pepe.id)
+        .some(
+          (e) => e.item.kind === "assistant_message" && /Only Yo adds specialists/.test(e.item.text ?? ""),
+        ),
+    );
+    expect(core.store.listAgents().some((a) => a.name === "Dew")).toBe(false);
+    await core.orchestrator.send(pepe.id, 'tool notify_user {"message":"Leads are in"}', [], "routine");
+    await until(() => pushes.some((p) => p.channel === "notify" && p.data.body === "Pepe: Leads are in"));
   });
 });

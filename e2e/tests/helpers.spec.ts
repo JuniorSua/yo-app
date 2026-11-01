@@ -46,9 +46,9 @@ test.describe("helpers", () => {
       await expect(area).not.toContainText("Book a table for 4 on Friday at 8 PM");
       await expect(area).not.toContainText("Find a birthday gift for Maria under $50");
     }
-    // The Team popover shows Yo, never its helpers.
+    // The Team popover shows Yo's specialists, never its helpers.
     const roster = await openTeam(page);
-    await expect(roster.getByTestId("agent-row-Yo")).toBeVisible();
+    await expect(roster.getByTestId("agent-row-Dew")).toBeVisible();
     await expect(roster).not.toContainText("Book a table");
     await expect(roster).not.toContainText("birthday gift");
     await page.keyboard.press("Escape");

@@ -14,20 +14,37 @@ export async function openApp(
   else await expect(page.getByTestId("onboarding")).toBeVisible();
 }
 
-/** Open the Team popover (the rail's stacked faces): the roster, the new-agent button and the pages. */
+/**
+ * Open the Team popover: every one of Yo's specialists (View and Edit each), the new-specialist button and "Ask Yo
+ * to add a specialist". From the rail's Team icon on a wide window, else the faces by Yo's head.
+ */
 export async function openTeam(page: Page) {
   const roster = page.getByTestId("roster");
-  if (!(await roster.isVisible())) await page.getByTestId("rail-team").click();
+  if (!(await roster.isVisible())) {
+    const rail = page.getByTestId("rail-team");
+    await ((await rail.isVisible()) ? rail : page.getByTestId("chat-team")).click();
+  }
   await expect(roster).toBeVisible();
   return roster;
 }
 
-/** Open an agent's chat from the Team popover (the main agent and every teammate). */
+/** Back to Yo's chat (home): the rail's Chat. */
+export async function openYo(page: Page) {
+  await page.getByTestId("rail-chat").click();
+  await expect(page.getByTestId("agent-title")).toHaveText("Yo");
+}
+
+/**
+ * Yo's chat ("Yo"), or a specialist's read-only view from the Team popover's View: its work and its exchanges with
+ * Yo, with Ask Yo in place of a message box.
+ */
 export async function openAgent(page: Page, name: string) {
+  if (name === "Yo") return openYo(page);
   const roster = await openTeam(page);
-  await roster.getByTestId(`agent-row-${name}`).click();
+  await roster.getByTestId(`agent-row-${name}`).getByTestId("agent-view").click();
   await expect(page.getByTestId("agent-title")).toHaveText(name);
   await expect(page.getByTestId("roster")).toHaveCount(0);
+  await expect(page.getByTestId("specialist-bar")).toBeVisible();
 }
 
 export async function send(page: Page, text: string) {
@@ -51,7 +68,7 @@ export async function openSettings(page: Page) {
   await expect(page.getByTestId("settings-dialog")).toBeVisible();
 }
 
-/** The Team popover's "New teammate" (+) button: opens the new-agent dialog. */
+/** The Team popover's "New specialist" (+) button: opens the new-agent dialog. */
 export async function newTeammate(page: Page) {
   await openTeam(page);
   await page.getByTestId("new-agent").click();

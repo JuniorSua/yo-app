@@ -83,16 +83,17 @@ function AgentForm({
             data-testid="agent-name"
           />
         </Field>
-        <Field label="Role">
+        <Field label="Job">
           <Input
             value={draft.role}
             onChange={(e) => set({ role: e.target.value })}
-            placeholder="What it's for, in a word or two"
+            placeholder="e.g. Polestar desk"
+            data-testid="agent-role"
           />
         </Field>
       </div>
       <Field
-        label="Their job"
+        label="Instructions"
         hint={
           isPrimary
             ? "Yo also keeps its own memory about you."
@@ -219,9 +220,9 @@ export function NewAgentDialog() {
         }}
       >
         <div className="px-6 pt-5 pb-4">
-          <DialogTitle className="font-semibold text-lg tracking-[-0.01em]">New teammate</DialogTitle>
+          <DialogTitle className="font-semibold text-lg tracking-[-0.01em]">New specialist</DialogTitle>
           <p className="mt-0.5 text-muted text-sm">
-            Pick a character and give it a job. It gets its own computer and its own memory.
+            Pick a character and give it a job. Yo hands it work, and it reports back to Yo.
           </p>
         </div>
         <div className="scroll-fade min-h-0 flex-1 space-y-5 overflow-y-auto px-6 pb-6 [--scroll-fade:24px]">

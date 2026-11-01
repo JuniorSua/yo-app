@@ -843,96 +843,93 @@
 
 /* ------------------------------------------------- Team handoffs ------------------------------------------------- */
 
-.chat-handoff {
+/* Yo handing work to a specialist: calm rows with its small face, in the middle of the conversation. "Asked
+   ⟨Pepe⟩: follow up pending leads", then "⟨Pepe⟩: 3 leads followed up". A click opens the specialist's view. */
+.chat-exchange {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
-/* "Messaged ⟨Dew⟩" / "2 messages with ⟨Dew⟩": one quiet line in the middle, the exchange behind a click. */
-.chat-handoff-row {
-  align-self: center;
+.chat-exchange-row {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
   max-width: 100%;
-  height: 28px;
-  padding: 0 8px 0 11px;
-  border-radius: 14px;
-  font-size: 12.5px;
+  min-height: 30px;
+  align-items: center;
+  gap: 8px;
+  margin-left: -6px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 15px;
   color: var(--muted);
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: left;
   transition:
     background-color 0.15s,
-    color 0.15s;
+    color 0.15s,
+    scale 0.1s var(--ease-out-soft);
 }
-@media (hover: hover) and (pointer: fine) {
-  .chat-handoff-row:hover {
-    background: var(--hover);
-    color: var(--fg-2);
-  }
+.chat-exchange-row > :first-child {
+  flex-shrink: 0;
 }
-.chat-handoff-who {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.chat-exchange-line {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-exchange-line > b {
   font-weight: 500;
   color: var(--fg-2);
 }
-.chat-handoff-note {
-  color: var(--muted);
+.chat-exchange-row[data-tone="reply"] .chat-exchange-text {
+  color: var(--fg-2);
 }
-.chat-handoff-chevron {
+.chat-exchange-note {
+  margin-left: 4px;
+}
+.chat-exchange-chevron {
   width: 13px;
   height: 13px;
+  flex-shrink: 0;
   color: var(--faint);
-  transition: rotate 0.2s var(--ease-out-soft);
+  opacity: 0;
+  translate: -2px 0;
+  transition:
+    opacity 0.15s,
+    translate 0.15s var(--ease-out-soft);
+}
+@media (hover: hover) and (pointer: fine) {
+  button.chat-exchange-row:hover {
+    background: var(--hover);
+    color: var(--fg-2);
+  }
+  button.chat-exchange-row:hover .chat-exchange-chevron {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+button.chat-exchange-row:active {
+  scale: 0.98;
+}
+button.chat-exchange-row:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.chat-exchange-row .chat-unread-dot {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.chat-exchange-error {
+  padding-left: 28px;
+  font-size: 12px;
+  color: var(--danger);
 }
 .chat-unread-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--unread);
-}
-.chat-handoff-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--chat-fill);
-}
-.chat-team-who {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.chat-team-who > svg {
-  color: var(--faint);
-}
-.chat-team-name {
-  font-weight: 500;
-  color: var(--fg-2);
-}
-.chat-team-text {
-  margin-top: 4px;
-  padding-left: 22px;
-  font-size: 13.5px;
-  line-height: 20px;
-}
-.chat-team-folded {
-  max-height: 220px;
-  overflow: hidden;
-  mask-image: linear-gradient(to bottom, black 65%, transparent);
-}
-.chat-handoff-foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 22px;
-  font-size: 12px;
-  color: var(--muted);
 }
 .chat-text-button {
   display: inline-flex;

@@ -616,7 +616,8 @@ export class PhoneChannel {
             ...opts,
             noSteer: true,
           });
-          this.own(agentId, res);
+          // A specialist's task goes to Yo (docs/one-yo.md): the reply to watch is Yo's.
+          this.own(res.agentId ?? agentId, res);
           return res;
         },
       },
@@ -1255,7 +1256,7 @@ export class PhoneChannel {
         noSteer: true,
       });
       this.sentAt.push(now);
-      this.own(agent.id, res);
+      this.own(res.agentId ?? agent.id, res);
     } catch (err) {
       this.send({
         t: "error",

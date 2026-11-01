@@ -28,10 +28,13 @@ test("a new customer: just Yo in the team, and the profile says how to set up it
   );
   await expect(inspector.getByTestId("computer-status")).toHaveText("Not set up yet");
   await page.keyboard.press("Escape");
-  // A team of one to start with; the + in the Team popover adds teammates.
+  // Just Yo to start with: no specialists yet (no faces by Yo's head); the Team popover's + adds one, or ask Yo.
+  await expect(page.getByTestId("chat-team")).toHaveCount(0);
   await openTeam(page);
-  await expect(page.getByTestId("roster").locator('[data-testid^="agent-row-"]')).toHaveCount(1);
+  await expect(page.getByTestId("roster").locator('[data-testid^="agent-row-"]')).toHaveCount(0);
+  await expect(page.getByTestId("roster")).toContainText("No specialists yet");
   await expect(page.getByTestId("new-agent")).toBeVisible();
+  await expect(page.getByTestId("ask-yo-add")).toBeVisible();
 
   await page.keyboard.press("Escape");
   await page.getByTestId("profile-trigger").click();

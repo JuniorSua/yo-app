@@ -6,8 +6,9 @@ import { z } from "zod";
 
 /**
  * Which tool set a session gets (session.start `toolset`, passed to yo-mcp as YO_TOOLSET):
- *  - "primary": the main agent (Yo), the front door. Routes work to teammates, adds them, and starts helpers.
- *  - "agent": any other long-lived agent (a teammate).
+ *  - "primary": the main agent (Yo), the only one the user talks to. Routes work to specialists, adds them (with
+ *    the user's OK), and starts helpers (docs/one-yo.md).
+ *  - "agent": a specialist: a long-lived agent that gets work from Yo and reports back to it.
  *  - "helper": a one-off helper (start_helper). No team, routine, scratchpad, ledger or helper tools.
  */
 export const YO_TOOLSETS = ["primary", "agent", "helper"] as const;
@@ -190,13 +191,13 @@ export const YO_TOOLS: YoToolDef[] = [
   {
     name: "message_agent",
     description:
-      "Hand work to a teammate (another of the user's Yo agents, listed under Your team), ask them something, or share an update. It returns at once (\"Sent to Dew\"): carry on with your own work. The teammate wakes, works on it in their own chat, and their reply (their final message) comes back to you later as a new message, so ask for everything you need in one go. Set wait=true only when you can't finish without their answer: then this waits for the reply and returns it.",
+      "Message another of the user's Yo agents (listed under Your team). Yo uses it to hand a specialist work or ask them something; a specialist uses it to report back to Yo when done or blocked. It returns at once (\"Sent to Dew\"): carry on. They work on it in their own chat, and their reply (their final message) comes back to you later as a new message, so ask for everything in one go. Set wait=true only when you can't finish without their answer: then this waits for the reply and returns it.",
     inputSchema: obj(
       {
-        to: { type: "string", description: "The teammate's name, e.g. 'Dew'." },
+        to: { type: "string", description: "Their name, e.g. 'Dew' (or 'Yo')." },
         message: {
           type: "string",
-          description: "What you want to say, self-contained: they can't see your chat with the user.",
+          description: "What you want to say, self-contained: they can't see your chat.",
         },
         wait: {
           type: "boolean",
@@ -211,11 +212,11 @@ export const YO_TOOLS: YoToolDef[] = [
   {
     name: "create_agent",
     description:
-      "Add a teammate to the user's team: a long-lived agent with one job, its own memory, screen and chat (for example when the user asks you to hire or set one up). The user sees a card and must approve it; this waits for their decision. Once added, the teammate introduces itself to the user and asks one question about its job; hand it work with message_agent.",
+      "Add a specialist to the user's team: a long-lived agent with one job (an area like sales leads, personal life or content), its own memory, screen and routines. It works for you: you hand it work with message_agent and it reports back to you; the user watches it but talks only to you. Use it when the user asks for one, or after they agree to your suggestion. The user sees a card and must approve it; this waits for their decision.",
     inputSchema: obj(
       {
         name: { type: "string", description: "Short first name, e.g. 'Dew'." },
-        role: { type: "string", description: "Their job in a few words, e.g. 'Research'." },
+        role: { type: "string", description: "Their job in a few words, e.g. 'Content manager'." },
         instructions: {
           type: "string",
           description: "Standing instructions they'll always follow (what they own, how to work).",
@@ -223,8 +224,8 @@ export const YO_TOOLS: YoToolDef[] = [
       },
       ["name", "role"],
     ),
-    // Not for helpers. Always behind the user's approval card.
-    audience: NOT_HELPERS,
+    // Yo only. Always behind the user's approval card.
+    audience: ["primary"],
   },
   {
     name: "create_phone_link",
@@ -479,7 +480,7 @@ export const YO_TOOLS: YoToolDef[] = [
       },
       ["replies"],
     ),
-    audience: NOT_HELPERS,
+    audience: ["primary"],
   },
   {
     name: "report_bug",

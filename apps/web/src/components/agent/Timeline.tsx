@@ -156,7 +156,7 @@ function BlockView({
 }) {
   switch (block.type) {
     case "user":
-      return block.entry.item.from ? (
+      return block.entry.item.from || block.entry.item.exchange?.direction === "from" ? (
         <TeammateMessage entry={block.entry} agent={agent} />
       ) : (
         <UserBubble entry={block.entry} group={group} />

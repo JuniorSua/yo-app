@@ -35,8 +35,11 @@
  *             &mockPhone=…       Settings → Phone: off (default) | ready | connected | nokey (see ./phone.ts)
  *             &mockOnePassword=… Settings → Accounts → 1Password: off (default) | connected | error
  *                                (see ./onepassword.ts)
- *             &mockTeam=owner    the owner's team: Pepe (no memory focus) joins Yo (Work focus), Pip (Personal focus)
- *                                and the usual teammates
+ *             &mockTeam=owner    the owner's team (One Yo): Yo (Work focus) and its specialists Pepe · Polestar desk
+ *                                (no memory focus), Pip · Personal (Personal focus) and Scout · Content manager
+ *             &mockTeam=leads    the owner's team mid-routing: you asked Yo to "take care of pending leads", Yo handed
+ *                                it to Pepe ("Asked Pepe" row), and Pepe is working on it (its face by Yo's has a ring).
+ *                                Saying "take care of pending leads" (or "@Pepe …") plays the same routing live
  *             &mockBrief=1       the brief is on, and the first brief.claim (opening the chat) posts it
  *
  * Chat keywords pick a scenario: "buy/order/purchase" -> approval card, "flight/trip/travel" ->
@@ -58,6 +61,8 @@
  * under Up next on the Tasks page), "brief" -> the morning brief card (post_brief), "choose" / "which one" -> a
  * question with quick replies (suggest_replies), anything else -> research-style run with todos + tools.
  */
+
+import { softieAvatar } from "@yo/avatar";
 import {
   type Account,
   type ActivityEvent,
@@ -85,6 +90,7 @@ import {
   type GrantMode,
   type Item,
   isProviderEnabled,
+  isSpecialist,
   type LicenseState,
   type Memory,
   newId,
@@ -100,6 +106,7 @@ import {
   type TimelineEntry,
   type TodoEntry,
   teammateAvatar,
+  toSpecialistViaYo,
   type VmHomeStatus,
 } from "@yo/contracts";
 import { isUsable } from "../accounts";
@@ -132,6 +139,7 @@ import {
   handoffMessage,
   handoffReply,
   handoffSaid,
+  handoffSteps,
   handoffSummary,
   handoffTarget,
   handoffTopic,
@@ -308,6 +316,7 @@ export class MockClient implements YoClient {
     if (theme === "light" || theme === "dark" || theme === "system") this.s.settings.theme = theme;
     if (q.get("mockHelpers") === "2") twoHelpersWorking(this.s);
     if (q.get("mockTeam") === "owner") ownerTeam(this.s);
+    if (q.get("mockTeam") === "leads") leadsRouting(this.s);
     (window as any).__yoMock = this;
     this.auth = new MockAuth(q, {
       connected: () => {
@@ -1396,6 +1405,14 @@ export class MockClient implements YoClient {
         title: `Messaged ${teammate.name}`,
         input: { to: teammate.name, message, ...(wait ? { wait: true } : {}) },
         ...(wait ? {} : { output: handoffAck(teammate.name, exchangeId, this.runs.has(teammate.id)) }),
+        exchange: {
+          direction: "to",
+          agentId: teammate.id,
+          name: teammate.name,
+          text: message,
+          at: Date.now(),
+          ...(wait ? {} : { exchangeId }),
+        },
       },
       { turnId: ctx.turnId },
     );
@@ -1446,19 +1463,33 @@ export class MockClient implements YoClient {
         status: "completed",
         text: message,
         from: { ...from, ...(exchangeId ? { exchangeId } : {}) },
+        exchange: {
+          direction: "from",
+          ...from,
+          text: message,
+          at: Date.now(),
+          ...(exchangeId ? { exchangeId } : {}),
+        },
       }),
     );
     let reply: string | null = null;
     const answer = async (c: RunCtx) => {
       c.status = `For ${from.name}: ${topic || "a request"}`;
-      this.patchAgent(teammate.id, { statusLine: c.status });
-      await this.step(c, "web", `Searched for ${topic || "it"}`, { live: "Searching…", ms: 1400 });
-      await this.step(c, "browser", "Read three sources", { toolName: "browser", ms: 1200 });
+      // Like core's AgentView.currentTask: the request it's on now.
+      const task = topic ? topic.charAt(0).toUpperCase() + topic.slice(1) : "A request from Yo";
+      this.patchAgent(teammate.id, { statusLine: c.status, currentTask: task });
+      for (const [i, st] of handoffSteps(topic).entries())
+        await this.step(c, st.kind, st.title, {
+          live: st.live,
+          ms: i ? 1200 : 1400,
+          ...(st.kind === "browser" ? { toolName: "browser" } : {}),
+        });
       const text = handoffReply(topic);
       await this.say(c, text);
       reply = text;
     };
     await this.run(teammate.id, message, answer, "auto", true);
+    this.patchAgent(teammate.id, { currentTask: null });
     return reply;
   }
 
@@ -1482,6 +1513,14 @@ export class MockClient implements YoClient {
         status: "completed",
         text: reply,
         from: { agentId: teammate.id, name: teammate.name, exchangeId, reply: true },
+        exchange: {
+          direction: "from",
+          agentId: teammate.id,
+          name: teammate.name,
+          text: reply,
+          at: Date.now(),
+          exchangeId,
+        },
       }),
     );
     await this.run(askerId, reply, async (c) => {
@@ -2707,6 +2746,7 @@ export class MockClient implements YoClient {
         computer: { state: "off", lease: "agent" },
         todos: [],
         lastActiveAt: null,
+        teamRole: "specialist",
       };
       this.s.agents.push(a);
       this.s.timelines[a.id] = [];
@@ -2848,6 +2888,18 @@ export class MockClient implements YoClient {
     },
 
     "chat.send": ({ agentId, text, attachments, route }) => {
+      // Like core (docs/one-yo.md): a message aimed at a specialist goes to Yo as "@Name text", and Yo routes it.
+      const target = this.agent(agentId);
+      const yo = this.primary();
+      if (target && yo && target.id !== yo.id && isSpecialist(target)) {
+        const r = this.handlers["chat.send"]({
+          agentId: yo.id,
+          text: toSpecialistViaYo(target.name, text),
+          attachments,
+          route,
+        });
+        return { ...r, agentId: yo.id };
+      }
       this.sends.push({
         agentId,
         text,
@@ -3543,22 +3595,172 @@ export class MockClient implements YoClient {
   }
 }
 
-/** `&mockTeam=owner`: Pepe joins, a teammate with no memory focus (he sees every memory), as on the owner's Yo. */
+/**
+ * `&mockTeam=owner`: the owner's Yo (One Yo): Yo plus three standing specialists it routes to. Pepe has no memory
+ * focus (he sees every memory), Pip's is Personal. Dew and Pico (the usual teammates) aren't on this team.
+ */
 function ownerTeam(s: SeedState) {
-  const base = s.agents.find((a) => a.name === "Dew");
-  if (!base) return;
-  s.agents.push({
-    ...base,
-    id: "agt_pepe",
-    name: "Pepe",
-    role: "Works the desk",
-    space: null,
-    unread: 0,
-    activity: "idle",
-    preview: null,
-    lastActiveAt: Date.now() - 3 * 3_600_000,
-  });
+  const dew = s.agents.find((a) => a.name === "Dew");
+  if (!dew) return;
+  const base = { ...dew };
+  for (const id of ["agt_research", "agt_pico"]) {
+    const a = s.agents.find((x) => x.id === id);
+    if (a) a.archivedAt = Date.now() - DAY_MS;
+    delete s.timelines[id];
+  }
+  const pip = s.agents.find((a) => a.id === "agt_home");
+  if (pip) Object.assign(pip, { role: "Personal" });
+  s.agents.push(
+    {
+      ...base,
+      id: "agt_pepe",
+      name: "Pepe",
+      role: "Polestar desk",
+      instructions:
+        "Work the Polestar sales desk: follow up leads, book test drives and keep the CRM tidy. Report back to Yo.",
+      avatar: softieAvatar("clove"),
+      space: null,
+      unread: 0,
+      activity: "idle",
+      todos: [],
+      preview: "Booked two test drives for Saturday",
+      lastActiveAt: Date.now() - 3 * 3_600_000,
+    },
+    {
+      ...base,
+      id: "agt_scout",
+      name: "Scout",
+      role: "Content manager",
+      instructions:
+        "Plan, draft and schedule posts for the owner's channels. Ask Yo before anything goes out.",
+      avatar: softieAvatar("kiki"),
+      space: null,
+      unread: 0,
+      activity: "idle",
+      todos: [],
+      computer: { state: "hibernated", lease: "agent" },
+      preview: "Drafted next week's three posts",
+      lastActiveAt: Date.now() - 26 * 3_600_000,
+    },
+  );
   s.timelines.agt_pepe = [];
+  s.timelines.agt_scout = [];
+}
+
+const DAY_MS = 24 * 3_600_000;
+
+/**
+ * `&mockTeam=leads`: the owner's team, a minute after "take care of pending leads": Yo asked Pepe (an async
+ * handoff), and Pepe is on it in his own view.
+ */
+function leadsRouting(s: SeedState) {
+  ownerTeam(s);
+  const pepe = s.agents.find((a) => a.id === "agt_pepe");
+  const yo = s.agents.find((a) => a.isPrimary);
+  if (!pepe || !yo) return;
+  const now = Date.now();
+  const t0 = now - 70_000;
+  let seq =
+    Math.max(
+      0,
+      ...Object.values(s.timelines)
+        .flat()
+        .map((e) => e.seq),
+    ) + 1;
+  const at = (agentId: string, t: number, item: TimelineEntry["item"], turnId: string | null = null) => ({
+    id: item.id,
+    agentId,
+    turnId,
+    seq: seq++,
+    createdAt: t,
+    item,
+  });
+  const message = handoffMessage("Pepe", "follow up pending leads");
+  s.timelines[yo.id]!.push(
+    at(yo.id, t0, {
+      id: "ld_u1",
+      kind: "user_message",
+      status: "completed",
+      text: "Take care of pending leads",
+    }),
+    at(
+      yo.id,
+      t0 + 3000,
+      {
+        id: "ld_ask",
+        kind: "tool",
+        status: "completed",
+        toolName: "mcp__yo__message_agent",
+        title: "Messaged Pepe",
+        input: { to: "Pepe", message },
+        output: handoffAck("Pepe", "xch_leads1", false),
+        exchange: {
+          direction: "to",
+          agentId: "agt_pepe",
+          name: "Pepe",
+          text: message,
+          at: t0 + 3000,
+          exchangeId: "xch_leads1",
+        },
+      },
+      "turn_ld1",
+    ),
+    at(
+      yo.id,
+      t0 + 5000,
+      { id: "ld_said", kind: "assistant_message", status: "completed", text: handoffSaid("Pepe") },
+      "turn_ld1",
+    ),
+  );
+  s.timelines.agt_pepe = [
+    at("agt_pepe", t0 + 4000, {
+      id: "ld_p1",
+      kind: "user_message",
+      status: "completed",
+      text: message,
+      from: { agentId: yo.id, name: yo.name, exchangeId: "xch_leads1" },
+      exchange: {
+        direction: "from",
+        agentId: yo.id,
+        name: yo.name,
+        text: message,
+        at: t0 + 4000,
+        exchangeId: "xch_leads1",
+      },
+    }),
+    at(
+      "agt_pepe",
+      t0 + 9000,
+      {
+        id: "ld_p2",
+        kind: "browser",
+        status: "completed",
+        toolName: "browser",
+        title: "Opened the Polestar CRM: 3 pending leads",
+      },
+      "turn_ld2",
+    ),
+    at(
+      "agt_pepe",
+      t0 + 30_000,
+      {
+        id: "ld_p3",
+        kind: "browser",
+        status: "running",
+        toolName: "browser",
+        title: "Emailing Marcus the price sheet",
+      },
+      "turn_ld2",
+    ),
+  ];
+  Object.assign(pepe, {
+    activity: "working",
+    statusLine: "For Yo: follow up pending leads",
+    currentTask: "Follow up pending leads",
+    preview: "Emailing Marcus the price sheet",
+    lastActiveAt: now - 10_000,
+  });
+  Object.assign(yo, { preview: handoffSaid("Pepe"), lastActiveAt: t0 + 5000 });
 }
 
 /** `&mockHelpers=2`: the gift helper is still on it too, browsing on its own computer. */

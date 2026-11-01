@@ -86,6 +86,22 @@ export const Item = z.object({
     })
     .optional(),
   /**
+   * One message of an agent-to-agent exchange, for a compact row in the chat (docs/one-yo.md, Visibility). Set by
+   * core on the message_agent step (`direction` "to": this chat's agent wrote to `agentId`) and on a message
+   * another agent put in this chat (`direction` "from": `agentId` wrote it; a request, a report or a reply).
+   * `exchangeId` pairs a handoff with its reply when there is one. Absent from older cores and other items.
+   */
+  exchange: z
+    .object({
+      direction: z.enum(["to", "from"]),
+      agentId: z.string(),
+      name: z.string(),
+      text: z.string(),
+      at: z.number(),
+      exchangeId: z.string().optional(),
+    })
+    .optional(),
+  /**
    * Helper cards (`hcard_<helperId>` in the parent's timeline): one of Yo's one-off helpers and where it is.
    * `avatar` is checked by type only: domain.ts imports this file, so its Avatar schema can't be used here.
    */
@@ -102,6 +118,8 @@ export const Item = z.object({
     .optional(),
 });
 export type Item = z.infer<typeof Item>;
+/** One message of an agent-to-agent exchange (`Item.exchange`). */
+export type TeamExchange = NonNullable<Item["exchange"]>;
 
 export const Usage = z.object({
   inputTokens: z.number().optional(),

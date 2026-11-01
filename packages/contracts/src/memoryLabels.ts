@@ -11,11 +11,21 @@ export const MemoryLabel = z.enum(["work", "personal"]);
 export type MemoryLabel = z.infer<typeof MemoryLabel>;
 
 /**
- * A main agent: the primary (Yo) or one with its own memory focus (Pip). Main agents get the front-door tools
- * (helpers, phone links, suggested tasks, the brief); other teammates and helpers don't.
+ * The lead: the primary agent (Yo), the only one the user talks to (docs/one-yo.md). It gets the front-door tools
+ * (helpers, adding specialists, phone links, suggested tasks, the brief). A memory focus (Pip: personal) doesn't
+ * make an agent a lead: specialists and helpers never are.
  */
 export function isLead(a: { kind?: string | null; isPrimary?: boolean; space?: string | null }): boolean {
-  return a.kind !== "helper" && (!!a.isPrimary || !!a.space);
+  return a.kind !== "helper" && !!a.isPrimary;
+}
+
+/** A specialist: a long-lived agent with a job that works for Yo (`kind` "agent" or absent, not the primary). */
+export function isSpecialist(a: {
+  kind?: string | null;
+  isPrimary?: boolean;
+  space?: string | null;
+}): boolean {
+  return a.kind !== "helper" && !a.isPrimary;
 }
 
 /** What the apps call each label. */

@@ -1,16 +1,15 @@
 import { YoLogo } from "@yo/avatar";
 import { Brain, CalendarClock, ListTodo, MessageCircle, Search, Settings, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { hasTrafficLights } from "../../lib/desktop";
 import { cn, modKey } from "../../lib/utils";
-import { sortAgents, useApp, usePrimaryAgent } from "../../stores/app";
+import { useApp, usePrimaryAgent } from "../../stores/app";
 import { load } from "../../stores/sync";
 import { useTimeline } from "../../stores/timeline";
 import { type Page, ui, useUI } from "../../stores/ui";
-import { AgentAvatar } from "../brand";
-import { TeamPanel } from "../Sidebar";
+import { RailTeam } from "../Team";
 import { UpdateButton } from "../UpdateButton";
-import { Popover, Tip } from "../ui/overlay";
+import { Tip } from "../ui/overlay";
 import { ProfileMenu } from "../WorkspaceMenu";
 
 /** The pages each rail item stands for (Tasks covers its tabs: Needs you and Activity). */
@@ -18,8 +17,8 @@ const TASK_PAGES: Page[] = ["tasks", "approvals", "activity"];
 
 /**
  * The thin icon rail on the far left (Dots-style): Chat · Tasks · Routines · Make · Memory · Search,
- * then the Team (stacked faces; a popover with everyone), updates, Settings and you at the bottom. There's no
- * roster column: one agent is front and centre. On phones the rail becomes a floating tab bar at the foot.
+ * then Team (one icon; the same popover as the faces by Yo's head), updates, Settings and you at the bottom. Yo is
+ * front and centre: its specialists are a side view, never a chat of their own. On phones the rail becomes a floating tab bar at the foot.
  */
 export function Rail() {
   // Yo: the logo talks to it, and Chat opens it when no chat is open yet.
@@ -30,6 +29,7 @@ export function Rail() {
     lead ? (s.tasks[lead.id]?.filter((t) => t.status === "review").length ?? 0) : 0,
   );
   const page = useUI((s) => s.page);
+  const agentId = useUI((s) => s.agentId);
   useEffect(() => {
     // The chat's "Next" chip, the inspector and the palette's Recent requests read these. A failed routines load
     // just hides them (the Routines page shows the retry).
@@ -42,13 +42,9 @@ export function Rail() {
       id: "chat",
       label: "Chat",
       icon: MessageCircle,
-      active: page === "agent",
-      action: () => {
-        const open = useUI.getState().agentId;
-        // Back to the chat that was open; the primary agent's when there's none.
-        if (open && useApp.getState().agents[open]) ui.openAgent(open);
-        else if (lead) ui.openAgent(lead.id);
-      },
+      // Yo is home: Chat always brings you back to Yo (a specialist's view is a side trip).
+      active: page === "agent" && (!agentId || agentId === lead?.id),
+      action: () => lead && ui.openAgent(lead.id),
     },
     {
       id: "tasks",
@@ -131,7 +127,7 @@ export function Rail() {
           </Tip>
         ))}
       </div>
-      <TeamButton />
+      <RailTeam />
       <div className="shell-rail-bottom">
         <span className="shell-rail-update">
           <UpdateButton />
@@ -151,50 +147,5 @@ export function Rail() {
         <ProfileMenu approvals={approvals.length} />
       </div>
     </nav>
-  );
-}
-
-/**
- * The team, as stacked mini faces (up to three): opens a popover listing every teammate and what it's doing, to
- * switch (that teammate becomes the big head) or make a new one. A dot when one of them needs you or has news.
- * In the rail; on phones (no rail Team) in the chat's top-left, `compact`, opening downwards.
- */
-export function TeamButton({ compact }: { compact?: boolean }) {
-  const agents = useApp((s) => s.agents);
-  const [open, setOpen] = useState(false);
-  const team = useMemo(() => sortAgents(agents), [agents]);
-  const openId = useUI((s) => s.agentId);
-  const page = useUI((s) => s.page);
-  // Picking someone closes the popover (also when their chat is the one already open, from another page).
-  useEffect(() => setOpen(false), [openId, page]);
-  const news = team.some((a) => a.id !== openId && (a.unread > 0 || a.activity === "waiting"));
-  const faces = team.slice(0, compact ? 2 : 3);
-  return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      side={compact ? "bottom" : "right"}
-      align={compact ? "start" : "end"}
-      sideOffset={compact ? 6 : 10}
-      className="team-popover"
-      label="Team"
-      trigger={
-        <button
-          type="button"
-          className={cn("shell-rail-team", open && "is-open")}
-          aria-label={`Team, ${team.length} ${team.length === 1 ? "agent" : "agents"}${news ? ", something new" : ""}`}
-          data-testid={compact ? "chat-team" : "rail-team"}
-        >
-          {faces.map((a) => (
-            <span key={a.id} className="shell-rail-team-face">
-              <AgentAvatar agent={a} size={30} quiet />
-            </span>
-          ))}
-          {news && <i className="shell-rail-team-dot" data-testid="rail-team-dot" aria-hidden />}
-        </button>
-      }
-    >
-      <TeamPanel />
-    </Popover>
   );
 }

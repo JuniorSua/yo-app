@@ -506,7 +506,7 @@ export class MockAgentd {
     let userText = text
       .replace(/^\[[^\]]*\d{4}[^\]]*\]\s*/, "")
       .replace(/^\[Scheduled routine[^\]]*\]\s*/, "")
-      .replace(/^\[(Message|Reply) from your teammate[^\]]*\]\s*/, "")
+      .replace(/^\[(Message|Reply|Work) from [^\]]*\]\s*/, "")
       // The task ledger line core adds when the ledger changed since the session last saw it.
       .replace(/^\[Open tasks: [^\n]*\]\n/, "")
       // And the team line, when someone joined or left (or got a new job or model) since then.

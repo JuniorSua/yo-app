@@ -1,7 +1,7 @@
 import type { TimelineEntry } from "@yo/contracts";
 import { describe, expect, it } from "vitest";
 import { toBlocks } from "./blocks";
-import { isTeamEntry, teamCall, teamReply } from "./team";
+import { askSummary, isTeamEntry, replySummary, teamCall, teamReply } from "./team";
 
 let seq = 0;
 const entry = (item: Partial<TimelineEntry["item"]>): TimelineEntry => ({
@@ -111,5 +111,29 @@ describe("team chat entries", () => {
     const out =
       'Pepe replied:\n\n<teammate_reply from="Pepe">\nThe page title is "Example Domain".\n</teammate_reply>';
     expect(teamReply(ask(out))).toEqual({ state: "replied", text: 'The page title is "Example Domain".' });
+  });
+});
+
+describe("exchange row summaries", () => {
+  it("says what Yo asked for in a few words", () => {
+    expect(
+      askSummary(
+        "Hi Pepe! Could you follow up pending leads for me? A short answer with anything that's still open is perfect.",
+        "Pepe",
+      ),
+    ).toBe("follow up pending leads");
+    expect(askSummary("@Pepe follow up the Polestar leads", "Pepe")).toBe("follow up the Polestar leads");
+    expect(askSummary("Please draft three posts about the launch.")).toBe(
+      "draft three posts about the launch",
+    );
+    expect(askSummary("x".repeat(100)).length).toBe(72);
+  });
+
+  it("says what the specialist reported in its first line", () => {
+    expect(replySummary("**3 leads followed up:**\n\n- Ana: test drive Thursday")).toBe(
+      "3 leads followed up",
+    );
+    expect(replySummary('<teammate_reply from="Pepe">\nAll done.\n</teammate_reply>')).toBe("All done.");
+    expect(replySummary("")).toBe("");
   });
 });
