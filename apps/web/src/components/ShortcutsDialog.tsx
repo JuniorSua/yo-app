@@ -12,7 +12,6 @@ export function shortcutGroups(): { title: string; items: { keys: string[]; labe
       items: [
         { keys: [`${modKey}K`], label: "Search and commands" },
         { keys: [newRequestKey()], label: "New request" },
-        { keys: [`${modKey}⇧M`], label: "Switch Work ↔ Personal" },
         { keys: [`${modKey}\\`], label: "Show or hide the inspector" },
         { keys: [`${modKey}.`], label: "Open or close the agent’s computer" },
         { keys: [`${modKey},`], label: "Settings" },

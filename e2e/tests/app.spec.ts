@@ -4,7 +4,9 @@ import {
   newTeammate,
   openAgent,
   openApp,
+  openProfile,
   openSettings,
+  openTeam,
   openWorkspacePage,
   send,
   signInChatGPT,
@@ -53,7 +55,7 @@ test("send a message and get a streamed reply", async ({ page }) => {
   await openApp(page);
   await send(page, "Research the history of the espresso machine");
   await expect(page.getByTestId("user-message").last()).toContainText("history of the espresso machine");
-  await expect(page.getByTestId("status-pill").first()).toHaveText("Working");
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Working on|Thinking…)/);
   await expect(page.getByTestId("todo-card").last()).toBeVisible();
   await expect(page.getByTestId("assistant-message").last()).toContainText("Here's what I found", {
     timeout: 45_000,
@@ -61,7 +63,7 @@ test("send a message and get a streamed reply", async ({ page }) => {
   await expect(page.getByTestId("assistant-message").last()).toContainText("one-page brief", {
     timeout: 45_000,
   });
-  await expect(page.getByTestId("status-pill").first()).toHaveText(/Done|Ready/);
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Idle|Working with \d+ helpers?)$/);
   await expect(page.getByTestId("activity-group").last()).toContainText(/Worked for .* steps/);
 });
 
@@ -70,12 +72,13 @@ test("stop interrupts a running agent", async ({ page }) => {
   await send(page, "Research something long");
   await page.getByTestId("stop-button").click();
   await expect(page.getByTestId("notice-row").last()).toContainText("Stopped");
-  await expect(page.getByTestId("status-pill").first()).toHaveText("Ready");
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Idle|Working with \d+ helpers?)$/);
 });
 
 test("approval card: allow once", async ({ page }) => {
   await openApp(page);
-  await expect(page.getByTestId("approvals-shortcut")).toHaveText(/^Needs you\s*1$/);
+  // What needs you is the count on Tasks in the rail: the 1 approval and the 2 tasks ready for review.
+  await expect(page.getByTestId("rail-tasks").getByTestId("rail-badge")).toHaveText("3");
   await openAgent(page, "Pico");
   const card = page.getByTestId("approval-card");
   await expect(card).toContainText("Publish the RSVP page");
@@ -85,7 +88,7 @@ test("approval card: allow once", async ({ page }) => {
   await expect(page.getByTestId("assistant-message").last()).toContainText("It's live at", {
     timeout: 15_000,
   });
-  await expect(page.getByTestId("approvals-shortcut")).toHaveCount(0);
+  await expect(page.getByTestId("rail-tasks").getByTestId("rail-badge")).toHaveText("2");
 });
 
 test("approval via a new purchase request can be denied", async ({ page }) => {
@@ -103,7 +106,8 @@ test("ask-user card: answer with an option", async ({ page }) => {
   await send(page, "Find me a flight to Lisbon");
   const card = page.getByTestId("ask-card");
   await expect(card).toContainText("Which dates work best for you?", { timeout: 15_000 });
-  await expect(page.getByTestId("status-pill").first()).toHaveText("Needs you");
+  // The line names what's waiting on you.
+  await expect(page.getByTestId("presence-line")).toHaveText(/^Waiting for your answer · /);
   await card.getByRole("button", { name: /Oct 17 – 21/ }).click();
   await expect(card).toHaveCount(0);
   await expect(page.getByTestId("assistant-message").last()).toContainText("Oct 17 – 21", {
@@ -157,8 +161,9 @@ test("a revised draft highlights what changed", async ({ page }) => {
 
 test("computer overlay: take over, terminal, give back", async ({ page }) => {
   await openApp(page);
-  await page.getByTestId("agent-options").click();
+  await openProfile(page);
   await page.getByTestId("open-computer").click();
+  await expect(page.getByTestId("profile-popover")).toHaveCount(0);
   const overlay = page.getByTestId("computer-overlay");
   await expect(overlay).toBeVisible();
   await expect(overlay.getByTestId("mock-desktop")).toBeVisible();
@@ -214,8 +219,8 @@ test("add a teammate: pick a Softie, name it, give it a job and a subscription",
 
   await expect(page.getByTestId("new-agent-dialog")).toHaveCount(0);
   await expect(page.getByTestId("agent-title")).toHaveText("Bob");
-  // A new teammate joins the roster in the sidebar, as the Softie you picked.
-  const row = page.getByTestId("roster").getByTestId("agent-row-Bob");
+  // A new teammate joins the team popover, as the Softie you picked.
+  const row = (await openTeam(page)).getByTestId("agent-row-Bob");
   await expect(row).toBeVisible();
   await expect(row.locator('[data-softie="dew"]')).toBeVisible();
   const bob = await page.evaluate(() =>
@@ -330,6 +335,15 @@ test("memory: add and delete", async ({ page }) => {
   const row = rows.filter({ hasText: "I'm vegetarian" });
   await row.hover();
   await row.getByTestId("memory-delete").click();
+  // It can't be undone, so it asks first; Cancel keeps it.
+  const confirm = page.getByTestId("confirm-dialog");
+  await expect(confirm).toContainText("Delete this memory?");
+  await confirm.getByTestId("confirm-cancel").click();
+  await expect(confirm).toHaveCount(0);
+  await expect(rows).toHaveCount(7);
+  await row.hover();
+  await row.getByTestId("memory-delete").click();
+  await confirm.getByTestId("confirm-action").click();
   await expect(rows).toHaveCount(6);
   await expect(page.getByTestId("memory-list")).not.toContainText("vegetarian");
 });
@@ -356,9 +370,13 @@ test("command palette switches agents", async ({ page }) => {
 
 test("profile menu: global pages, keyboard and dismissal", async ({ page }) => {
   await openApp(page);
-  // Pending approvals stay visible outside the menu.
-  await expect(page.getByTestId("approvals-shortcut")).toHaveText(/^Needs you\s*1$/);
-  await page.getByTestId("approvals-shortcut").click();
+  // Pending approvals stay visible outside the menu: the count on Tasks in the rail opens them.
+  await expect(page.getByTestId("rail-tasks").getByTestId("rail-badge")).toBeVisible();
+  await page.getByTestId("rail-tasks").click();
+  await page
+    .getByRole("navigation", { name: "Tasks sections" })
+    .getByRole("button", { name: /Needs you/ })
+    .click();
   await expect(page.getByRole("heading", { name: "Needs you" })).toBeVisible();
 
   const trigger = page.getByTestId("profile-trigger");
@@ -421,7 +439,7 @@ test("pictures from the agent's computer show inline and open full size", async 
   await expect(page.getByTestId("image-viewer")).toHaveCount(0);
 });
 
-test("/compact from the composer and the agent menu", async ({ page }) => {
+test("/compact from the composer and the profile popover", async ({ page }) => {
   await openApp(page);
   const input = page.getByTestId("composer-input");
   await input.fill("/co");
@@ -434,16 +452,17 @@ test("/compact from the composer and the agent menu", async ({ page }) => {
   await expect(page.getByTestId("notice-row").last()).toContainText("focused on keep the prices");
   // The command is never sent to the agent as a chat message.
   await expect(page.getByTestId("user-message").filter({ hasText: "/compact" })).toHaveCount(0);
-  await page.getByTestId("agent-options").click();
+  await openProfile(page);
   await page.getByTestId("compact-conversation").click();
   await expect(page.getByTestId("notice-row").last()).toContainText("Compacted our conversation");
 });
 
-test("The Next chip refreshes when a routine is added or removed, even after a reconnect", async ({
+test("The next routine in the profile refreshes when a routine is added or removed, even after a reconnect", async ({
   page,
 }) => {
   await openApp(page);
-  const next = page.getByTestId("next-routine");
+  // The profile popover's Scheduled lists the routines, soonest first.
+  const next = (await openProfile(page)).getByTestId("pane-routine").first();
   await expect(next).toBeVisible();
   // The connection drops and comes back (e.g. Yo's server restarted), while the chat stays on screen.
   await page.evaluate(() => (window as any).__yoMock.simulateReconnect());

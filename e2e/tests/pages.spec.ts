@@ -32,10 +32,11 @@ for (const theme of ["light", "dark"] as const) {
     await expect(page.getByText("7 pm", { exact: false }).first()).toBeVisible();
     await shot(page, theme, "01-page-card");
 
-    // Open: the full page, with Pin, Download and Close.
+    // Open: the page becomes a workspace tab beside the chat, with Pin and Download (and the tab's close).
     await card.getByRole("button", { name: "Open", exact: true }).click();
-    const viewer = page.getByTestId("page-viewer");
+    const viewer = page.getByTestId("workspace");
     await expect(viewer).toBeVisible();
+    await expect(viewer.locator('[data-testid^="ws-tab-page:"]')).toBeVisible();
     const frame = viewer.getByTestId("page-frame");
     await expect(frame).toHaveAttribute("sandbox", "allow-scripts");
     await expect(frame.contentFrame().getByText("Best hour")).toBeVisible();
@@ -43,8 +44,8 @@ for (const theme of ["light", "dark"] as const) {
     await shot(page, theme, "02-page-viewer");
     await viewer.getByTestId("pin-button").click();
     await expect(viewer.getByTestId("pin-button")).toHaveAttribute("aria-pressed", "true");
-    await page.keyboard.press("Escape");
-    await expect(viewer).toHaveCount(0);
+    await viewer.getByTestId("ws-tab-close").click();
+    await expect(frame).toHaveCount(0);
 
     // Make: the pinned Page comes first, marked, with a Page label.
     await openWorkspacePage(page, "artifacts");

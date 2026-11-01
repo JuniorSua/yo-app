@@ -5,6 +5,8 @@ import {
   applyAccountUpdate,
   chatFor,
   offeredAccounts,
+  pickAgentId,
+  primaryAgent,
   sortAgents,
   trackWorkingSince,
 } from "./app";
@@ -120,7 +122,7 @@ describe("Yo's one-off helpers", () => {
   });
 });
 
-describe("the main agents (Work & Personal)", () => {
+describe("the roster order and the chat a window opens on", () => {
   const view = (id: string, extra: Partial<AgentView> = {}) =>
     ({
       id,
@@ -132,21 +134,29 @@ describe("the main agents (Work & Personal)", () => {
       ...extra,
     }) as AgentView;
 
-  it("lead the roster: the Work agent, then the Personal agent, then pinned and recent teammates", () => {
-    const agents = {
-      agt_pepe: view("agt_pepe", { pinned: true, lastActiveAt: 50 }),
-      agt_home: view("agt_home", { space: "personal", pinned: true, lastActiveAt: 99 }),
-      agt_old: view("agt_old", { lastActiveAt: 70 }),
-      agt_yo: view("agt_yo", { isPrimary: true, space: "work", pinned: true }),
-    };
+  const agents = {
+    agt_pepe: view("agt_pepe", { pinned: true, lastActiveAt: 50 }),
+    agt_home: view("agt_home", { space: "personal", pinned: true, lastActiveAt: 99 }),
+    agt_old: view("agt_old", { lastActiveAt: 70 }),
+    agt_gone: view("agt_gone", { archivedAt: 5 }),
+    agt_hlp: view("agt_hlp", { kind: "helper", parentId: "agt_yo" }),
+    agt_yo: view("agt_yo", { isPrimary: true, space: "work", pinned: true }),
+  };
+
+  it("the primary first, then pinned and recent teammates (Pip is one of them); never a helper", () => {
     expect(sortAgents(agents).map((a) => a.id)).toEqual(["agt_yo", "agt_home", "agt_pepe", "agt_old"]);
+    expect(primaryAgent(agents)?.id).toBe("agt_yo");
   });
 
-  it("an older core (no spaces): the primary still comes first", () => {
-    const agents = {
-      agt_old: view("agt_old", { lastActiveAt: 70 }),
-      agt_yo: view("agt_yo", { isPrimary: true }),
-    };
-    expect(sortAgents(agents).map((a) => a.id)).toEqual(["agt_yo", "agt_old"]);
+  it("opens the last agent the user had open, else the primary", () => {
+    expect(pickAgentId(agents, "agt_home")).toBe("agt_home");
+    expect(pickAgentId(agents, "agt_pepe")).toBe("agt_pepe");
+    expect(pickAgentId(agents, "agt_yo")).toBe("agt_yo");
+    // Archived, deleted or a helper's: the primary.
+    expect(pickAgentId(agents, "agt_gone")).toBe("agt_yo");
+    expect(pickAgentId(agents, "agt_nope")).toBe("agt_yo");
+    expect(pickAgentId(agents, "agt_hlp")).toBe("agt_yo");
+    expect(pickAgentId(agents, null)).toBe("agt_yo");
+    expect(pickAgentId({}, "agt_home")).toBeNull();
   });
 });

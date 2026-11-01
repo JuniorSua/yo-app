@@ -12,7 +12,7 @@ import { ModelPickerPanel, modelInfo, shortModel } from "./agent/ModelPicker";
 import { ProviderIcon } from "./brand";
 import { Button } from "./ui/button";
 import { Field, Input, Segmented, Textarea } from "./ui/controls";
-import { DialogTitle, Modal, Popover } from "./ui/overlay";
+import { ConfirmDialog, DialogTitle, Modal, Popover } from "./ui/overlay";
 
 type Draft = Required<Pick<AgentDraft, "name" | "role" | "instructions" | "avatar">> & {
   accountId: string | null;
@@ -283,6 +283,7 @@ export function AgentSettingsDialog() {
   const accounts = useApp((s) => s.accounts);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   useEffect(() => {
     if (!agent) return;
@@ -334,19 +335,26 @@ export function AgentSettingsDialog() {
             />
           </div>
           <div className={cn("flex items-center gap-2 border-border border-t bg-bg/30 px-6 py-3.5")}>
-            {/* The main agents stay: Yo always, Pip until Work & Personal is turned off in Settings. */}
-            {!agent.isPrimary && !agent.space && (
+            {/* The main agent stays. */}
+            {!agent.isPrimary && (
               <Button
                 variant="ghost"
                 className="text-danger hover:text-danger"
-                onClick={async () => {
-                  await run(api().call("agent.archive", { id: agent.id }));
-                  close();
-                }}
+                onClick={() => setArchiving(true)}
               >
                 <Archive className="size-3.5" /> Archive
               </Button>
             )}
+            <ConfirmDialog
+              open={archiving}
+              onOpenChange={setArchiving}
+              title={`Archive ${agent.name}?`}
+              body="It stops what it's doing, drops its queued messages and turns its routines off. You can't bring it back from the app."
+              action={`Archive ${agent.name}`}
+              onConfirm={async () => {
+                if (await run(api().call("agent.archive", { id: agent.id }))) close();
+              }}
+            />
             <div className="flex-1" />
             <Button variant="ghost" onClick={close}>
               Cancel

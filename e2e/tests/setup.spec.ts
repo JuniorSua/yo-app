@@ -285,24 +285,24 @@ test("a model connected in onboarding (a Grok API key): the chat says so, then s
   );
 });
 
-test("a new user starts with one assistant: Work & Personal spaces stay off, even in the evening", async ({
-  page,
-}) => {
-  // Saturday night: outside the default work hours, when Pip would otherwise lead the chat.
+test("a new user starts with one assistant, whatever the time of day", async ({ page }) => {
+  // Saturday night, outside the default work hours: still the assistant they just named.
   await page.clock.install({ time: new Date("2026-10-17T21:00:00-04:00") });
   await page.addInitScript(() => localStorage.removeItem("yo.ui"));
-  await page.goto("/?mock=1&fast=1&space=auto");
-  expect((await mockSettings(page)).spacesOn).toBe(true);
+  await page.goto("/?mock=1&fast=1");
   await page.getByTestId("onboarding-start").click();
   await connectClaude(page);
   await page.getByTestId("access-skip").click();
   await page.getByTestId("primary-name").fill("Jarvis");
   await page.getByTestId("onboarding-finish").click();
-  // The assistant they just named, setting up its computer; no second agent, no space switch.
+  // Setting up its computer; no second agent.
   await expect(page.getByTestId("agent-title")).toHaveText("Jarvis");
   await expect(page.getByTestId("setup-greeting")).toBeVisible();
-  expect((await mockSettings(page)).spacesOn).toBe(false);
-  await expect(page.getByTestId("space-intro")).toHaveCount(0);
+  const agents = await page.evaluate(() =>
+    (window as any).__yoMock.s.agents.filter((a: any) => a.kind !== "helper").map((a: any) => a.name),
+  );
+  expect(agents).toEqual(["Jarvis"]);
+  expect(await mockSettings(page)).not.toHaveProperty("spacesOn");
 });
 
 test("skipped the model: the chat says so and points to Accounts; connecting one later leads to the setup", async ({
@@ -329,8 +329,8 @@ test("skipped the model: the chat says so and points to Accounts; connecting one
   await send(page, "Find me a cheap flight");
   const error = page.getByTestId("error-row");
   await expect(error).toContainText("Settings → Accounts");
-  const errorPill = page.getByTestId("status-pill").filter({ hasText: "Error" });
-  await expect(errorPill.first()).toBeVisible();
+  // The line under the head names why, and where to fix it (not a bare "Something went wrong").
+  await expect(page.getByTestId("presence-line")).toContainText("Settings → Accounts");
   await error.getByTestId("error-connect").click();
   await expect(page.getByTestId("settings-dialog")).toBeVisible();
   await page.getByTestId("connect-claude").click();

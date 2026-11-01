@@ -12,7 +12,9 @@ async function draftBug(page: Page) {
   await expect(draft).toContainText("Suggested fix");
   await expect(page.getByTestId("timeline").getByText("Would you like me to report it?")).toBeVisible();
   // Answer once the turn is over (the mock treats a message sent mid-turn as steering, not a new turn).
-  await expect(page.getByTestId("status-pill").first()).toHaveText(/Done|Ready/, { timeout: 20_000 });
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Idle|Working with \d+ helpers?)$/, {
+    timeout: 20_000,
+  });
   return draft;
 }
 

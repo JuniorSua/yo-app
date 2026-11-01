@@ -64,9 +64,11 @@
     color 0.15s,
     scale 0.15s var(--ease-out-soft);
 }
-.chat-chip:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-chip:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-chip:active {
   scale: 0.97;
@@ -108,8 +110,10 @@
   color: var(--warning);
   background: color-mix(in srgb, var(--warning) 9%, transparent);
 }
-.chat-chip.is-warning:hover {
-  background: color-mix(in srgb, var(--warning) 15%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .chat-chip.is-warning:hover {
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+  }
 }
 .chat-icon-button {
   display: grid;
@@ -122,10 +126,15 @@
     background-color 0.15s,
     color 0.15s;
 }
-.chat-icon-button:hover,
 .chat-icon-button[data-popup-open] {
   background: var(--hover);
   color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-icon-button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-icon-button > svg {
   width: 18px;
@@ -171,8 +180,10 @@
   outline: none;
   transition: translate 0.2s var(--ease-out-soft);
 }
-.chat-head-avatar:hover {
-  translate: 0 -1px;
+@media (hover: hover) and (pointer: fine) {
+  .chat-head-avatar:hover {
+    translate: 0 -1px;
+  }
 }
 .chat-head-avatar:focus-visible {
   outline: 2px solid var(--focus);
@@ -224,10 +235,15 @@
     background-color 0.15s,
     color 0.15s;
 }
-.chat-model-chip:hover,
 .chat-model-chip[data-popup-open] {
   background: var(--hover);
   color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-model-chip:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-model-chip:focus-visible {
   outline: 2px solid var(--focus);
@@ -390,9 +406,11 @@
   height: 15px;
   color: var(--accent-text);
 }
-.chat-suggestion:hover {
-  background: var(--accent-soft);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-suggestion:hover {
+    background: var(--accent-soft);
+    color: var(--fg);
+  }
 }
 .chat-suggestion:active {
   scale: 0.97;
@@ -538,10 +556,12 @@
   font-weight: 500;
   color: var(--fg-2);
 }
-button.chat-theirs-name:hover {
-  color: var(--fg);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+@media (hover: hover) and (pointer: fine) {
+  button.chat-theirs-name:hover {
+    color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
 .chat-theirs-bubble {
   max-width: min(560px, 85%);
@@ -572,8 +592,10 @@ button.chat-theirs-name:hover {
   text-decoration-color: color-mix(in srgb, var(--fg) 30%, transparent);
   text-underline-offset: 3px;
 }
-.chat .prose-yo a:hover {
-  text-decoration-color: currentColor;
+@media (hover: hover) and (pointer: fine) {
+  .chat .prose-yo a:hover {
+    text-decoration-color: currentColor;
+  }
 }
 .chat .prose-yo code {
   background: var(--chat-fill);
@@ -639,8 +661,10 @@ button.chat-theirs-name:hover {
 .chat-reply-actions [data-testid="copy-reply"]:not([data-copied]) {
   color: var(--muted);
 }
-.chat-reply-actions [data-testid="copy-reply"]:not([data-copied]):hover {
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-reply-actions [data-testid="copy-reply"]:not([data-copied]):hover {
+    color: var(--fg);
+  }
 }
 
 /* Steps, folded behind "Worked for 3m". */
@@ -662,9 +686,11 @@ button.chat-theirs-name:hover {
     background-color 0.15s,
     color 0.15s;
 }
-.chat-steps-toggle:hover {
-  background: var(--hover);
-  color: var(--fg-2);
+@media (hover: hover) and (pointer: fine) {
+  .chat-steps-toggle:hover {
+    background: var(--hover);
+    color: var(--fg-2);
+  }
 }
 .chat-steps-chevron {
   width: 14px;
@@ -792,8 +818,10 @@ button.chat-theirs-name:hover {
   flex-shrink: 0;
   color: var(--muted);
 }
-.chat-reply-chip:hover:not(:disabled) {
-  background: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+  .chat-reply-chip:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
 }
 .chat-reply-chip:active:not(:disabled) {
   scale: 0.97;
@@ -836,9 +864,11 @@ button.chat-theirs-name:hover {
     background-color 0.15s,
     color 0.15s;
 }
-.chat-handoff-row:hover {
-  background: var(--hover);
-  color: var(--fg-2);
+@media (hover: hover) and (pointer: fine) {
+  .chat-handoff-row:hover {
+    background: var(--hover);
+    color: var(--fg-2);
+  }
 }
 .chat-handoff-who {
   display: inline-flex;
@@ -919,9 +949,11 @@ button.chat-theirs-name:hover {
     background-color 0.15s,
     color 0.15s;
 }
-.chat-text-button:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-text-button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-mini-face {
   display: inline-grid;
@@ -1021,9 +1053,11 @@ button.chat-theirs-name:hover {
   width: 13px;
   height: 13px;
 }
-.chat-mini-pill:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-mini-pill:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-mini-pill:active {
   scale: 0.96;
@@ -1033,8 +1067,10 @@ button.chat-theirs-name:hover {
   box-shadow: var(--chat-ring);
   color: var(--fg);
 }
-.chat-mini-pill.is-stop:hover {
-  color: var(--danger);
+@media (hover: hover) and (pointer: fine) {
+  .chat-mini-pill.is-stop:hover {
+    color: var(--danger);
+  }
 }
 .chat-mini-pill.is-stop > svg {
   width: 10px;
@@ -1181,9 +1217,11 @@ button.chat-theirs-name:hover {
 .chat-round.is-plus {
   color: var(--muted);
 }
-.chat-round.is-plus:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .chat-round.is-plus:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 /* Send: a round button in the agent's colour (faded until there's something to send). */
 .chat-round.is-send,
@@ -1204,8 +1242,10 @@ button.chat-theirs-name:hover {
   opacity: 0.4;
   cursor: default;
 }
-.chat-round.is-send:hover:not(:disabled) {
-  filter: brightness(0.95);
+@media (hover: hover) and (pointer: fine) {
+  .chat-round.is-send:hover:not(:disabled) {
+    filter: brightness(0.95);
+  }
 }
 .chat-round.is-stop {
   background: var(--fg);
@@ -1247,10 +1287,15 @@ button.chat-theirs-name:hover {
   width: 12px;
   height: 12px;
 }
-.chat-route-chip:hover,
 .chat-route-chip[data-popup-open] {
   background: var(--hover);
   color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-route-chip:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .chat-steer {
   align-self: center;
@@ -1309,8 +1354,10 @@ button.chat-theirs-name:hover {
   font-weight: 500;
   transition: background-color 0.15s;
 }
-.chat-jump:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .chat-jump:hover {
+    background: var(--hover);
+  }
 }
 
 /* Up next, above the message box. */
@@ -1578,8 +1625,10 @@ button.chat-theirs-name:hover {
     opacity 0.15s,
     scale 0.15s var(--ease-out-soft);
 }
-.ycard-pill:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .ycard-pill:hover {
+    background: var(--hover);
+  }
 }
 .ycard-pill:active {
   scale: 0.97;
@@ -1593,11 +1642,15 @@ button.chat-theirs-name:hover {
   box-shadow: none;
   color: var(--bg);
 }
-.ycard-pill.is-primary:hover {
-  filter: brightness(1.3);
+@media (hover: hover) and (pointer: fine) {
+  .ycard-pill.is-primary:hover {
+    filter: brightness(1.3);
+  }
 }
-.dark .ycard-pill.is-primary:hover {
-  filter: brightness(0.9);
+@media (hover: hover) and (pointer: fine) {
+  .dark .ycard-pill.is-primary:hover {
+    filter: brightness(0.9);
+  }
 }
 .ycard-pill.is-quiet {
   padding: 0 12px;
@@ -1745,8 +1798,10 @@ button.chat-theirs-name:hover {
     box-shadow 0.15s,
     scale 0.15s var(--ease-out-soft);
 }
-.ycard-option:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .ycard-option:hover {
+    background: var(--hover);
+  }
 }
 .ycard-option:active {
   scale: 0.97;
@@ -1942,8 +1997,10 @@ button.chat-theirs-name:hover {
   width: 14px;
   height: 14px;
 }
-button.ycard-link:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  button.ycard-link:hover {
+    background: var(--hover);
+  }
 }
 .ycard-link.is-done {
   color: var(--success);

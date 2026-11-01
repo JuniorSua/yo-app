@@ -5,9 +5,16 @@ import { api, isUnknownMethod } from "../lib/api";
 import { friendlyError } from "../lib/connection";
 import { nativeNotify } from "../lib/desktop";
 import { applyTaskUpdate } from "../lib/tasks";
-import { applyAccountUpdate, chatFor, offeredAccounts, trackWorkingSince, upsertById, useApp } from "./app";
+import {
+  applyAccountUpdate,
+  chatFor,
+  offeredAccounts,
+  pickAgentId,
+  trackWorkingSince,
+  upsertById,
+  useApp,
+} from "./app";
 import { startDeviceSync } from "./device";
-import { pickAgentId, spaceView } from "./space";
 import { useTimeline } from "./timeline";
 import { ui, useUI } from "./ui";
 
@@ -39,7 +46,6 @@ export async function bootstrap() {
   let workingSince = useApp.getState().workingSince;
   for (const a of b.agents) workingSince = trackWorkingSince(workingSince, a, a);
   for (const id of Object.keys(workingSince)) if (!agents[id]) workingSince = omitKey(workingSince, id);
-  const reconnect = useApp.getState().booted;
   useApp.setState({
     booted: true,
     workingSince,
@@ -51,12 +57,9 @@ export async function bootstrap() {
     // Older cores don't send it: device features are then shown as unavailable.
     execution: b.execution ?? null,
   });
-  // The saved chat, unless it's gone or (on first load) it's the other space's agent: then the active space's (Pip
-  // in Personal time, Yo otherwise). A reconnect keeps the chat that's on screen.
+  // The chat the user last had open (saved on this device), unless it's gone: then the primary's.
   const { agentId } = useUI.getState();
-  const pick = pickAgentId(agents, agentId, spaceView(Date.now(), b.settings, agents), {
-    keepOpen: reconnect,
-  });
+  const pick = pickAgentId(agents, agentId);
   if (pick && pick !== agentId) useUI.setState({ agentId: pick });
   void api()
     .call("approvals.pending", {})
@@ -163,10 +166,8 @@ export function startSync() {
       delete agents[id];
       return { agents };
     });
-    if (useUI.getState().agentId === id) {
-      const { agents, settings } = useApp.getState();
-      useUI.setState({ agentId: pickAgentId(agents, null, spaceView(Date.now(), settings, agents)) });
-    }
+    if (useUI.getState().agentId === id)
+      useUI.setState({ agentId: pickAgentId(useApp.getState().agents, null) });
   });
   c.on("timeline.upsert", (e) => {
     useTimeline.getState().upsert(e);

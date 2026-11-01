@@ -1,12 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  labelOfArea,
+  MemoryLabel,
   normalizePlaybook,
   PageKind,
   PlaybookRecordRunInput,
-  Space,
   SuggestTaskInput,
-  spaceOfArea,
   TaskAddInput,
   TaskUpdateInput,
   tagArea,
@@ -16,7 +16,7 @@ import type { Store } from "../db/store";
 import type { Hub } from "../hub";
 import type { Scheduler } from "../scheduler/Scheduler";
 import { suggestTask } from "../tasks/tasks";
-import { focusOf } from "../team/spaces";
+import { memoryFocus } from "../team/memoryFocus";
 import { postBrief, suggestReplies } from "./brief";
 import type { BugReports } from "./bugReports";
 
@@ -66,21 +66,21 @@ export function createYoTools(d: YoToolDeps) {
   return async (agentId: string, tool: string, args: Record<string, unknown>): Promise<string> => {
     const str = (k: string) => (typeof args[k] === "string" ? (args[k] as string) : "");
     /**
-     * remember's space: the one asked for ("everywhere" = null), else the one its area names ("work"), else the
-     * agent's own space (a helper's parent's) when Work & Personal is on, else Everywhere.
+     * remember's label: the one asked for ("everywhere" = null), else the one its area names ("work"), else the
+     * agent's memory focus (a helper's parent's), else Everywhere.
      */
-    const spaceFor = (id: string): Space | null => {
-      const asked = str("space").trim().toLowerCase();
+    const labelFor = (id: string): MemoryLabel | null => {
+      const asked = str("label").trim().toLowerCase();
       if (asked === "everywhere") return null;
-      const parsed = Space.safeParse(asked);
+      const parsed = MemoryLabel.safeParse(asked);
       if (parsed.success) return parsed.data;
-      return spaceOfArea(str("area")) ?? focusOf(d.store, d.store.getAgent(id)) ?? null;
+      return labelOfArea(str("area")) ?? memoryFocus(d.store, d.store.getAgent(id)) ?? null;
     };
     switch (tool) {
       case "remember": {
         const fact = tagArea(str("area"), str("fact").trim()); // life map: "[area:work] …"
         if (!str("fact").trim()) throw new Error("fact is required");
-        const m = d.store.addMemory(fact, str("scope") === "agent" ? agentId : null, spaceFor(agentId));
+        const m = d.store.addMemory(fact, str("scope") === "agent" ? agentId : null, labelFor(agentId));
         d.hub.push("memory.updated", m);
         d.store.addActivity({
           agentId,
@@ -91,13 +91,10 @@ export function createYoTools(d: YoToolDeps) {
         return `Saved to memory (id ${m.id}).`;
       }
       case "recall": {
-        const prefer = focusOf(d.store, d.store.getAgent(agentId));
+        const prefer = memoryFocus(d.store, d.store.getAgent(agentId));
         const found = d.store.searchMemories(str("query"), agentId, { prefer });
         if (!found.length) return "No matching memories.";
-        const labelled = d.store.getSettings().spacesOn;
-        return found
-          .map((m) => `[${m.id}]${labelled && m.space ? ` (${m.space})` : ""} ${m.content}`)
-          .join("\n");
+        return found.map((m) => `[${m.id}]${m.space ? ` (${m.space})` : ""} ${m.content}`).join("\n");
       }
       case "forget": {
         d.store.deleteMemory(str("id"));

@@ -1,18 +1,33 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 /** Open the app against the mock backend. */
-export async function openApp(page: Page, opts: { onboarded?: boolean; theme?: "dark" | "light" } = {}) {
-  const { onboarded = true, theme } = opts;
+export async function openApp(
+  page: Page,
+  opts: { onboarded?: boolean; theme?: "dark" | "light"; query?: string } = {},
+) {
+  const { onboarded = true, theme, query } = opts;
   await page.addInitScript(() => localStorage.removeItem("yo.ui"));
-  await page.goto(`/?mock=1&fast=1${onboarded ? "&onboarded=1" : ""}${theme ? `&theme=${theme}` : ""}`);
+  await page.goto(
+    `/?mock=1&fast=1${onboarded ? "&onboarded=1" : ""}${theme ? `&theme=${theme}` : ""}${query ? `&${query.replace(/^&/, "")}` : ""}`,
+  );
   if (onboarded) await expect(page.getByTestId("sidebar")).toBeVisible();
   else await expect(page.getByTestId("onboarding")).toBeVisible();
 }
 
-/** Open an agent's chat from the sidebar roster (the active space's main agent and every teammate). */
+/** Open the Team popover (the rail's stacked faces): the roster, the new-agent button and the pages. */
+export async function openTeam(page: Page) {
+  const roster = page.getByTestId("roster");
+  if (!(await roster.isVisible())) await page.getByTestId("rail-team").click();
+  await expect(roster).toBeVisible();
+  return roster;
+}
+
+/** Open an agent's chat from the Team popover (the main agent and every teammate). */
 export async function openAgent(page: Page, name: string) {
-  await page.getByTestId("roster").getByTestId(`agent-row-${name}`).click();
+  const roster = await openTeam(page);
+  await roster.getByTestId(`agent-row-${name}`).click();
   await expect(page.getByTestId("agent-title")).toHaveText(name);
+  await expect(page.getByTestId("roster")).toHaveCount(0);
 }
 
 export async function send(page: Page, text: string) {
@@ -36,18 +51,27 @@ export async function openSettings(page: Page) {
   await expect(page.getByTestId("settings-dialog")).toBeVisible();
 }
 
-/** The sidebar's "New teammate" (+) button: opens the new-agent dialog. */
+/** The Team popover's "New teammate" (+) button: opens the new-agent dialog. */
 export async function newTeammate(page: Page) {
+  await openTeam(page);
   await page.getByTestId("new-agent").click();
   await expect(page.getByTestId("new-agent-dialog")).toBeVisible();
 }
 
-/** The inspector beside the chat (open by default on a wide window; ⌘\ or the chat bar's button toggles it). */
-export async function openInspector(page: Page) {
-  const inspector = page.getByTestId("work-pane");
-  if (!(await inspector.isVisible())) await page.getByTestId("toggle-workspace").click();
-  await expect(inspector).toBeVisible();
-  return inspector;
+/** The agent's profile popover (click its big head): the model, computer, work, schedule and Options. */
+export async function openProfile(page: Page) {
+  const profile = page.getByTestId("profile-popover");
+  if (!(await profile.isVisible())) await page.getByTestId("presence-avatar").click();
+  await expect(profile).toBeVisible();
+  return profile;
+}
+
+/** The workspace beside the chat (open by default on a wide window; ⌘\ or the chat's button toggles it). */
+export async function openWorkspace(page: Page) {
+  const workspace = page.getByTestId("workspace");
+  if (!(await workspace.isVisible())) await page.getByTestId("toggle-workspace").click();
+  await expect(workspace).toBeVisible();
+  return workspace;
 }
 
 /**

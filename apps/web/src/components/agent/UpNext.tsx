@@ -136,6 +136,7 @@ function UpNextItem({
           <textarea
             ref={ta}
             data-testid="up-next-edit-input"
+            aria-label="Edit queued message"
             value={text}
             rows={2}
             onChange={(e) => setText(e.target.value)}

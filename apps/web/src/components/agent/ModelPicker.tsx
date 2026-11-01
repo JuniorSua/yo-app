@@ -202,7 +202,7 @@ export function modelChipLabel(acc: Account | undefined, label: string | undefin
  * The model chip under the agent's name: the subscription and model it runs on. A click opens the picker to
  * switch either, and the effort, for this agent.
  */
-export function ModelPicker({ agent }: { agent: AgentView }) {
+export function ModelPicker({ agent, side = "bottom" }: { agent: AgentView; side?: "top" | "bottom" }) {
   const accounts = useApp((s) => s.accounts);
   const acc = accountFor(agent, accounts);
   // On a fallback account (the agent's own is gone or hidden): its model and effort don't apply.
@@ -217,12 +217,15 @@ export function ModelPicker({ agent }: { agent: AgentView }) {
     <Popover
       open={open}
       onOpenChange={setOpen}
-      side="bottom"
-      align="center"
+      side={side}
+      align={side === "top" ? "end" : "center"}
       trigger={
         <button
+          type="button"
           data-testid="model-picker-trigger"
           className="chat-model-chip"
+          // In the narrow column only the provider mark shows: the name is spoken, not just a hover tooltip.
+          aria-label={`${modelChipLabel(acc, m?.label)}${signedOut ? ", not connected" : ""}. Change model`}
           data-signed-out={signedOut || undefined}
           title={
             signedOut

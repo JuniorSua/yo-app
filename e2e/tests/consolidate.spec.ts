@@ -3,7 +3,7 @@
  * backend. `&mockConsolidate=1` gives core a team it would have offered to fold into Yo (apps/web/src/lib/mock/team.ts).
  */
 import { expect, type Page, test } from "@playwright/test";
-import { openWorkspacePage } from "./helpers";
+import { openTeam, openWorkspacePage } from "./helpers";
 
 async function open(page: Page, scenario?: "1" | "solo" | "fail") {
   await page.addInitScript(() => localStorage.removeItem("yo.ui"));
@@ -33,9 +33,9 @@ test("memory page groups life-map memories by area", async ({ page }) => {
 });
 
 // Yo 2: teammates are first-class again, so the old "Yo is now one assistant" offer never shows.
-test("never offers to fold teammates into Yo; they stay in the sidebar roster", async ({ page }) => {
+test("never offers to fold teammates into Yo; they stay in the Team popover", async ({ page }) => {
   await open(page, "1");
-  const roster = page.getByTestId("roster");
+  const roster = await openTeam(page);
   await expect(roster.locator('[data-testid^="agent-row-"]').nth(1)).toBeVisible();
   const rows = await roster.locator('[data-testid^="agent-row-"]').count();
   await page.waitForTimeout(500);

@@ -1754,7 +1754,7 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
     expect(store.getTask(own.id)!.status).toBe("open");
   });
 
-  it("only touches the active space's main agent's tasks", async () => {
+  it("only touches the primary agent's tasks", async () => {
     const pip = addPip();
     const theirs = store.addTask({
       ownerId: pip.id,
@@ -1771,7 +1771,7 @@ describe("phone channel: tasks, morning brief and quick replies (v2.3)", () => {
 
   /** A Yo that's been set up since before today (the brief turned on, unless `on` is false), and a channel whose clock is two days on. */
   async function briefSetup({ on = true }: { on?: boolean } = {}) {
-    store.updateSettings({ onboarded: true, computerSetup: "done", timezone: "UTC", spacesOn: false });
+    store.updateSettings({ onboarded: true, computerSetup: "done", timezone: "UTC" });
     if (on) store.updateSettings({ morningBrief: true });
     await channel.stop();
     const at = Date.now() + 2 * DAY;

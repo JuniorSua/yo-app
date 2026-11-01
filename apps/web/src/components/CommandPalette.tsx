@@ -1,5 +1,5 @@
 import { Dialog as BDialog } from "@base-ui/react/dialog";
-import { isLead, SPACE_LABELS, type Space, type WorkspaceSearchResult } from "@yo/contracts";
+import type { WorkspaceSearchResult } from "@yo/contracts";
 import {
   Activity,
   Brain,
@@ -22,13 +22,11 @@ import { recentRequests } from "../lib/presence";
 import { newRequestKey } from "../lib/useShortcuts";
 import { cn, modKey } from "../lib/utils";
 import { openMessage, openSearchResult } from "../lib/workspace";
-import { sortAgents, useApp } from "../stores/app";
-import { setAutoSwitch, toggleSpace, useActiveAgent, useSpace } from "../stores/space";
+import { sortAgents, useApp, usePrimaryAgent } from "../stores/app";
 import { run } from "../stores/sync";
 import { useTimeline } from "../stores/timeline";
 import { ui, useUI } from "../stores/ui";
 import { AgentAvatar } from "./brand";
-import { SPACE_ICON } from "./SpaceSwitch";
 import { Kbd } from "./ui/controls";
 
 interface Cmd {
@@ -41,52 +39,13 @@ interface Cmd {
   run: () => void;
 }
 
-/** Work & Personal: switch, back to the schedule, and the work hours (Settings → Work & Personal). */
-function spaceCmds(space: Space, auto: boolean): Cmd[] {
-  const ic = "size-4 text-muted";
-  const other = space === "work" ? "personal" : "work";
-  const Icon = SPACE_ICON[other];
-  return [
-    {
-      id: "space-switch",
-      group: "Actions",
-      label: `Switch to ${SPACE_LABELS[other]}`,
-      icon: <Icon className={ic} />,
-      shortcut: `${modKey}⇧M`,
-      run: toggleSpace,
-    },
-    ...(auto
-      ? []
-      : [
-          {
-            id: "space-auto",
-            group: "Actions",
-            label: "Follow my work hours",
-            hint: "Switch between Work and Personal automatically",
-            icon: <CalendarClock className={ic} />,
-            run: () => void setAutoSwitch(true),
-          },
-        ]),
-    {
-      id: "space-hours",
-      group: "Actions",
-      label: "Edit work hours",
-      icon: <Clock3 className={ic} />,
-      run: () => ui.openSettings("spaces"),
-    },
-  ];
-}
-
 export function CommandPalette() {
   const open = useUI((s) => s.paletteOpen);
   const agents = useApp((s) => s.agents);
   const theme = useApp((s) => s.settings.theme);
-  const active = useActiveAgent();
-  const space = useSpace((s) => s.space);
-  const spaces = useSpace((s) => s.available);
-  const auto = useSpace((s) => s.source === "schedule");
+  const active = usePrimaryAgent();
   const yoId = active?.id;
-  // Recent requests live here: ⌘K or the rail's Search opens straight onto them (the active space's agent's).
+  // Recent requests live here: ⌘K or the rail's Search opens straight onto them (the primary agent's).
   const yoEntries = useTimeline((s) => (yoId ? s.byAgent[yoId] : undefined));
   const recent = useMemo(() => recentRequests(yoEntries), [yoEntries]);
   const [q, setQ] = useState("");
@@ -141,11 +100,10 @@ export function CommandPalette() {
     return [
       ...sortAgents(agents).map((a) => ({
         id: `agent-${a.id}`,
-        // Yo (Work) and Pip (Personal) are the main assistants; everyone else is a teammate.
-        group: isLead(a) ? (spaces ? "Your assistants" : "Your assistant") : "Teammates",
+        // Yo is the main assistant; everyone else is a teammate.
+        group: a.isPrimary ? "Your assistant" : "Teammates",
         label: a.name,
-        // "Work · your work assistant", so typing "work" or "personal" finds them.
-        hint: spaces && a.space ? `${SPACE_LABELS[a.space]} · ${a.role}` : a.role,
+        hint: a.role,
         icon: <AgentAvatar agent={a} size={20} quiet />,
         run: () => ui.openAgent(a.id),
       })),
@@ -159,7 +117,14 @@ export function CommandPalette() {
           if (active) ui.focusComposer(active.id);
         },
       },
-      ...(spaces ? spaceCmds(space, auto) : []),
+      {
+        id: "work-hours",
+        group: "Actions",
+        label: "Your work hours",
+        hint: "Settings → Profile",
+        icon: <Clock3 className={ic} />,
+        run: () => ui.openSettings("profile"),
+      },
       {
         id: "computer",
         group: "Actions",
@@ -227,7 +192,7 @@ export function CommandPalette() {
         run: () => useUI.setState({ shortcutsOpen: true }),
       },
     ];
-  }, [agents, theme, active, spaces, space, auto]);
+  }, [agents, theme, active]);
 
   const filtered = useMemo<Cmd[]>(() => {
     const s = q.trim().toLowerCase();

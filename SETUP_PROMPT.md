@@ -7,8 +7,8 @@ for them, with a line like:
 Set up Yo for me. Follow the setup prompt at https://github.com/JuniorSua/yo-app/blob/main/SETUP_PROMPT.md
 ```
 
-Yo is a free, open-source macOS app for a team of AI agents (Yo leads, plus Pip for personal time and any
-teammates the person adds). It works in a private workspace on the person's Mac or PC (a Linux desktop with
+Yo is a free, open-source macOS app for a team of AI agents (Yo leads, plus any teammates the person
+adds). It works in a private workspace on the person's Mac or PC (a Linux desktop with
 Chromium, running in a small Colima VM), and runs on the Claude, ChatGPT or Grok plan the person already pays
 for. Yo itself costs nothing and asks for no key or account. Below are the steps, in order. Every command here is the one the Yo app itself shows;
 don't substitute your own.
@@ -202,8 +202,7 @@ link or approve the code for them.
 
 Yo's chat opens with "Looks like we have a model connected. Let's set up my computer." (or, when they chose
 Claude or ChatGPT, "Let's set up my computer first. You sign in to Claude on it right after.", with ChatGPT in
-place of Claude when they chose it) and three cards. (Outside the person's work hours the app may open Pip, the Personal space, instead;
-press ⌘⇧M to switch to Work, where Yo's setup chat is.)
+place of Claude when they chose it) and three cards.
 
 - **This Mac:** the person picks it. Yo checks the Mac (the same table as the preflight), shows any missing
   tools with copy buttons (already installed in step 4), and offers **Start my computer**. The first start

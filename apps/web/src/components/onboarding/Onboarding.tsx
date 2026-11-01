@@ -21,6 +21,7 @@ import { primaryAgent, useApp } from "../../stores/app";
 import { applyDeviceStatus, errorText, useDevice } from "../../stores/device";
 import { run } from "../../stores/sync";
 import { AvatarStudio } from "../AvatarStudio";
+import { useMedia } from "../agent/Presence";
 import { ConnectModel } from "../connect/ConnectModel";
 import { macBlocker } from "../settings/DevicesAccessSettings";
 import { Button } from "../ui/button";
@@ -32,30 +33,35 @@ const STEPS: Step[] = ["welcome", "subs", "access", "meet"];
 
 const TEAM = SOFTIES.filter((s) => TEAMMATE_KINDS.includes(s.kind));
 
+/**
+ * The first screen. It fits a 1100×720 window without scrolling (tighter at short heights, styles/dots.css
+ * .onb-welcome); in anything shorter, or on a phone, it scrolls and Get started stays pinned at the bottom.
+ */
 function Welcome({ next }: { next: () => void }) {
+  const short = useMedia("(max-height: 800px)");
   return (
-    <div className="flex w-full max-w-[680px] flex-col items-center text-center">
-      <Softie kind="yo" size={120} className="mb-5" />
+    <div className="onb-welcome flex w-full max-w-[680px] flex-col items-center text-center">
+      <Softie kind="yo" size={short ? 88 : 120} className="onb-hero" />
       <h1 className="font-semibold text-4xl tracking-[-0.035em]">Say hi to Yo.</h1>
       <p className="mt-3 max-w-[30rem] text-balance text-lg text-muted">
         Your AI agent, on the subscription you already pay for, with its own computer on your{" "}
         {clientIsMac() ? "Mac" : "PC"}.
       </p>
-      <div className="mt-9 w-full" data-testid="welcome-team">
-        <ul className="flex items-end justify-center gap-6">
+      <div className="onb-gap w-full" data-testid="welcome-team">
+        <ul className="onb-team flex items-end justify-center">
           {TEAM.map((s) => (
-            <li key={s.kind} className="flex w-[72px] flex-col items-center">
+            <li key={s.kind} className="flex flex-col items-center">
               <Softie kind={s.kind} size={48} animated={false} />
               <span className="mt-1.5 font-medium text-sm">{s.name}</span>
               <span className="text-muted text-xs">{s.role}</span>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-muted text-sm">
+        <p className="mt-3 text-balance text-muted text-sm">
           Add teammates when you want them. Each gets its own job, memory and model.
         </p>
       </div>
-      <div className="mt-9 grid w-full grid-cols-3 gap-3 text-left">
+      <div className="onb-gap onb-features grid w-full gap-3 text-left">
         {[
           {
             icon: Monitor,
@@ -73,16 +79,18 @@ function Welcome({ next }: { next: () => void }) {
             d: "It asks before buying, sending or posting anything.",
           },
         ].map((f) => (
-          <div key={f.t} className="rounded-2xl border border-border bg-card p-4">
-            <f.icon className="mb-3 size-[18px] text-fg-2" strokeWidth={1.8} />
+          <div key={f.t} className="onb-feature rounded-2xl border border-border bg-card p-4">
+            <f.icon className="onb-feature-icon size-[18px] text-fg-2" strokeWidth={1.8} />
             <div className="font-medium">{f.t}</div>
             <div className="mt-1 text-muted text-sm leading-snug">{f.d}</div>
           </div>
         ))}
       </div>
-      <Button variant="primary" size="lg" className="mt-9 px-6" onClick={next} data-testid="onboarding-start">
-        Get started <ArrowRight className="size-4" />
-      </Button>
+      <div className="onb-cta">
+        <Button variant="primary" size="lg" className="px-6" onClick={next} data-testid="onboarding-start">
+          Get started <ArrowRight className="size-4" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -252,12 +260,6 @@ function Meet() {
     setBusy(true);
     if (primary)
       await run(api().call("agent.update", { id: primary.id, patch: { name: name.trim() || "Yo", avatar } }));
-    // A new user starts with one assistant: Work & Personal spaces (a second agent, Pip, who takes over outside
-    // work hours) stay off until they turn them on in Settings → Spaces. Otherwise someone finishing setup in
-    // the evening met Pip instead of the assistant they just named, and never saw the computer setup. Only
-    // onboarding sends this, so existing installs keep their spaces. Before `onboarded`, so the shell opens
-    // with Pip already put away.
-    if (settings.spacesOn) await run(api().call("settings.update", { spacesOn: false }));
     // The user's own time zone (the default is New York): the agent's clock, routines and calendar use it.
     const timezone = localTimeZone() ?? settings.timezone;
     await run(api().call("settings.update", { userName: you.trim(), timezone, onboarded: true }));
@@ -339,7 +341,10 @@ export function Onboarding() {
         </div>
       </div>
       <div id="onb-scroll" className="scroll-fade relative min-h-0 flex-1 overflow-y-auto">
-        <div key={step} className="flex min-h-full items-center justify-center px-6 py-10 animate-rise">
+        <div
+          key={step}
+          className="onb-step flex min-h-full items-center justify-center px-6 py-10 animate-rise"
+        >
           {step === "welcome" && <Welcome next={next} />}
           {step === "subs" && <Subscriptions next={next} />}
           {step === "access" && <AccessStep next={next} />}

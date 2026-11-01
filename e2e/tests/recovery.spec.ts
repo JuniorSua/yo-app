@@ -102,6 +102,7 @@ test("failed memory writes preserve drafts and existing rows", async ({ page }) 
   await row.getByRole("button", { name: "Cancel", exact: true }).click();
   const count = await page.getByTestId("memory-row").count();
   await row.getByTestId("memory-delete").click();
+  await page.getByTestId("confirm-action").click();
   await expect(page.getByText("Something went wrong", { exact: true })).toBeVisible();
   await expect(page.getByTestId("memory-row")).toHaveCount(count);
 });

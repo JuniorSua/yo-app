@@ -115,8 +115,6 @@ export function seed(onboarded: boolean): SeedState {
     macWrites: false,
     // A fresh install sets up the agent's computer in the first agent's chat.
     computerSetup: onboarded ? "done" : "pending",
-    // Held in Work by hand, so screenshots and tests don't depend on the clock (`&space=` changes it).
-    spaceManual: { space: "work", until: null },
   };
 
   const accounts: Account[] = [
@@ -235,7 +233,7 @@ export function seed(onboarded: boolean): SeedState {
     };
   }
 
-  // Two teammates in Work, each on its own subscription: Dew finished a brief, Pico waits for an OK.
+  // Two teammates, each on its own subscription: Dew finished a brief, Pico waits for an OK.
   agents.push(
     {
       ...base,
@@ -276,7 +274,7 @@ export function seed(onboarded: boolean): SeedState {
     },
   );
 
-  // Pip, the Personal-time agent core creates next to Yo.
+  // Pip, a teammate for life outside work, with a Personal memory focus (Yo's is Work), as on the owner's Yo.
   agents.push({
     ...base,
     id: "agt_home",

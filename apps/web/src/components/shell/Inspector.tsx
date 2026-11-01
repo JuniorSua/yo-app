@@ -8,9 +8,13 @@ import {
   Eye,
   Hand,
   LoaderCircle,
+  Maximize2,
+  Minimize2,
   Power,
+  Settings2,
   ShieldCheck,
   Sparkles,
+  SquarePen,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { accentVars } from "../../lib/accent";
@@ -37,11 +41,11 @@ const ACTIVITY_ROWS = 6;
 const LIST_ROWS = 4;
 
 /**
- * The inspector beside the chat: the Dots profile panel, kept open. Who the agent is and what it runs on, its
- * computer, what it's doing (Activity), what it will do (Scheduled) and what it made (Outputs). The chat bar's
- * inspector button (or ⌘\) hides it.
+ * The agent's profile (Dots' profile popover, opened by clicking its head): who it is and what it runs on, its
+ * computer, what it's doing (Activity), what it will do (Scheduled), what it made (Outputs), then its options.
+ * Replaces Yo 2's always-open inspector.
  */
-export function Inspector({ agent }: { agent: AgentView }) {
+export function ProfileCard({ agent, onDone }: { agent: AgentView; onDone: () => void }) {
   const theme = usePaintedTheme();
   const accent = useMemo(() => accentVars(agent.avatar, theme), [agent.avatar, theme]);
   const agents = useApp((s) => s.agents);
@@ -51,15 +55,24 @@ export function Inspector({ agent }: { agent: AgentView }) {
     load.artifacts().catch(() => undefined);
   }, [agent.id, agent.kind]);
   return (
-    <aside
-      className="shell-inspector animate-panel-in"
-      data-testid="work-pane"
+    <section
+      className="shell-inspector"
+      data-testid="profile-popover"
       aria-label={`${agent.name}’s profile`}
       style={accent}
+      // Any row that goes somewhere closes the popover.
+      onClickCapture={(e) => {
+        if (
+          (e.target as HTMLElement).closest(
+            ".inspector-row, .inspector-options button, .inspector-model, .inspector-screen, .inspector-thumb, [data-testid=open-computer-pane], [data-testid=pane-take-over]",
+          )
+        )
+          queueMicrotask(onDone);
+      }}
     >
       <div className="inspector-scroll">
         <header className="inspector-head">
-          <AgentAvatar agent={agent} size={64} quiet />
+          <AgentAvatar agent={agent} size={56} quiet />
           <div className="min-w-0">
             <h2 className="inspector-name">{agent.name}</h2>
             <p className="inspector-line" data-tone={tone}>
@@ -72,8 +85,47 @@ export function Inspector({ agent }: { agent: AgentView }) {
         <ActivityList agent={agent} />
         <Scheduled agent={agent} />
         <Outputs agent={agent} />
+        <Options agent={agent} />
       </div>
-    </aside>
+    </section>
+  );
+}
+
+/** What the chat's ⋯ menu had: a fresh session, compacting, its settings. */
+function Options({ agent }: { agent: AgentView }) {
+  return (
+    <Section title="Options">
+      <div className="inspector-options">
+        <button
+          type="button"
+          data-testid="new-session"
+          onClick={() =>
+            run(api().call("agent.newSession", { id: agent.id }), "Couldn't start a new session")
+          }
+        >
+          <SquarePen aria-hidden /> New session
+        </button>
+        <button
+          type="button"
+          data-testid="compact-conversation"
+          onClick={() =>
+            run(api().call("agent.compact", { id: agent.id }), "Couldn't compact the conversation")
+          }
+        >
+          <Minimize2 aria-hidden /> Compact conversation
+        </button>
+        <button
+          type="button"
+          data-testid="open-agent-settings"
+          onClick={() => useUI.setState({ agentSettingsId: agent.id })}
+        >
+          <Settings2 aria-hidden /> Rename and customize
+        </button>
+        <button type="button" data-testid="open-computer" onClick={() => ui.openComputer(agent.id)}>
+          <Maximize2 aria-hidden /> Open computer full screen
+        </button>
+      </div>
+    </Section>
   );
 }
 
@@ -158,7 +210,7 @@ function ComputerCard({ agent }: { agent: AgentView }) {
     setBusy(true);
     await run(api().call("computer.takeover", { agentId: agent.id }));
     setBusy(false);
-    ui.openComputer(agent.id);
+    ui.showTab("computer");
   };
   return (
     <Section title="Computer">
@@ -169,7 +221,7 @@ function ComputerCard({ agent }: { agent: AgentView }) {
             className="inspector-screen"
             data-testid="screen-preview"
             aria-label={`Watch ${agent.name}’s computer`}
-            onClick={() => ui.openComputer(agent.id)}
+            onClick={() => ui.showTab("computer")}
           >
             <span className="inspector-screen-live">
               <ScreenView agent={agent} />
@@ -183,7 +235,7 @@ function ComputerCard({ agent }: { agent: AgentView }) {
               className="inspector-thumb"
               data-testid="screen-preview"
               aria-label={`Watch ${agent.name}’s computer`}
-              onClick={() => ui.openComputer(agent.id)}
+              onClick={() => ui.showTab("computer")}
             >
               <AgentAvatar agent={agent} size={24} quiet state={asleep || !running ? "sleeping" : "idle"} />
             </button>
@@ -206,7 +258,7 @@ function ComputerCard({ agent }: { agent: AgentView }) {
             <Button
               size="sm"
               variant="secondary"
-              onClick={() => ui.openComputer(agent.id)}
+              onClick={() => ui.showTab("computer")}
               data-testid="open-computer-pane"
             >
               <Eye className="size-3.5" /> Watch

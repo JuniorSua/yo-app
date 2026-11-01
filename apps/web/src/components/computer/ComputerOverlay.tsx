@@ -9,7 +9,7 @@ import { run } from "../../stores/sync";
 import { useUI } from "../../stores/ui";
 import { AgentAvatar, pillFor, StatusPill } from "../brand";
 import { Button } from "../ui/button";
-import { Tip } from "../ui/overlay";
+import { Sheet, Tip } from "../ui/overlay";
 import { FilesView } from "./FilesWindow";
 import { FloatingWindow } from "./FloatingWindow";
 import { ScreenView } from "./ScreenView";
@@ -51,10 +51,11 @@ function DockButton({
   return (
     <Tip label={label}>
       <button
+        type="button"
         aria-label={label}
         data-testid={testId}
         onClick={onClick}
-        className="relative grid size-11 place-items-center rounded-xl text-white/85 transition-all duration-150 hover:scale-[1.06] hover:bg-white/10 hover:text-white active:scale-95 [&_svg]:size-5"
+        className="relative grid size-11 place-items-center rounded-xl text-white/85 transition-[scale,background-color,color] duration-150 hover:scale-[1.06] hover:bg-white/10 hover:text-white active:scale-95 [&_svg]:size-5"
       >
         {children}
         {active && <span className="-bottom-1 absolute size-1 rounded-full bg-white/80" />}
@@ -90,6 +91,7 @@ export function ComputerOverlay() {
   const agent = useApp((s) => (agentId ? s.agents[agentId] : undefined));
   const [wins, setWins] = useState<Win[]>([]);
   const [busy, setBusy] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!agentId) setWins([]);
@@ -109,8 +111,19 @@ export function ComputerOverlay() {
   };
 
   return (
-    <div
-      data-testid="computer-overlay"
+    // A full-screen dialog: focus starts on Close and stays inside, Escape closes it (not from the terminal, which
+    // needs Escape itself), and focus goes back to what opened it.
+    <Sheet
+      open
+      onOpenChange={(open, reason, event) => {
+        if (open) return;
+        if (reason === "escape-key" && (event?.target as HTMLElement | null)?.closest?.(".xterm")) return;
+        close();
+      }}
+      label={`${agent.name}'s computer`}
+      initialFocus={closeRef}
+      keepOnOutsidePress
+      testId="computer-overlay"
       className="dark air-page fixed inset-0 z-40 flex flex-col text-fg animate-fade-in"
     >
       <div
@@ -153,6 +166,8 @@ export function ComputerOverlay() {
         )}
         <Tip label="Close" shortcut="Esc" side="bottom">
           <button
+            ref={closeRef}
+            type="button"
             aria-label="Close computer"
             data-testid="close-computer"
             onClick={close}
@@ -216,6 +231,6 @@ export function ComputerOverlay() {
           </FloatingWindow>
         ),
       )}
-    </div>
+    </Sheet>
   );
 }

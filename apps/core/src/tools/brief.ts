@@ -8,7 +8,6 @@ import {
 } from "@yo/contracts";
 import type { Store } from "../db/store";
 import type { Orchestrator } from "../orchestrator/Orchestrator";
-import { activeSpaceAgent } from "../team/spaces";
 
 const DAY_MS = 24 * 60 * 60_000;
 /** The last local date a brief was claimed for (`YYYY-MM-DD`), in the settings table's private keys. */
@@ -54,8 +53,8 @@ function dateIn(at: number, tz: string): string {
 }
 
 export interface BriefClaimDeps {
-  store: Pick<Store, "getSettings" | "listAgents" | "getKv" | "setKv">;
-  /** Sends the active space's main agent the framed request (shown as a quiet notice, queued like chat.send). */
+  store: Pick<Store, "getSettings" | "primaryAgent" | "getKv" | "setKv">;
+  /** Sends the primary agent the framed request (shown as a quiet notice, queued like chat.send). */
   send: (agentId: string, text: string) => Promise<unknown>;
   now?: () => number;
 }
@@ -77,9 +76,9 @@ export function sendBriefRequest(
 }
 
 /**
- * brief.claim: the chat of the active space's main agent opened (or Yo Phone said hello). Posts the daily brief when the user turned it on, `localDate`
- * is a real date within a day of the server's, today's hasn't been claimed (by any tab or device), it isn't
- * the user's first day with Yo, and the agent exists. `posted` = this call started it.
+ * brief.claim: the primary agent's chat opened (or Yo Phone said hello). Posts the daily brief when the user turned
+ * it on, `localDate` is a real date within a day of the server's, today's hasn't been claimed (by any tab or
+ * device), it isn't the user's first day with Yo, and the agent exists. `posted` = this call started it.
  */
 export async function claimBrief(d: BriefClaimDeps, localDate: unknown): Promise<{ posted: boolean }> {
   const no = { posted: false };
@@ -92,11 +91,10 @@ export async function claimBrief(d: BriefClaimDeps, localDate: unknown): Promise
   // Every place on Earth is within a day of UTC's date: further out is a wrong clock, which would claim a
   // day that hasn't come yet and turn the real one away.
   if (day === null || Math.abs(day - Math.floor(now / DAY_MS) * DAY_MS) > DAY_MS) return no;
-  const agent = activeSpaceAgent(d.store, now);
+  const agent = d.store.primaryAgent();
   if (!agent) return no;
   // The first day belongs to the welcome: no brief until the day after Yo was set up.
-  const first = d.store.listAgents().find((a) => a.isPrimary) ?? agent;
-  if (dateIn(first.createdAt, s.timezone) >= localDate) return no;
+  if (dateIn(agent.createdAt, s.timezone) >= localDate) return no;
   const last = d.store.getKv<string>(CLAIM_KV);
   if (last && last >= localDate) return no;
   // Claimed before anything awaits, so a second tab or device asking at the same moment is turned away.

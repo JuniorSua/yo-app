@@ -1,36 +1,15 @@
-import { type AgentView, isLead } from "@yo/contracts";
-import {
-  CalendarClock,
-  Eye,
-  Maximize2,
-  MessageCircle,
-  Minimize2,
-  MoreHorizontal,
-  Plus,
-  Power,
-  Settings2,
-  ShieldCheck,
-  SquarePen,
-} from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import { api } from "../../lib/api";
-import {
-  activeHelpers,
-  type PresenceTone,
-  presenceLine,
-  presenceTone,
-  runningStep,
-} from "../../lib/presence";
-import { useNow } from "../../lib/useNow";
-import { clockTime, cn } from "../../lib/utils";
-import { useApp } from "../../stores/app";
-import { run } from "../../stores/sync";
+import type { AgentView } from "@yo/contracts";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { activeHelpers, lastFailure, type PresenceTone, presenceTone, runningStep } from "../../lib/presence";
+import { cn } from "../../lib/utils";
+import { chatFor, useApp } from "../../stores/app";
 import { useTimeline } from "../../stores/timeline";
-import { ui, useUI } from "../../stores/ui";
-import { AgentAvatar, pillFor, StatusPill } from "../brand";
+import { ui, WORKSPACE_QUERY } from "../../stores/ui";
+import { AgentAvatar } from "../brand";
+import { ProfileCard } from "../shell/Inspector";
+import { TeamButton } from "../shell/Rail";
 import { TopBarButtons } from "../shell/TopBar";
-import { Menu, MenuItem, Popover } from "../ui/overlay";
-import { ModelPicker } from "./ModelPicker";
+import { Popover, Tip } from "../ui/overlay";
 
 export function useMedia(query: string) {
   const [match, setMatch] = useState(() => typeof matchMedia === "function" && matchMedia(query).matches);
@@ -44,298 +23,169 @@ export function useMedia(query: string) {
   return match;
 }
 
-/** Wide enough for the computer pane beside the chat; narrower windows open the full-screen view instead. */
-export const PANE_QUERY = "(min-width: 1024px)";
-
-/** Tone, the "doing now" line (with how long, while working) and the one action that matters most. */
-export function usePresence(agent: AgentView) {
-  const agents = useApp((s) => s.agents);
-  // The request it's waiting on: its own first, else one of its helpers'.
-  const waiting = useApp((s) => (s.approvals.find((e) => e.agentId === agent.id) ?? s.approvals[0])?.request);
-  const since = useApp((s) => s.workingSince[agent.id]);
-  const step = useTimeline((s) => runningStep(s.byAgent[agent.id]));
-  const tone = presenceTone(agent);
-  const now = useNow(30_000, tone === "working" && !!since);
-  const helpers = activeHelpers(agents, agent.id);
-  let line = presenceLine({
-    agent,
-    tone,
-    step,
-    helpers,
-    waitingOn: waiting?.title,
-    asking: waiting?.kind === "user_input",
-  });
-  // Step titles mark commands with backticks ("Ran `ls`"); the line shows plain words.
-  line = line.replace(/`/g, "");
-  if (tone === "working" && since) line += ` · ${Math.max(1, Math.round((now - since) / 60_000))}m`;
-  return { tone, line };
-}
-
-interface Action {
-  id: string;
-  label: string;
-  icon: ReactNode;
-  run: () => void;
-}
-
-function actionsFor(agent: AgentView, tone: PresenceTone): { primary: Action; more: Action[] } {
-  const wake: Action = {
-    id: "wake",
-    label: "Wake him up",
-    icon: <Power />,
-    run: () => run(api().call("computer.wake", { agentId: agent.id }), "Couldn't wake his computer"),
-  };
-  const review: Action = {
-    id: "review",
-    label: "Review what needs you",
-    icon: <ShieldCheck />,
-    run: () => ui.goto("approvals"),
-  };
-  const watch: Action = {
-    id: "computer",
-    label: tone === "working" ? "Watch him work" : "Watch his screen",
-    icon: <Eye />,
-    run: () => {
-      if (matchMedia(PANE_QUERY).matches) useUI.setState({ workPaneOpen: true });
-      else ui.openComputer(agent.id);
-    },
-  };
-  const ask: Action = {
-    id: "new",
-    label: isLead(agent) ? "New request" : "Ask something",
-    icon: isLead(agent) ? <Plus /> : <MessageCircle />,
-    run: () => ui.focusComposer(agent.id),
-  };
-  const settings: Action = {
-    id: "settings",
-    label: "His settings",
-    icon: <Settings2 />,
-    run: () => useUI.setState({ agentSettingsId: agent.id }),
-  };
-  const primary =
-    tone === "waiting"
-      ? review
-      : tone === "sleeping"
-        ? wake
-        : tone === "working" || tone === "control"
-          ? watch
-          : ask;
-  return { primary, more: [watch, ask, settings].filter((a) => a !== primary) };
-}
-
-/** Clicking the assistant opens a small card: what he's doing, and the next useful thing to do. */
-export function PresenceCard({
-  agent,
-  trigger,
-  align = "start",
-}: {
-  agent: AgentView;
-  trigger: ReactElement;
-  align?: "start" | "center";
-}) {
-  const [open, setOpen] = useState(false);
-  const { tone, line } = usePresence(agent);
-  const { primary, more } = actionsFor(agent, tone);
-  const go = (a: Action) => {
-    setOpen(false);
-    a.run();
-  };
-  return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      trigger={trigger}
-      align={align}
-      sideOffset={10}
-      className="presence-card"
-    >
-      <div data-testid="presence-card">
-        <div className="presence-card-head">
-          <strong>{agent.name}</strong>
-          <StatusPill kind={pillFor(agent)} />
-        </div>
-        <p>{line}</p>
-        <button
-          className="presence-primary"
-          data-testid={`presence-${primary.id}`}
-          onClick={() => go(primary)}
-        >
-          {primary.icon}
-          {primary.label}
-        </button>
-        <div className="presence-more">
-          {more.map((a) => (
-            <button key={a.id} data-testid={`presence-${a.id}`} onClick={() => go(a)}>
-              {a.icon}
-              <span>{a.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </Popover>
-  );
-}
-
-/** Quiet chips along the top of the chat: what needs you and what's next. */
-function PresenceChips() {
-  const approvals = useApp((s) => s.approvals.length);
-  const routines = useApp((s) => s.routines);
-  const next = (routines ?? [])
-    .filter((r) => r.enabled && r.nextRunAt)
-    .sort((a, b) => a.nextRunAt! - b.nextRunAt!)[0];
-  return (
-    <div className="chat-chips">
-      {approvals > 0 && (
-        <button
-          className="chat-chip is-warning"
-          data-testid="approvals-shortcut"
-          onClick={() => ui.goto("approvals")}
-        >
-          <ShieldCheck />
-          Needs you<b>{approvals}</b>
-        </button>
-      )}
-      {next && (
-        <button
-          className="chat-chip"
-          data-testid="next-routine"
-          title={`Next routine: ${next.name} at ${clockTime(next.nextRunAt!)}`}
-          onClick={() => {
-            ui.goto("routines");
-            useUI.setState({ focusRecordId: next.id });
-          }}
-        >
-          <CalendarClock />
-          <span>
-            <em>Next: </em>
-            <strong>{next.name}</strong>
-          </span>
-          <time>{clockTime(next.nextRunAt!)}</time>
-        </button>
-      )}
-    </div>
-  );
-}
-
-function AgentMenu({ agent }: { agent: AgentView }) {
-  return (
-    <Menu
-      trigger={
-        <button aria-label="Agent options" data-testid="agent-options" className="chat-icon-button">
-          <MoreHorizontal />
-        </button>
-      }
-    >
-      <MenuItem icon={<Maximize2 />} testId="open-computer" onClick={() => ui.openComputer(agent.id)}>
-        Open computer full screen
-      </MenuItem>
-      <MenuItem
-        icon={<SquarePen />}
-        testId="new-session"
-        onClick={() => run(api().call("agent.newSession", { id: agent.id }))}
-      >
-        New session
-      </MenuItem>
-      <MenuItem
-        icon={<Minimize2 />}
-        testId="compact-conversation"
-        onClick={() =>
-          run(api().call("agent.compact", { id: agent.id }), "Couldn't compact the conversation")
-        }
-      >
-        Compact conversation
-      </MenuItem>
-      <MenuItem
-        icon={<Settings2 />}
-        testId="open-agent-settings"
-        onClick={() => useUI.setState({ agentSettingsId: agent.id })}
-      >
-        Agent settings
-      </MenuItem>
-    </Menu>
-  );
-}
+/** Wide enough for the workspace beside the chat; narrower windows open it as a sheet. */
+export const PANE_QUERY = WORKSPACE_QUERY;
 
 /**
- * The chat's top bar, a quiet row beside the agent's head: what needs you, what's next, the agent's menu, then
- * the shell's computer button and inspector toggle at the far right.
+ * The chat's top: one drag area for the window, the round buttons top-right (computer, workspace), and the agent's
+ * head floating at top centre over the conversation, which fades out under it. With no head (an empty chat shows
+ * it big in the middle) only the buttons stay.
  */
-export function ChatBar({ agent }: { agent: AgentView }) {
+export function ChatTop({ agent, head }: { agent: AgentView; head: boolean }) {
+  const phone = useMedia("(max-width: 600px)");
   return (
-    <div className="chat-bar">
-      <PresenceChips />
-      <AgentMenu agent={agent} />
-      <TopBarButtons agent={agent} />
+    <div
+      className={cn("chat-top app-drag", head && "has-head")}
+      // The head band covers the top of the conversation: a wheel or trackpad scroll over it still scrolls the chat.
+      onWheel={(e) => {
+        const scroller =
+          e.currentTarget.parentElement?.querySelector<HTMLElement>('[data-testid="timeline"]');
+        scroller?.scrollBy({ top: e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY });
+      }}
+    >
+      <div className="chat-bar">
+        {/* Phones have no rail Team: the team opens from here. */}
+        {phone && <TeamButton compact />}
+        <TopBarButtons agent={agent} />
+      </div>
+      {head && <PresenceHeader agent={agent} />}
     </div>
   );
 }
 
+const plural = (n: number, one: string) => (n === 1 ? `1 ${one}` : `${n} ${one}s`);
+
 /**
- * The agent's head above the conversation, as in a messaging app: its avatar (live), a name pill hanging off
- * the bottom, the subscription and model it runs on (click to switch), and one calm line on what it's doing.
- * It folds into a slim title while you scroll back. `hero`: the bigger head of an empty chat, without the line.
+ * "Idle" · "Thinking…" · "Working on <task>" · "Waiting for you": the one line under the name. While it has helpers
+ * the line says so ("Working with 2 helpers"); a request waiting on you is named, and a failure says what went wrong.
+ */
+export function statusLine(
+  agent: AgentView,
+  tone: PresenceTone,
+  step: string,
+  helpers = 0,
+  waiting?: { title: string; asking: boolean },
+  /** Why the last turn failed (its error notice), when it did. */
+  failure = "",
+): string {
+  const crew = helpers ? plural(helpers, "helper") : "";
+  switch (tone) {
+    case "waiting":
+      return waiting
+        ? `${waiting.asking ? "Waiting for your answer" : "Waiting for your OK"} · ${waiting.title}`
+        : "Waiting for you";
+    case "control":
+      return "You have control";
+    case "sleeping":
+      return "Asleep";
+    case "error":
+      return failure || "Something went wrong. Ask again, or check Settings";
+    case "working": {
+      // What it says it's doing, else the running step, else the plan's current item.
+      const plan = agent.todos.find((t) => t.status === "in_progress")?.text;
+      const task = (agent.statusLine ?? (step || plan || "")).replace(/`/g, "");
+      if (!task) return crew ? `Working with ${crew}` : "Thinking…";
+      return `Working on ${task.charAt(0).toLowerCase()}${task.slice(1)}${crew ? ` · ${crew}` : ""}`;
+    }
+    default:
+      return crew ? `Working with ${crew}` : "Idle";
+  }
+}
+
+/**
+ * The agent's head (Dots): its Softie big at top centre (it blinks and breathes), its name in a pill under it,
+ * then one status line. Clicking it opens the profile popover. While it has helpers, their small heads pop in at
+ * the big head's lower right, each with a working ring. `hero`: the bigger head of an empty chat.
  */
 export function PresenceHeader({ agent, hero }: { agent: AgentView; hero?: boolean }) {
-  const { tone, line } = usePresence(agent);
+  const tone = presenceTone(agent);
+  const step = useTimeline((s) => runningStep(s.byAgent[agent.id]));
+  const failure = useTimeline((s) => (tone === "error" ? lastFailure(s.byAgent[agent.id]) : ""));
   const phone = useMedia("(max-width: 600px)");
-  const compact = useCompactOnScroll() && !hero;
-  const size = hero ? (phone ? 88 : 120) : phone ? 48 : 64;
+  const short = useMedia("(max-height: 800px)");
+  const tiny = useMedia("(max-height: 640px)");
+  const agents = useApp((s) => s.agents);
+  const helpers = useMemo(() => activeHelpers(agents, agent.id), [agents, agent.id]);
+  // The request it's waiting on: its own, else one of its helpers'.
+  const request = useApp(
+    (s) => s.approvals.find((e) => e.request && chatFor(s.agents, e.agentId) === agent.id)?.request,
+  );
+  const waiting = request?.title
+    ? { title: request.title, asking: request.kind === "user_input" }
+    : undefined;
+  const [open, setOpen] = useState(false);
+  // The Softie fills about three quarters of its box: 176 draws a head about 136px tall (about 115px when short),
+  // as big as Grok Bot's. The head zone's solid ground (styles/dots.css --head-solid) is sized to each.
+  const size = hero ? (phone ? 104 : 160) : phone ? 68 : tiny ? 120 : short ? 148 : 176;
   const Tag = hero ? "div" : "header";
+  const line = statusLine(agent, tone, step, helpers.length, waiting, failure);
   return (
     <Tag
-      className={cn("chat-head", compact && "is-compact", hero && "is-hero")}
+      className={cn("chat-head", hero && "is-hero")}
       data-testid={hero ? "presence-hero" : "presence-header"}
       data-tone={tone}
     >
-      <PresenceCard
-        agent={agent}
-        align="center"
-        trigger={
-          <button
-            className="chat-head-avatar"
-            data-testid="presence-avatar"
-            aria-label={`${agent.name}: what he’s doing and quick actions`}
-          >
-            <AgentAvatar agent={agent} size={size} ground={hero} live />
-          </button>
-        }
-      />
-      <div className="chat-head-name" data-testid="agent-title">
-        {agent.name}
-      </div>
-      <div className="chat-head-meta">
-        <ModelPicker agent={agent} />
-        {!hero && (
-          <div className="chat-head-status">
-            <StatusPill kind={pillFor(agent)} />
-            <span
-              className={cn("chat-head-line", tone === "working" && "is-live")}
-              data-testid="presence-line"
+      <div className="chat-head-stack" style={{ "--head-size": `${size}px` } as CSSProperties}>
+        <Popover
+          open={open}
+          onOpenChange={setOpen}
+          align="center"
+          sideOffset={8}
+          className="profile-popover"
+          label={`${agent.name}’s profile`}
+          keepSide
+          trigger={
+            <button
+              type="button"
+              className="chat-head-avatar"
+              data-testid="presence-avatar"
+              aria-label={`${agent.name}’s profile`}
             >
-              {line}
-            </span>
-          </div>
-        )}
+              <AgentAvatar agent={agent} size={size} ground={hero} live />
+            </button>
+          }
+        >
+          <ProfileCard agent={agent} onDone={() => setOpen(false)} />
+        </Popover>
+        {!hero && helpers.length > 0 && <HelperHeads helpers={helpers} />}
       </div>
+      <h1 className="chat-head-name" data-testid="agent-title">
+        {agent.name}
+      </h1>
+      {!hero && (
+        <div className="chat-head-status" role="status">
+          <span
+            className={cn("chat-head-line", tone === "working" && "is-live")}
+            data-testid="presence-line"
+            title={line}
+          >
+            {line}
+          </span>
+        </div>
+      )}
     </Tag>
   );
 }
 
-/**
- * Slim head while reading back through the chat (scrolled well away from the newest message); full again near
- * the bottom. Hysteresis keeps the head's own height change from flipping it back.
- */
-function useCompactOnScroll() {
-  const [compact, setCompact] = useState(false);
-  useEffect(() => {
-    const onScroll = (e: Event) => {
-      const el = e.target as HTMLElement;
-      if (el?.dataset?.testid !== "timeline") return;
-      const fromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-      setCompact((c) => (c ? fromBottom > 60 : fromBottom > 280));
-    };
-    document.addEventListener("scroll", onScroll, true);
-    return () => document.removeEventListener("scroll", onScroll, true);
-  }, []);
-  return compact;
+/** Small helper heads tucked at the big head's lower right, popping in; each opens its workspace tab. */
+function HelperHeads({ helpers }: { helpers: AgentView[] }) {
+  return (
+    <div className="chat-head-helper-heads" data-testid="helper-heads">
+      {helpers.map((h, i) => (
+        <Tip key={h.id} label={h.preview ? `${h.name} · ${h.preview}` : h.name} side="bottom">
+          <button
+            type="button"
+            className="chat-helper-head"
+            data-testid="helper-head"
+            data-waiting={h.activity === "waiting" || undefined}
+            style={{ animationDelay: `${i * 70}ms` }}
+            aria-label={`Helper: ${h.name}`}
+            onClick={() => ui.showTab(`helper:${h.id}`)}
+          >
+            <AgentAvatar agent={h} size={38} quiet />
+          </button>
+        </Tip>
+      ))}
+    </div>
+  );
 }

@@ -52,11 +52,11 @@ export const YO_TOOLS: YoToolDef[] = [
             "The area of the user's life this belongs to, one or two words (e.g. work, personal, yo-project). Tag facts about their goals, people, sites, routines and tasks so they show up in the life map.",
         },
         // --- end life map ---
-        space: {
+        label: {
           type: "string",
           enum: ["work", "personal", "everywhere"],
           description:
-            "Which space's agents see this fact (default: your own space). Use everywhere for core facts about the user: their name, family, home, health, and how they like to be talked to. Use work or personal when it clearly belongs to that side of their life.",
+            "Which agents are shown this fact in their prompt (default: your own memory focus, else everywhere). Use everywhere for core facts about the user: their name, family, home, health, and how they like to be talked to. Use work or personal when it clearly belongs to that side of their life.",
         },
       },
       ["fact"],
@@ -65,7 +65,7 @@ export const YO_TOOLS: YoToolDef[] = [
   {
     name: "recall",
     description:
-      "Search long-term memory for facts relevant to a query. Searches every space (Work, Personal and Everywhere), not just the facts you were shown.",
+      "Search long-term memory for facts relevant to a query. Searches every memory (Work, Personal and Everywhere), not just the facts you were shown.",
     inputSchema: obj({ query: { type: "string" } }, ["query"]),
   },
   {

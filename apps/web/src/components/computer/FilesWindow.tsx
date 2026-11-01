@@ -69,38 +69,49 @@ export function FilesView({ agentId }: { agentId: string }) {
         {items?.length === 0 && (
           <div className="p-6 text-center text-[#85858a] text-sm">This folder is empty</div>
         )}
-        {items?.map((f) => (
-          <div
-            key={f.path}
-            onDoubleClick={() => f.type === "dir" && setPath(f.path)}
-            onClick={() => f.type === "dir" && setPath(f.path)}
-            className="group flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm hover:bg-white/[0.05]"
-          >
-            {f.type === "dir" ? (
-              <Folder className="size-4 fill-[#60a5fa]/25 text-[#60a5fa]" />
-            ) : (
-              <File className="size-4 text-[#85858a]" />
-            )}
-            <span className="min-w-0 flex-1 truncate text-[#ececee]">{f.name}</span>
-            <span className="w-16 text-right text-[#85858a] text-xs tabular-nums">
-              {f.type === "file" ? fileSize(f.size) : ""}
-            </span>
-            <span className="w-12 text-right text-[#55565c] text-xs">{relTime(f.mtime)}</span>
-            {f.type === "file" ? (
+        {items?.map((f) => {
+          const row = (
+            <>
+              {f.type === "dir" ? (
+                <Folder className="size-4 fill-[#60a5fa]/25 text-[#60a5fa]" aria-hidden />
+              ) : (
+                <File className="size-4 text-[#85858a]" aria-hidden />
+              )}
+              <span className="min-w-0 flex-1 truncate text-left text-[#ececee]">{f.name}</span>
+              <span className="w-16 text-right text-[#85858a] text-xs tabular-nums">
+                {f.type === "file" ? fileSize(f.size) : ""}
+              </span>
+              <span className="w-12 text-right text-[#85858a] text-xs">{relTime(f.mtime)}</span>
+            </>
+          );
+          // A folder is a button (keyboard and screen readers can open it); a file row holds its download link.
+          return f.type === "dir" ? (
+            <button
+              type="button"
+              key={f.path}
+              onClick={() => setPath(f.path)}
+              className="group flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-sm hover:bg-white/[0.05]"
+            >
+              {row}
+              <span className="size-7" />
+            </button>
+          ) : (
+            <div
+              key={f.path}
+              className="group flex h-9 items-center gap-3 rounded-lg px-2.5 text-sm hover:bg-white/[0.05]"
+            >
+              {row}
               <a
                 href={api().fileUrl(agentId, f.path)}
                 download={f.name}
                 aria-label={`Download ${f.name}`}
-                className="grid size-7 place-items-center rounded-md text-[#85858a] opacity-0 hover:bg-white/10 hover:text-white group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
+                className="grid size-7 place-items-center rounded-md text-[#85858a] opacity-0 hover:bg-white/10 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
               >
                 <Download className="size-3.5" />
               </a>
-            ) : (
-              <span className="size-7" />
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

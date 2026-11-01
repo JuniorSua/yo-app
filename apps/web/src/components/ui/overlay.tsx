@@ -3,8 +3,9 @@ import { Menu as BMenu } from "@base-ui/react/menu";
 import { Popover as BPopover } from "@base-ui/react/popover";
 import { Tooltip as BTooltip } from "@base-ui/react/tooltip";
 import { X } from "lucide-react";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import { type CSSProperties, type ReactElement, type ReactNode, type RefObject, useState } from "react";
 import { cn } from "../../lib/utils";
+import { Button } from "./button";
 
 /* --------------------------------- Dialog --------------------------------- */
 
@@ -74,6 +75,116 @@ export function Modal({
 
 export const DialogClose = BDialog.Close;
 export const DialogTitle = BDialog.Title;
+export const DialogDescription = BDialog.Description;
+
+/**
+ * A modal surface the caller lays out and places itself (the workspace sheet, the full-screen computer): focus
+ * moves in and is trapped, Escape closes it, the page behind is inert, and focus returns to what opened it.
+ * `onEscape` may return false to keep it open (a terminal inside it wants Escape for itself).
+ */
+export function Sheet({
+  open,
+  onOpenChange,
+  label,
+  children,
+  className,
+  backdropClassName,
+  initialFocus,
+  keepOnOutsidePress,
+  testId,
+  style,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean, reason?: string, event?: Event) => void;
+  label: string;
+  children: ReactNode;
+  className?: string;
+  /** No backdrop when omitted (the surface covers the window). */
+  backdropClassName?: string;
+  initialFocus?: RefObject<HTMLElement | null>;
+  /** A press outside (a toast over it) doesn't close it. */
+  keepOnOutsidePress?: boolean;
+  testId?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <BDialog.Root
+      open={open}
+      disablePointerDismissal={keepOnOutsidePress}
+      onOpenChange={(o, d) => onOpenChange(o, d.reason, d.event)}
+    >
+      <BDialog.Portal>
+        {backdropClassName && <BDialog.Backdrop className={backdropClassName} />}
+        <BDialog.Popup
+          data-testid={testId}
+          aria-label={label}
+          initialFocus={initialFocus}
+          className={cn("outline-none", className)}
+          style={style}
+        >
+          {children}
+        </BDialog.Popup>
+      </BDialog.Portal>
+    </BDialog.Root>
+  );
+}
+
+/**
+ * "Archive Pico?": one plain question, what it costs, Cancel (focused first) and the action, named for what it does.
+ * For one-click actions that can't be undone.
+ */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  body,
+  action,
+  onConfirm,
+  testId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  body: ReactNode;
+  action: string;
+  onConfirm: () => unknown;
+  testId?: string;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      hideClose
+      testId={testId ?? "confirm-dialog"}
+    >
+      <p className="px-5 pt-1 text-fg-2 text-sm leading-relaxed">{body}</p>
+      <div className="flex justify-end gap-2 px-5 pt-4 pb-5">
+        {/* First in the dialog, so it has focus when it opens: Enter or Escape never destroys anything. */}
+        <BDialog.Close render={<Button variant="secondary" data-testid="confirm-cancel" />}>
+          Cancel
+        </BDialog.Close>
+        <Button
+          variant="danger"
+          disabled={busy}
+          data-testid="confirm-action"
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await onConfirm();
+            } finally {
+              setBusy(false);
+              onOpenChange(false);
+            }
+          }}
+        >
+          {action}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
 
 /* --------------------------------- Popover -------------------------------- */
 
@@ -86,6 +197,8 @@ export function Popover({
   align = "start",
   sideOffset = 8,
   className,
+  label,
+  keepSide,
 }: {
   trigger: ReactElement;
   children: ReactNode;
@@ -95,6 +208,10 @@ export function Popover({
   align?: "start" | "center" | "end";
   sideOffset?: number;
   className?: string;
+  /** The popover's name for screen readers ("Yo’s profile", "Team"). */
+  label?: string;
+  /** Always on `side` (never flipped): it caps its own height to the room there (`--available-height`). */
+  keepSide?: boolean;
 }) {
   return (
     <BPopover.Root open={open} onOpenChange={onOpenChange ? (o) => onOpenChange(o) : undefined}>
@@ -105,9 +222,13 @@ export function Popover({
           align={align}
           sideOffset={sideOffset}
           collisionPadding={12}
+          collisionAvoidance={
+            keepSide ? { side: "none", align: "shift", fallbackAxisSide: "none" } : undefined
+          }
           className="z-50"
         >
           <BPopover.Popup
+            aria-label={label}
             className={cn(
               "air-overlay origin-[var(--transform-origin)] rounded-2xl border border-border-strong/60 bg-elevated shadow-pop outline-none transition-[opacity,transform] duration-150 ease-out-soft data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0",
               className,

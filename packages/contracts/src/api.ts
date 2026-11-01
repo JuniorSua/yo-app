@@ -37,9 +37,9 @@ import type {
   TimelineEntry,
 } from "./domain";
 import type { Decision, ProviderKind, RuntimeMode } from "./events";
+import type { MemoryLabel } from "./memoryLabels";
 import type { OnePasswordApiMethods, OnePasswordStatus } from "./onePassword";
 import type { SetupApiMethods } from "./setup";
-import type { Space } from "./spaces";
 
 export const CORE_PORT = 7777;
 
@@ -234,13 +234,13 @@ export interface ApiMethods
   "pty.open": { params: { agentId: string; cols: number; rows: number }; result: { ptyId: string } };
 
   "memory.list": { params: { agentId?: string | null }; result: Memory[] };
-  /** `space`: which space's agents see it (null or absent = Everywhere). */
+  /** `space`: the memory's label (null or absent = Everywhere). */
   "memory.add": {
-    params: { content: string; agentId?: string | null; space?: Space | null };
+    params: { content: string; agentId?: string | null; space?: MemoryLabel | null };
     result: Memory;
   };
-  /** `space` absent = unchanged; null = Everywhere. */
-  "memory.update": { params: { id: string; content: string; space?: Space | null }; result: Memory };
+  /** `space` (the label) absent = unchanged; null = Everywhere. */
+  "memory.update": { params: { id: string; content: string; space?: MemoryLabel | null }; result: Memory };
   "memory.delete": { params: { id: string }; result: { ok: true } };
 
   "routine.list": { params: { agentId?: string }; result: Routine[] };
@@ -261,8 +261,8 @@ export interface ApiMethods
   "rules.delete": { params: { id: string }; result: { ok: true } };
   "artifacts.list": { params: { agentId?: string }; result: Artifact[] };
   /**
-   * The Tasks page: the active space's main agent's ledger tasks. Resolved (done) tasks from the last 7 days are
-   * included; cancelled, interrupted and hidden ones are not.
+   * The Tasks page: the primary agent's ledger tasks (another agent's with `agentId`). Resolved (done) tasks from
+   * the last 7 days are included; cancelled, interrupted and hidden ones are not.
    */
   "tasks.list": { params: { agentId?: string }; result: LedgerTask[] };
   /** The + button: a task the user adds. `start` sends it to Yo now; otherwise it's saved for Up next. */

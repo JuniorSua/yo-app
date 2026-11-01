@@ -1,5 +1,5 @@
 import { Avatar, type TurnInfo, turnInfo } from "@yo/avatar";
-import { type Account, type AgentActivity, type AgentView, isLead, type ProviderKind } from "@yo/contracts";
+import type { Account, AgentActivity, AgentView, ProviderKind } from "@yo/contracts";
 import { useMemo } from "react";
 import { cn } from "../lib/utils";
 import { useTimeline } from "../stores/timeline";
@@ -80,7 +80,7 @@ export function agentState(a: AgentView): AgentActivity {
   if (
     a.activity === "idle" &&
     (a.computer.state === "hibernated" || a.computer.state === "off") &&
-    !isLead(a)
+    !a.isPrimary
   )
     return "sleeping";
   return a.activity;

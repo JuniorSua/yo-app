@@ -129,7 +129,6 @@ describe("brief.claim", () => {
       onboarded: true,
       computerSetup: "done",
       timezone: "UTC",
-      spacesOn: false,
       morningBrief: true,
     });
     const yo = store.createAgent({
@@ -158,7 +157,7 @@ describe("brief.claim", () => {
     return { store, yo, deps, sent, today, now };
   }
 
-  it("posts once per local day, for the active space's main agent", async () => {
+  it("posts once per local day, for the primary agent", async () => {
     const { deps, sent, today, yo } = setup();
     expect(await claimBrief(deps, today)).toEqual({ posted: true });
     expect(sent).toEqual([{ agentId: yo.id, text: MORNING_BRIEF_FRAME }]);
@@ -281,7 +280,7 @@ describe("brief.claim in core", () => {
     const t0 = Date.now();
     while (!c.store.listAccounts().some((a) => a.status === "authenticated") && Date.now() - t0 < 5000)
       await new Promise((r) => setTimeout(r, 20));
-    c.store.updateSettings({ onboarded: true, computerSetup: "done", spacesOn: false });
+    c.store.updateSettings({ onboarded: true, computerSetup: "done" });
     // Off by default: nothing is posted until the user turns it on.
     expect(await c.api["brief.claim"]({ localDate: "2026-01-01" })).toEqual({ posted: false });
     c.store.updateSettings({ morningBrief: true });

@@ -1,5 +1,4 @@
-import { type AgentView, agentForSpace, isLead, type Space } from "@yo/contracts";
-import { sortAgents } from "../stores/app";
+import type { AgentView } from "@yo/contracts";
 import { activeHelpers, presenceTone } from "./presence";
 
 /** How a roster row reads: the words under the name and what the row shows beside it. */
@@ -46,19 +45,4 @@ export function rosterState(agent: AgentView, agents: Record<string, AgentView>)
 function lowerFirst(text: string): string {
   const t = text.trim();
   return /^[A-Z][a-z]/.test(t) && !/^[A-Z][a-z]+[A-Z]/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t;
-}
-
-/**
- * The team in the sidebar: the space's main agent first (Yo in Work, Pip in Personal), then every teammate.
- * The other space's main agent is one switch away; helpers never join the roster.
- */
-export function roster(
-  agents: Record<string, AgentView>,
-  space: Space,
-  spacesAvailable: boolean,
-): AgentView[] {
-  const all = sortAgents(agents);
-  if (!spacesAvailable) return all;
-  const lead = agentForSpace(all, space, true);
-  return all.filter((a) => a === lead || !isLead(a));
 }

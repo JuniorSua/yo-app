@@ -28,7 +28,7 @@ test("the code block's Copy button works from the keyboard", async ({ page }) =>
   await send(page, "Open terminal please");
   const reply = page.getByTestId("assistant-message").last();
   await expect(reply).toContainText("Tell me if you see an error", { timeout: 15_000 });
-  await expect(page.getByTestId("status-pill").first()).toHaveText(/Done|Ready/);
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Idle|Working with \d+ helpers?)$/);
   const copy = reply.getByTestId("copy-code");
   await copy.focus();
   await expect(copy).toBeFocused();

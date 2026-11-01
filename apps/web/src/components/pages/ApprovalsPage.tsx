@@ -90,10 +90,17 @@ export function ApprovalsPage() {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Delete rule"
-                onClick={async () => {
-                  await run(api().call("rules.delete", { id: r.id }));
-                  void load.rules();
-                }}
+                onClick={() =>
+                  ui.confirm({
+                    title: "Delete this rule?",
+                    body: "Yo asks you again the next time it comes up.",
+                    action: "Delete rule",
+                    run: async () => {
+                      await run(api().call("rules.delete", { id: r.id }));
+                      void load.rules();
+                    },
+                  })
+                }
               >
                 <Trash2 className="size-3.5" />
               </Button>

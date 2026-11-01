@@ -1,59 +1,74 @@
 import { YoLogo } from "@yo/avatar";
-import { agentForSpace, type Memory, parseArea, type Space } from "@yo/contracts";
-import { Brain, Check, ChevronDown, Globe, Pencil, Plus, Trash2, X } from "lucide-react";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type Memory, type MemoryLabel, parseArea } from "@yo/contracts";
+import {
+  Brain,
+  Briefcase,
+  Check,
+  ChevronDown,
+  Globe,
+  House,
+  Pencil,
+  Plus,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../../lib/api";
 import {
-  defaultMemorySpace,
   filterMemories,
-  memorySpace,
-  SPACE_CHOICES,
-  type SpaceFilter,
-  spaceCounts,
+  LABEL_CHOICES,
+  type LabelFilter,
+  labelCounts,
+  memoryLabel,
+  whoSees,
 } from "../../lib/memoryFilter";
 import { ago, cn } from "../../lib/utils";
 import { sortAgents, useApp } from "../../stores/app";
 import { load, run } from "../../stores/sync";
-import { useUI } from "../../stores/ui";
+import { ui, useUI } from "../../stores/ui";
 import { AgentAvatar } from "../brand";
 import { LoadState, useLoad } from "../LoadState";
 import { EmptyNote, PageShell } from "../PageHeader";
-import { SPACE_ICON, SPACE_TINT } from "../settings/SpacesSettings";
 import { Button } from "../ui/button";
-import { Segmented, Select } from "../ui/controls";
+import { Select } from "../ui/controls";
 import { Menu, MenuItem } from "../ui/overlay";
 
-type SpaceKey = Space | "everywhere";
-const keyOf = (s: Space | null): SpaceKey => s ?? "everywhere";
-const LABEL: Record<SpaceKey, string> = { work: "Work", personal: "Personal", everywhere: "Everywhere" };
+type LabelKey = MemoryLabel | "everywhere";
+const keyOf = (l: MemoryLabel | null): LabelKey => l ?? "everywhere";
+const LABEL: Record<LabelKey, string> = { work: "Work", personal: "Personal", everywhere: "Everywhere" };
+const LABEL_ICON = { work: Briefcase, personal: House, everywhere: Globe } as const;
+/** Each label's tint: cool for Work, warm for Personal. */
+const LABEL_TINT: Record<MemoryLabel, string> = {
+  work: "bg-link/12 text-link-ink",
+  personal: "bg-brand/18 text-brand-ink",
+};
 
-function SpaceIcon({ space, className }: { space: SpaceKey; className?: string }) {
-  const Icon = space === "everywhere" ? Globe : SPACE_ICON[space];
+function LabelIcon({ label, className }: { label: LabelKey; className?: string }) {
+  const Icon = LABEL_ICON[label];
   return <Icon className={className} strokeWidth={2} />;
 }
 
-/** Who sees a memory in each space, by agent name ("Only Yo", "Yo and Pip"). */
-function useSpaceAgents() {
+/** Whose prompt shows a memory with each label, by agent name ("Yo and Pepe see it"). */
+function useWhoSees(): Record<LabelKey, string> {
   const agents = useApp((s) => s.agents);
   return useMemo(() => {
-    const list = Object.values(agents);
-    const work = agentForSpace(list, "work", true)?.name ?? "Yo";
-    const personal = list.find((a) => a.space === "personal" && !a.archivedAt)?.name ?? "your Personal agent";
+    const team = sortAgents(agents);
     return {
-      work: `Only ${work} sees it`,
-      personal: `Only ${personal} sees it`,
-      everywhere: `${work} and ${personal} both see it`,
-    } satisfies Record<SpaceKey, string>;
+      work: whoSees("work", team),
+      personal: whoSees("personal", team),
+      everywhere: whoSees(null, team),
+    };
   }, [agents]);
 }
 
-/** The small space badge on a memory; it opens "Move to…". */
-function SpaceBadge({ m }: { m: Memory }) {
-  const current = keyOf(memorySpace(m));
-  const who = useSpaceAgents();
-  const move = (space: Space | null) => {
-    if (keyOf(space) === current) return;
-    void run(api().call("memory.update", { id: m.id, content: m.content, space }), "Couldn't move it");
+/** The small label badge on a memory; it opens "Move to…". */
+function LabelBadge({ m }: { m: Memory }) {
+  const current = keyOf(memoryLabel(m));
+  const who = useWhoSees();
+  const move = (label: MemoryLabel | null) => {
+    if (keyOf(label) === current) return;
+    void run(api().call("memory.update", { id: m.id, content: m.content, space: label }), "Couldn't move it");
   };
   return (
     <Menu
@@ -63,29 +78,29 @@ function SpaceBadge({ m }: { m: Memory }) {
       trigger={
         <button
           type="button"
-          data-testid="memory-space-badge"
-          data-space={current}
-          aria-label={`${LABEL[current]}. Move to another space`}
+          data-testid="memory-label-badge"
+          data-label={current}
+          aria-label={`Label: ${LABEL[current]}. Change the label`}
           className={cn(
             "inline-flex h-5 shrink-0 items-center gap-1 rounded-full px-1.5 pr-1 font-medium text-2xs transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-link/50 data-[popup-open]:ring-2 data-[popup-open]:ring-border-strong dark:hover:brightness-125",
-            current === "everywhere" ? "bg-active text-fg-2" : SPACE_TINT[current],
+            current === "everywhere" ? "bg-active text-fg-2" : LABEL_TINT[current],
           )}
         >
-          <SpaceIcon space={current} className="size-3" />
+          <LabelIcon label={current} className="size-3" />
           {LABEL[current]}
           <ChevronDown className="size-2.5 opacity-60" />
         </button>
       }
     >
       <div className="px-2.5 pt-1.5 pb-1 font-medium text-2xs text-muted uppercase tracking-[0.08em]">
-        Move to…
+        Label as…
       </div>
-      {SPACE_CHOICES.map((c) => (
+      {LABEL_CHOICES.map((c) => (
         <MenuItem
           key={c.key}
           testId={`memory-move-${c.key}`}
           className="h-auto py-1.5"
-          icon={<SpaceIcon space={c.key} />}
+          icon={<LabelIcon label={c.key} />}
           trailing={c.key === current ? <Check className="!text-fg" /> : undefined}
           onClick={() => move(c.value)}
         >
@@ -99,7 +114,80 @@ function SpaceBadge({ m }: { m: Memory }) {
   );
 }
 
-function MemoryRow({ m, spaces }: { m: Memory; spaces: boolean }) {
+/**
+ * The page's quiet label filter: "All labels", or just the memories with one label. Each choice says who sees
+ * those memories, so a label reads as "who sees this", not as a mode the app is in.
+ */
+function LabelFilterMenu({
+  value,
+  onChange,
+  counts,
+}: {
+  value: LabelFilter;
+  onChange: (f: LabelFilter) => void;
+  counts: Record<LabelFilter, number>;
+}) {
+  const who = useWhoSees();
+  const on = value !== "all";
+  const tick = (key: LabelFilter, n: number) => (
+    <span className="flex items-center gap-2">
+      <span className="text-faint text-xs tabular-nums">{n}</span>
+      <Check className={cn("!text-fg", key !== value && "invisible")} />
+    </span>
+  );
+  return (
+    <Menu
+      align="end"
+      testId="memory-label-filter-menu"
+      className="min-w-64"
+      trigger={
+        <button
+          type="button"
+          data-testid="memory-label-filter"
+          data-value={value}
+          aria-label={on ? `Showing memories labelled ${LABEL[value]}. Change` : "Filter by label"}
+          className={cn(
+            "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-base outline-none transition-colors hover:bg-hover focus-visible:ring-3 focus-visible:ring-link/15 data-[popup-open]:bg-active",
+            on ? "bg-active text-fg" : "text-fg-2",
+          )}
+        >
+          {on ? <LabelIcon label={value} className="size-3.5" /> : <Tag className="size-3.5 text-muted" />}
+          {on ? LABEL[value] : "All labels"}
+          <ChevronDown className="size-3.5 text-muted" />
+        </button>
+      }
+    >
+      <div className="px-2.5 pt-1.5 pb-1 font-medium text-2xs text-muted uppercase tracking-[0.08em]">
+        Show memories labelled
+      </div>
+      <MenuItem
+        testId="memory-filter-all"
+        icon={<Tag />}
+        trailing={tick("all", counts.all)}
+        onClick={() => onChange("all")}
+      >
+        All labels
+      </MenuItem>
+      {LABEL_CHOICES.map((c) => (
+        <MenuItem
+          key={c.key}
+          testId={`memory-filter-${c.key}`}
+          className="h-auto py-1.5"
+          icon={<LabelIcon label={c.key} />}
+          trailing={tick(c.key, counts[c.key])}
+          onClick={() => onChange(c.key)}
+        >
+          <div className="min-w-0">
+            <div>{c.label}</div>
+            <div className="text-muted text-xs">{who[c.key]}</div>
+          </div>
+        </MenuItem>
+      ))}
+    </Menu>
+  );
+}
+
+function MemoryRow({ m }: { m: Memory }) {
   const agents = useApp((s) => s.agents);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(m.content);
@@ -126,6 +214,7 @@ function MemoryRow({ m, spaces }: { m: Memory; spaces: boolean }) {
         {editing ? (
           <input
             autoFocus
+            aria-label="Edit memory"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -141,9 +230,9 @@ function MemoryRow({ m, spaces }: { m: Memory; spaces: boolean }) {
           <div className="text-md [overflow-wrap:anywhere]">{parseArea(m.content).text}</div>
         )}
         <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-faint text-xs">
-          {spaces && <SpaceBadge m={m} />}
+          <LabelBadge m={m} />
           <span>
-            {a ? `${a.name} only · ` : spaces ? "" : "Shared workspace memory · "}
+            {a ? `${a.name} only · ` : ""}
             {ago(m.updatedAt)}
           </span>
         </div>
@@ -173,11 +262,18 @@ function MemoryRow({ m, spaces }: { m: Memory; spaces: boolean }) {
               size="icon-sm"
               aria-label="Delete memory"
               data-testid="memory-delete"
-              onClick={async () => {
-                const deleted = await run(api().call("memory.delete", { id: m.id }));
-                if (!deleted) return;
-                useApp.setState((s) => ({ memories: s.memories?.filter((x) => x.id !== m.id) ?? null }));
-              }}
+              onClick={() =>
+                ui.confirm({
+                  title: "Delete this memory?",
+                  body: "Your agents stop remembering it, and this can't be undone.",
+                  action: "Delete memory",
+                  run: async () => {
+                    const deleted = await run(api().call("memory.delete", { id: m.id }));
+                    if (!deleted) return;
+                    useApp.setState((s) => ({ memories: s.memories?.filter((x) => x.id !== m.id) ?? null }));
+                  },
+                })
+              }
             >
               <Trash2 className="size-3.5" />
             </Button>
@@ -194,28 +290,24 @@ export function MemoryPage() {
   const agents = useApp((s) => s.agents);
   const settings = useApp((s) => s.settings);
   const userName = settings.userName;
-  const spaces = settings.spacesOn === true;
-  const [spaceFilter, setSpaceFilter] = useState<SpaceFilter>("all");
+  const [labelFilter, setLabelFilter] = useState<LabelFilter>("all");
   const [agentFilter, setAgentFilter] = useState("all");
   useEffect(() => {
     if (!focusedRecord) return;
-    setSpaceFilter("all");
+    setLabelFilter("all");
     setAgentFilter("all");
   }, [focusedRecord]);
   const [draft, setDraft] = useState("");
-  const [scope, setScope] = useState("shared");
-  // Untouched, a new memory goes to the space you're in.
-  const [pickedSpace, setPickedSpace] = useState<SpaceKey | null>(null);
-  const addSpace: SpaceKey = pickedSpace ?? keyOf(defaultMemorySpace(settings));
+  const [addLabel, setAddLabel] = useState<LabelKey>("everywhere");
   const status = useLoad(() => load.memories(true));
 
   const agentId = agentFilter === "all" ? null : agentFilter;
   const all = memories ?? [];
   const list = useMemo(
-    () => filterMemories(memories ?? [], spaces ? spaceFilter : "all", agentId),
-    [memories, spaces, spaceFilter, agentId],
+    () => filterMemories(memories ?? [], labelFilter, agentId),
+    [memories, labelFilter, agentId],
   );
-  const counts = useMemo(() => spaceCounts(memories ?? [], agentId), [memories, agentId]);
+  const counts = useMemo(() => labelCounts(memories ?? [], agentId), [memories, agentId]);
 
   // Life map: memories tagged "[area:work]" are grouped by area; untagged ones come last.
   const groups = useMemo(() => {
@@ -232,12 +324,11 @@ export function MemoryPage() {
   const add = async () => {
     if (!draft.trim()) return;
     const added = await run(
-      api().call(
-        "memory.add",
-        spaces
-          ? { content: draft.trim(), agentId: null, space: addSpace === "everywhere" ? null : addSpace }
-          : { content: draft.trim(), agentId: scope === "shared" ? null : scope },
-      ),
+      api().call("memory.add", {
+        content: draft.trim(),
+        agentId: null,
+        space: addLabel === "everywhere" ? null : addLabel,
+      }),
       "Couldn't remember that",
     );
     if (added) setDraft("");
@@ -248,38 +339,32 @@ export function MemoryPage() {
     label: a.name,
     icon: <AgentAvatar agent={a} size={18} state="idle" quiet />,
   }));
-  // With spaces on, the agent filter is only for memories an older teammate keeps to itself.
-  const showAgentFilter = !spaces || all.some((m) => m.agentId !== null);
-
-  const spaceOption = (key: SpaceFilter, label: string, icon?: ReactNode) => ({
-    value: key,
-    icon,
-    label: (
-      <>
-        {label}
-        <span className="text-faint tabular-nums">{counts[key]}</span>
-      </>
-    ),
-  });
+  // The agent filter is only for memories a teammate keeps to itself.
+  const showAgentFilter = all.some((m) => m.agentId !== null);
 
   return (
     <PageShell
       title={userName ? `About ${userName}` : "About you"}
-      subtitle="What Yo remembers. Review, edit or remove the details you keep here."
+      subtitle="What Yo remembers. Edit or remove anything here."
       actions={
-        showAgentFilter ? (
-          <div className={spaces ? "w-40" : "w-48"}>
-            <Select
-              value={agentFilter}
-              onChange={setAgentFilter}
-              label="Whose memories"
-              testId="memory-agent-filter"
-              options={[
-                { value: "all", label: spaces ? "All agents" : "All memories" },
-                { value: "shared", label: "Shared" },
-                ...agentOpts,
-              ]}
-            />
+        memories ? (
+          <div className="flex items-center gap-1.5">
+            <LabelFilterMenu value={labelFilter} onChange={setLabelFilter} counts={counts} />
+            {showAgentFilter && (
+              <div className="w-40">
+                <Select
+                  value={agentFilter}
+                  onChange={setAgentFilter}
+                  label="Whose memories"
+                  testId="memory-agent-filter"
+                  options={[
+                    { value: "all", label: "All agents" },
+                    { value: "shared", label: "Shared" },
+                    ...agentOpts,
+                  ]}
+                />
+              </div>
+            )}
           </div>
         ) : undefined
       }
@@ -296,78 +381,52 @@ export function MemoryPage() {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           data-testid="memory-input"
+          aria-label="Add a memory"
           placeholder="Add something Yo should remember, e.g. “I'm vegetarian”"
           className="h-9 min-w-0 flex-1 bg-transparent text-md outline-none max-sm:basis-full max-sm:px-2.5"
         />
-        {spaces ? (
-          <div className="w-36 max-sm:flex-1">
-            <Select<SpaceKey>
-              value={addSpace}
-              onChange={setPickedSpace}
-              label="Which space"
-              testId="memory-add-space"
-              options={SPACE_CHOICES.map((c) => ({
-                value: c.key,
-                label: c.label,
-                icon: <SpaceIcon space={c.key} className="size-3.5 text-muted" />,
-              }))}
-              className="h-8 border-transparent bg-active/60"
-            />
-          </div>
-        ) : (
-          <div className="w-40 max-sm:flex-1">
-            <Select
-              value={scope}
-              onChange={setScope}
-              options={[{ value: "shared", label: "Workspace" }, ...agentOpts]}
-              className="h-8 border-transparent bg-active/60"
-            />
-          </div>
-        )}
+        <div className="w-36 max-sm:flex-1">
+          <Select<LabelKey>
+            value={addLabel}
+            onChange={setAddLabel}
+            label="Label"
+            testId="memory-add-label"
+            options={LABEL_CHOICES.map((c) => ({
+              value: c.key,
+              label: c.label,
+              icon: <LabelIcon label={c.key} className="size-3.5 text-muted" />,
+            }))}
+            className="h-8 border-transparent bg-active/60"
+          />
+        </div>
         <Button type="submit" variant="primary" disabled={!draft.trim()} data-testid="memory-add">
           Remember
         </Button>
       </form>
 
-      {spaces && memories && (
-        <div className="mb-4 space-y-2.5">
-          <div className="-mx-1 overflow-x-auto px-1 pb-0.5">
-            <Segmented<SpaceFilter>
-              value={spaceFilter}
-              onChange={setSpaceFilter}
-              className="[&>button]:gap-1.5 max-sm:flex max-sm:[&>button]:flex-1 max-sm:[&>button]:px-2 max-sm:[&_svg]:hidden"
-              options={[
-                spaceOption("all", "All"),
-                spaceOption("work", "Work", <SpaceIcon space="work" />),
-                spaceOption("personal", "Personal", <SpaceIcon space="personal" />),
-                spaceOption("everywhere", "Everywhere", <SpaceIcon space="everywhere" />),
-              ]}
-            />
-          </div>
-          {counts.everywhere > 0 && (spaceFilter === "all" || spaceFilter === "everywhere") && (
-            <div
-              data-testid="memory-everywhere-hint"
-              className="flex items-start gap-2 px-1 text-muted text-sm"
-            >
-              <Globe className="mt-[3px] size-3.5 shrink-0" />
-              <span>
-                <span className="font-medium text-fg-2">Everywhere ({counts.everywhere})</span> — facts both
-                agents see. Sort any that belong to one space.
-                {spaceFilter === "all" && (
-                  <>
-                    {" "}
-                    <button
-                      type="button"
-                      className="text-link-ink hover:underline"
-                      onClick={() => setSpaceFilter("everywhere")}
-                    >
-                      Show them
-                    </button>
-                  </>
-                )}
-              </span>
-            </div>
-          )}
+      {memories && counts.everywhere > 0 && (labelFilter === "all" || labelFilter === "everywhere") && (
+        <div
+          data-testid="memory-everywhere-hint"
+          className="mb-4 flex items-start gap-2 px-1 text-muted text-sm"
+        >
+          <Globe className="mt-[3px] size-3.5 shrink-0" />
+          <span>
+            A memory's label decides who sees it.{" "}
+            <span className="font-medium text-fg-2">{counts.everywhere} labelled Everywhere</span>: facts
+            every agent sees. Label any that are just for work or just personal.
+            {labelFilter === "all" && (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  className="text-link-ink hover:underline"
+                  onClick={() => setLabelFilter("everywhere")}
+                >
+                  Show them
+                </button>
+              </>
+            )}
+          </span>
         </div>
       )}
 
@@ -377,8 +436,8 @@ export function MemoryPage() {
           icon={<Brain />}
           title="Nothing here yet"
           body={
-            spaces && spaceFilter !== "all"
-              ? `Nothing in ${LABEL[spaceFilter]} yet. Use a memory's badge to move it here.`
+            labelFilter !== "all"
+              ? `Nothing labelled ${LABEL[labelFilter]} yet. Use a memory's badge to label it.`
               : "Save the details you want Yo to remember."
           }
         />
@@ -394,7 +453,7 @@ export function MemoryPage() {
               )}
               <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-card">
                 {g.items.map((m) => (
-                  <MemoryRow key={m.id} m={m} spaces={spaces} />
+                  <MemoryRow key={m.id} m={m} />
                 ))}
               </div>
             </section>

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { useApp } from "../stores/app";
-import { activeAgent, toggleSpace } from "../stores/space";
+import { primaryAgent, useApp } from "../stores/app";
 import { ui, useUI } from "../stores/ui";
 import { useBrowserAuth } from "./browserAuth";
 import { isDesktop } from "./desktop";
@@ -16,10 +15,10 @@ export function newRequestKey(browserMode = useBrowserAuth.getState().browserMod
 }
 
 /**
- * Global shortcuts:  ⌘K palette · ⌘N new request (to the active space's agent) · ⌘⇧M switch Work ↔ Personal ·
- * ⌘, settings · ⌘\ the inspector · ⌘. the open agent's computer, full screen · ⌘/ the shortcuts sheet · Esc closes
- * overlays. ⌘ is Ctrl off a Mac; in a browser Alt+N is New request too.
- * (Dialogs close themselves on Esc; this handles the computer overlay and palette fallbacks.)
+ * Global shortcuts:  ⌘K palette · ⌘N new request (to the primary agent) · ⌘, settings · ⌘\ the inspector · ⌘. the
+ * open agent's computer, full screen · ⌘/ the shortcuts sheet · Esc closes overlays. ⌘ is Ctrl off a Mac; in a
+ * browser Alt+N is New request too.
+ * (Dialogs, the workspace sheet and the full-screen computer close themselves on Esc.)
  */
 export function useShortcuts() {
   useEffect(() => {
@@ -32,11 +31,8 @@ export function useShortcuts() {
         useUI.setState((s) => ({ paletteOpen: !s.paletteOpen }));
       } else if ((mod && k === "n") || (altOnly(e) && k === "n" && !isDesktop)) {
         e.preventDefault();
-        const a = activeAgent();
+        const a = primaryAgent(useApp.getState().agents);
         if (a) ui.focusComposer(a.id);
-      } else if (mod && e.shiftKey && k === "m") {
-        e.preventDefault();
-        toggleSpace();
       } else if (mod && e.key === ",") {
         e.preventDefault();
         useUI.setState({ settingsOpen: true, paletteOpen: false });
@@ -50,22 +46,14 @@ export function useShortcuts() {
         e.preventDefault();
         const s = useUI.getState();
         ui.openComputer(
-          s.computerAgentId ? null : s.page === "agent" ? s.agentId : (activeAgent()?.id ?? null),
+          s.computerAgentId
+            ? null
+            : s.page === "agent"
+              ? s.agentId
+              : (primaryAgent(useApp.getState().agents)?.id ?? null),
         );
-      } else if (e.key === "Escape") {
-        if ((e.target as HTMLElement | null)?.closest?.(".xterm")) return;
-        const s = useUI.getState();
-        const dialogOpen =
-          s.settingsOpen ||
-          s.newAgentOpen ||
-          s.paletteOpen ||
-          s.agentSettingsId ||
-          s.shortcutsOpen ||
-          s.pageViewerId;
-        if (!dialogOpen && s.computerAgentId) {
-          useUI.setState({ computerAgentId: null });
-        }
       }
+      // Escape: dialogs, the workspace sheet and the full-screen computer close themselves (Base UI dialogs).
     };
     const altOnly = (e: KeyboardEvent) => e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     window.addEventListener("keydown", onKey);

@@ -1,6 +1,13 @@
 import type { AgentView, TimelineEntry } from "@yo/contracts";
 import { describe, expect, it } from "vitest";
-import { activeHelpers, presenceLine, presenceTone, recentRequests, runningStep } from "./presence";
+import {
+  activeHelpers,
+  lastFailure,
+  presenceLine,
+  presenceTone,
+  recentRequests,
+  runningStep,
+} from "./presence";
 
 const agent = (patch: Partial<AgentView> = {}): AgentView =>
   ({
@@ -35,6 +42,14 @@ describe("presence", () => {
       "control",
     );
     expect(presenceTone(agent({ activity: "waiting" }))).toBe("waiting");
+  });
+
+  it("lastFailure names why the last turn failed, never an older one", () => {
+    const failed = entry({ kind: "notice", status: "failed", title: "Claude isn't connected yet." });
+    expect(lastFailure([entry({ kind: "user_message" }), failed])).toBe("Claude isn't connected yet.");
+    expect(lastFailure([failed, entry({ kind: "user_message" })])).toBe("");
+    expect(lastFailure([entry({ kind: "notice", status: "completed", title: "Compacted" })])).toBe("");
+    expect(lastFailure(undefined)).toBe("");
   });
 
   it("runningStep reads only the current turn", () => {

@@ -98,13 +98,14 @@ describe("# Your team", () => {
     expect(p).not.toContain("# Leading the team");
   });
 
-  it("names both main agents for a teammate when Work and Personal each have one", () => {
-    const pip: TeamMember = { ...YO, name: "Pip", role: "your personal assistant" };
+  it("names the main agent for a teammate, and Pip is a teammate like any other", () => {
+    const pip: TeamMember = { ...PICO, name: "Pip", role: "your personal-time agent" };
     const team = section(
       buildSystemAppend(ctx({ name: "Dew", isPrimary: false }, [YO, pip, { ...DEW, you: true }])),
       "Your team",
     );
-    expect(team).toContain("Yo and Pip are the main agents: Sam's front door.");
+    expect(team).toContain("Yo is the main agent: Sam's front door. You're Dew, a teammate.");
+    expect(team).toContain("- Pip (your personal-time agent): asleep");
   });
 
   it("a main agent with no teammates yet knows how one is added", () => {

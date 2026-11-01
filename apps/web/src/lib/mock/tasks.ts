@@ -102,15 +102,15 @@ export class MockTasks {
       emit: (t: LedgerTask) => void;
       /** Post a message into an agent's chat as the user (the mock's chat.send). */
       send: (agentId: string, text: string) => void;
-      /** The active space's main agent. */
-      activeAgentId: () => string | undefined;
+      /** The primary agent (Yo). */
+      primaryId: () => string | undefined;
     },
   ) {
     this.tasks = onboarded ? seedTasks(workAgentId, Date.now()) : [];
   }
 
   list(agentId?: string): LedgerTask[] {
-    const owner = agentId ?? this.d.activeAgentId();
+    const owner = agentId ?? this.d.primaryId();
     const since = Date.now() - RESOLVED_FOR_MS;
     return this.tasks
       .filter(
@@ -152,7 +152,7 @@ export class MockTasks {
   create(p: { title: string; note?: string; start: boolean }): LedgerTask {
     const title = p.title.replace(/\s+/g, " ").trim().slice(0, 200);
     if (!title) throw new Error("Give the task a title.");
-    const owner = this.d.activeAgentId();
+    const owner = this.d.primaryId();
     if (!owner) throw new Error("There's no agent to give it to yet.");
     const note = p.note?.trim() || null;
     const now = Date.now();

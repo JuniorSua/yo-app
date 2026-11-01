@@ -50,7 +50,7 @@ fork it.
 - **From your phone.** Text your agents, answer their questions and approve things with
   [Yo Phone](docs/phone/GUIDE.md), a web app you add to your Home Screen. Messages are end-to-end encrypted.
 - **Telegram, if you like.** Chat, notifications and approvals through your own Telegram bot.
-- **Work and Personal.** Two spaces with their own agents and memory, following your work hours.
+- **Your work hours.** Every agent knows them, so work waits for work time unless you bring it up.
 
 ## Honest notes
 
@@ -212,13 +212,13 @@ takes a few minutes while that computer starts:
 
 An xAI API key works too (billed by xAI per use). Yo keeps this key in its secret storage (the Keychain on a Mac).
 
-You can connect another one later in **Settings → Accounts**, and pick the account and model for Yo (and Pip)
-from the model picker under the message box.
+You can connect another one later in **Settings → Accounts**, and pick the account and model for Yo (and each
+teammate) from the model picker under the message box.
 
 ## Yo sets up its computer
 
 Once a model is connected, Yo's chat opens with: *"Looks like we have a model connected. Let's set up my
-computer."* (If Pip's chat opens instead, press ⌘⇧M to switch to Work.) It offers three places to run it:
+computer."* It offers three places to run it:
 
 - **This Mac** (free): the downloaded app already includes Colima, Lima, the Docker CLI and Compose, so a new
   Mac does not open Terminal or type an admin password. Yo checks this Mac against the requirements above

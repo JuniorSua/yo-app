@@ -38,7 +38,6 @@ import { addSecret, logger } from "../log";
 import type { Orchestrator, TurnEvent } from "../orchestrator/Orchestrator";
 import type { SecretStore } from "../secrets/SecretStore";
 import { createTasksApi } from "../tasks/tasks";
-import { activeSpaceAgent } from "../team/spaces";
 import { claimBrief, sendBriefRequest } from "../tools/brief";
 import {
   admitFor,
@@ -450,6 +449,7 @@ export interface PhoneDeps {
     | "setKv"
     | "getAgent"
     | "listAgents"
+    | "primaryAgent"
     | "getEntry"
     | "listTimeline"
     | "getSettings"
@@ -1311,7 +1311,7 @@ export class PhoneChannel {
     if (!this.state().tasksCap) this.saveState({ tasksCap: true });
   }
 
-  /** The Tasks page of the active space's main agent (tasks.list), as the phone shows it. */
+  /** The primary agent's Tasks page (tasks.list), as the phone shows it. */
   private async sendTasks() {
     const items = fitTasks(phoneTasks(await this.tasks["tasks.list"]({})));
     this.tasksSent = tasksShown(items);
@@ -1319,13 +1319,13 @@ export class PhoneChannel {
   }
 
   /**
-   * Start, Hide or check off a task, with the Tasks page's own rules (tasks.ts). Only the active space's main
-   * agent's tasks. Refusals come back as an `error` in plain words; the list follows either way, so the phone
+   * Start, Hide or check off a task, with the Tasks page's own rules (tasks.ts). Only the primary agent's tasks.
+   * Refusals come back as an `error` in plain words; the list follows either way, so the phone
    * shows what's really there.
    */
   private async onTask(m: Extract<PhoneIn, { t: "task" }>) {
     this.wantsTasks();
-    const agent = activeSpaceAgent(this.d.store, this.now());
+    const agent = this.d.store.primaryAgent();
     const name = agent?.name ?? "Yo";
     if (typeof m.taskId !== "string" || !TASK_ACTIONS.has(m.action)) {
       this.send({ t: "error", agent: name, text: "I can't do that to a task from the phone." });
@@ -1363,7 +1363,7 @@ export class PhoneChannel {
     if (!this.keys || this.tasksTimer) return;
     const st = this.state();
     if (!st.tasksCap || !st.lastSeenAt || this.now() - st.lastSeenAt > TASKS_PUSH_SEEN_MS) return;
-    if (t.ownerId !== activeSpaceAgent(this.d.store, this.now())?.id) return;
+    if (t.ownerId !== this.d.store.primaryAgent()?.id) return;
     this.tasksTimer = setTimeout(() => {
       this.tasksTimer = null;
       void this.pushTasks().catch((err) => log.warn("couldn't send tasks to the phone", err));
@@ -1484,8 +1484,7 @@ export class PhoneChannel {
 
   /**
    * The agent phone messages go to: the one the phone is in the middle of a task with (so a reply, a stop or a
-   * follow-up isn't split when work hours end mid-task), else the main agent of the space right now (Yo for Work,
-   * Pip for Personal; the primary when spaces are off).
+   * follow-up stays with it), else the primary (Yo).
    */
   private activeAgent(): Agent | undefined {
     for (const t of this.openTurns) {
@@ -1493,7 +1492,7 @@ export class PhoneChannel {
       const a = id ? this.d.store.getAgent(id) : null;
       if (a && !a.archivedAt && a.kind !== "helper") return a;
     }
-    return activeSpaceAgent(this.d.store, this.now()) ?? undefined;
+    return this.d.store.primaryAgent() ?? undefined;
   }
 
   /* -------------------------------- outbound -------------------------------- */

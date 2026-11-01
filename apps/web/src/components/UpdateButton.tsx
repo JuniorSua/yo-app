@@ -1,29 +1,31 @@
 /**
- * The update button next to the profile (bottom left). One click checks for updates; while a new Yo.app
- * downloads it shows the progress; when an update is ready a dot appears and its panel offers Restart (new
- * Yo.app) or Refresh (new server build). Never updates by itself.
+ * The update button above Settings in the rail. While there's an update notice (UpdateNotice), the notice takes the
+ * button's place, so the rail says it once and nothing covers the chat. With an update to decide on, a failed one
+ * or one being applied, a click opens the update window. Otherwise it checks: its panel says Yo is up to date, or
+ * shows a background download (a ring fills around the button), or a download that stopped. A dot means an update
+ * is waiting after Later. Never updates by itself.
  */
-import { AlertCircle, ArrowDownToLine, Check, RefreshCw, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowDownToLine, Check } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import { isGithubDownload, pendingServerUpdate } from "../lib/updates";
 import { cn } from "../lib/utils";
-import { type Applying, updates, useUpdates } from "../stores/updates";
-import { ApplyBar, applyCopy, useApplyFill, useApplyLate } from "./UpdateProgress";
+import { currentOffer, failure, noticeKind, updates, useUpdates } from "../stores/updates";
+import { useMedia } from "./agent/Presence";
+import { PHONE_QUERY, RailUpdateNotice } from "./UpdateNotice";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/controls";
 import { Popover, Tip } from "./ui/overlay";
 
-type View = "idle" | "checking" | "available" | "downloading" | "ready" | "refresh" | "applying" | "error";
+type View = "idle" | "checking" | "downloading" | "paused" | "ready" | "applying" | "error";
 
 function useView(checking: boolean): View {
   return useUpdates((s) => {
     if (s.applying) return "applying";
+    if (currentOffer(s) || failure(s)?.kind === "server") return "ready";
     const d = s.desktop?.status;
-    if (d === "downloaded" || pendingServerUpdate(s.server)) return "ready";
-    if (s.refresh) return "refresh";
     if (d === "downloading") return "downloading";
-    if (d === "available") return "available";
-    if (checking || d === "checking") return "checking";
+    // A feed build's download that stopped (a fresh "available" downloads right away: no flash of it).
+    if (d === "available" && s.desktop?.canRetry) return "paused";
+    if (checking || d === "checking" || d === "available") return "checking";
     if (d === "error") return "error";
     return "idle";
   });
@@ -32,22 +34,25 @@ function useView(checking: boolean): View {
 const TIP: Record<View, string> = {
   idle: "Check for updates",
   checking: "Checking for updates…",
-  available: "Update available",
-  downloading: "Downloading update",
-  ready: "Update ready: restart Yo",
-  refresh: "Yo was updated: refresh",
-  applying: "Installing the update…",
+  downloading: "Downloading an update",
+  paused: "Update paused",
+  ready: "Update ready",
+  applying: "Updating Yo…",
   error: "Update problem",
 };
 
 export function UpdateButton() {
   const ownBuild = useUpdates((s) => s.ownBuild);
   const percent = useUpdates((s) => Math.round(s.desktop?.percent ?? 0));
-  const applying = useUpdates((s) => s.applying);
+  // The dot only stands in for the notice: never both, and not behind the update window.
+  const quiet = useUpdates((s) => noticeKind(s) === null && s.dialog === null);
+  const notice = useUpdates((s) => noticeKind(s) !== null);
+  const phone = useMedia(PHONE_QUERY);
   const [open, setOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const view = useView(checking);
   if (!ownBuild) return null; // development build: nothing to update
+  if (notice && !phone) return <RailUpdateNotice />;
 
   const check = async () => {
     setChecking(true);
@@ -58,11 +63,12 @@ export function UpdateButton() {
     }
   };
   const onOpenChange = (next: boolean) => {
+    // Something to decide on or watch: the update window, not the panel.
+    if (next && (view === "ready" || view === "applying")) return updates.open();
     setOpen(next);
     // Opening it is the check: nothing else to click when there's nothing pending.
     if (next && (view === "idle" || view === "error")) void check();
   };
-  const dot = view === "ready" || view === "refresh" || view === "available";
 
   return (
     <Popover
@@ -79,12 +85,12 @@ export function UpdateButton() {
           aria-label={TIP[view]}
           className={cn(
             "relative grid size-[38px] shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-hover hover:text-fg data-[popup-open]:bg-active",
-            (dot || view === "downloading" || view === "applying") && "text-fg",
+            (view === "ready" || view === "downloading") && "text-fg",
           )}
         >
           <Tip label={TIP[view]}>
             <span className="grid size-full place-items-center">
-              {view === "checking" ? (
+              {view === "checking" || view === "applying" ? (
                 <Spinner className="size-4" />
               ) : view === "error" ? (
                 <AlertCircle className="size-[18px]" />
@@ -94,8 +100,7 @@ export function UpdateButton() {
             </span>
           </Tip>
           {view === "downloading" && <ProgressRing percent={percent} />}
-          {applying && <ApplyRing applying={applying} />}
-          {dot && (
+          {view === "ready" && quiet && (
             <span
               data-testid="update-dot"
               className="absolute top-1 right-1 size-2.5 rounded-full border-2 border-sidebar bg-brand"
@@ -108,33 +113,9 @@ export function UpdateButton() {
       }
     >
       <div data-testid="update-panel" data-state={view}>
-        <UpdatePanel view={view} onCheck={() => void check()} onDone={() => setOpen(false)} />
+        <UpdatePanel view={view} onCheck={() => void check()} />
       </div>
     </Popover>
-  );
-}
-
-/** The button's ring while an update is applied: fills with the panel's bar. */
-function ApplyRing({ applying }: { applying: Applying }) {
-  const { fraction, transition } = useApplyFill(applying);
-  const r = 17;
-  const c = 2 * Math.PI * r;
-  return (
-    <svg className="-rotate-90 pointer-events-none absolute inset-0" viewBox="0 0 38 38" aria-hidden>
-      <circle cx="19" cy="19" r={r} fill="none" strokeWidth="2" className="stroke-border" />
-      <circle
-        cx="19"
-        cy="19"
-        r={r}
-        fill="none"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={c * (1 - fraction)}
-        className="stroke-brand"
-        style={{ transition: transition === "none" ? "none" : `stroke-dashoffset ${transition}` }}
-      />
-    </svg>
   );
 }
 
@@ -153,19 +134,16 @@ function ProgressRing({ percent }: { percent: number }) {
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={c * (1 - percent / 100)}
-        className="stroke-brand transition-[stroke-dashoffset] duration-500"
+        className="stroke-brand transition-[stroke-dashoffset] duration-500 motion-reduce:transition-none"
       />
     </svg>
   );
 }
 
-function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => void; onDone: () => void }) {
+function UpdatePanel({ view, onCheck }: { view: View; onCheck: () => void }) {
   const desktop = useUpdates((s) => s.desktop);
-  const serverPending = useUpdates((s) => !!pendingServerUpdate(s.server));
   const server = useUpdates((s) => s.server);
   const ownBuild = useUpdates((s) => s.ownBuild);
-  const applying = useUpdates((s) => s.applying);
-  const late = useApplyLate(applying);
   const percent = Math.round(desktop?.percent ?? 0);
   const versions = [
     desktop ? `Yo app ${desktop.currentVersion}` : null,
@@ -175,53 +153,9 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
     .join(" · ");
 
   switch (view) {
-    case "applying": {
-      if (!applying) return null;
-      const copy = applyCopy(applying, late);
-      return (
-        <div>
-          <Row icon={<Sparkles />} tone="brand" title={copy.title} line={copy.line} />
-          <ApplyBar applying={applying} className="mt-3" />
-        </div>
-      );
-    }
     case "checking":
       return <Row icon={<Spinner className="size-4" />} title="Checking for updates…" line={versions} />;
-    case "available":
-      // Public builds can't install updates themselves: Download opens the release page on GitHub.
-      if (isGithubDownload(desktop))
-        return (
-          <Row
-            icon={<Sparkles />}
-            tone="brand"
-            title={`Yo ${desktop?.availableVersion} is available`}
-            line="Download the new version from GitHub. Quit Yo first (⌘Q), then drag the new Yo into Applications and choose Replace."
-            note={
-              // Ad-hoc signed builds get a new signature each version, so macOS asks again (#74).
-              window.yoDesktop?.platform === "darwin"
-                ? "After updating, macOS may ask about “Yo Safe Storage”: click Always Allow."
-                : undefined
-            }
-            action={
-              <>
-                <Button size="sm" variant="ghost" onClick={onDone}>
-                  Later
-                </Button>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  data-testid="update-download"
-                  onClick={() => {
-                    void updates.download();
-                    onDone();
-                  }}
-                >
-                  Download
-                </Button>
-              </>
-            }
-          />
-        );
+    case "paused":
       return (
         <Row
           icon={<ArrowDownToLine />}
@@ -240,12 +174,12 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
           <Row
             icon={<ArrowDownToLine />}
             title={`Downloading Yo ${desktop?.availableVersion ?? ""}`}
-            line="Keep using Yo; you'll be asked to restart."
+            line="Keep using Yo. It's ready to install when this finishes."
           />
           <div className="mt-3 flex items-center gap-2">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-active">
               <div
-                className="h-full rounded-full bg-brand transition-[width]"
+                className="h-full rounded-full bg-brand transition-[width] motion-reduce:transition-none"
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -253,66 +187,11 @@ function UpdatePanel({ view, onCheck, onDone }: { view: View; onCheck: () => voi
           </div>
         </div>
       );
-    case "ready":
-      return (
-        <Row
-          icon={<Sparkles />}
-          tone="brand"
-          title={serverPending ? "Update ready" : `Yo ${desktop?.downloadedVersion ?? ""} is ready`}
-          line={
-            serverPending
-              ? "Restart to update. Yo is back in about 30 seconds."
-              : "Restart to update. It takes a few seconds."
-          }
-          action={
-            <>
-              <Button size="sm" variant="ghost" onClick={onDone}>
-                Later
-              </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                data-testid="update-restart"
-                onClick={() => {
-                  onDone();
-                  updates.askRestart();
-                }}
-              >
-                Restart
-              </Button>
-            </>
-          }
-        />
-      );
-    case "refresh":
-      return (
-        <Row
-          icon={<RefreshCw />}
-          tone="brand"
-          title="Yo was updated"
-          line="Refresh to load the new version."
-          action={
-            <>
-              <Button size="sm" variant="ghost" onClick={onDone}>
-                Later
-              </Button>
-              <Button
-                size="sm"
-                variant="primary"
-                data-testid="update-refresh"
-                onClick={() => void updates.apply("refresh")}
-              >
-                Refresh
-              </Button>
-            </>
-          }
-        />
-      );
     case "error":
       return (
         <Row
           icon={<AlertCircle />}
-          title="Couldn't update"
+          title={desktop?.errorContext === "install" ? "Yo couldn't restart to update" : "Couldn't update"}
           line={desktop?.message ?? "Check your connection and try again."}
           action={
             <Button size="sm" onClick={onCheck}>
@@ -343,37 +222,22 @@ function Row({
   icon,
   title,
   line,
-  note,
   action,
-  tone,
 }: {
   icon: ReactNode;
   title: string;
   line: string;
-  /** A smaller second line under `line`. */
-  note?: string;
   action?: ReactNode;
-  tone?: "brand";
 }) {
   return (
     <div>
       <div className="flex items-start gap-2.5">
-        <span
-          className={cn(
-            "mt-px grid size-7 shrink-0 place-items-center rounded-lg [&_svg]:size-[15px]",
-            tone === "brand" ? "bg-brand/15 text-brand-ink" : "bg-active text-fg-2",
-          )}
-        >
+        <span className="mt-px grid size-7 shrink-0 place-items-center rounded-lg bg-active text-fg-2 [&_svg]:size-[15px]">
           {icon}
         </span>
         <div className="min-w-0 flex-1">
           <div className="font-medium text-base">{title}</div>
           <div className="text-muted text-sm">{line}</div>
-          {note && (
-            <div data-testid="update-note" className="mt-1.5 text-faint text-xs">
-              {note}
-            </div>
-          )}
         </div>
       </div>
       {action && <div className="mt-2.5 flex justify-end gap-1.5">{action}</div>}

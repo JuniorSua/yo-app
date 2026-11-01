@@ -1,4 +1,4 @@
-import { type AgentView, isLead, type TimelineEntry } from "@yo/contracts";
+import type { AgentView, TimelineEntry } from "@yo/contracts";
 
 /** What an assistant is up to, in a few words: the chat header and Today's "Now" rows. */
 export type PresenceTone = "working" | "waiting" | "sleeping" | "idle" | "done" | "error" | "control";
@@ -21,6 +21,17 @@ export function runningStep(entries: readonly TimelineEntry[] | undefined): stri
     const { kind, status, title } = entries[i]!.item;
     if (kind === "user_message") return "";
     if (status === "running" && title && kind !== "todo" && kind !== "notice") return title;
+  }
+  return "";
+}
+
+/** Why the agent's last turn failed (its error notice since your last message), or "". */
+export function lastFailure(entries: readonly TimelineEntry[] | undefined): string {
+  if (!entries) return "";
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const { kind, status, title } = entries[i]!.item;
+    if (kind === "user_message") return "";
+    if (kind === "notice" && status === "failed" && title) return title;
   }
   return "";
 }
@@ -85,6 +96,6 @@ export function presenceLine({
     case "done":
       return helperLine || "Finished. Have a look below";
     default:
-      return helperLine || (isLead(agent) ? "Ready when you are" : agent.role);
+      return helperLine || (agent.isPrimary ? "Ready when you are" : agent.role);
   }
 }

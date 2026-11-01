@@ -30,7 +30,6 @@ import { Orchestrator } from "./orchestrator/Orchestrator";
 import { Scheduler } from "./scheduler/Scheduler";
 import { FileSecretStore, KeychainSecretStore, type SecretStore, trackSecrets } from "./secrets/SecretStore";
 import { createSetupApi, initComputerSetup } from "./setup";
-import { ensureSpaceAgents } from "./team/spaces";
 import { BugInbox } from "./tools/bugInbox";
 import { BugReports } from "./tools/bugReports";
 import { createYoTools } from "./tools/yoTools";
@@ -274,9 +273,6 @@ export async function startCore(
       pinned: true,
     });
   }
-  // Work & Personal: Yo leads Work, Pip (made here the first time) leads Personal. Does nothing when spaces are off.
-  ensureSpaceAgents(store);
-
   // Optional Telegram channel: does nothing until a bot token is saved.
   const telegram = new TelegramChannel({ store, hub, orchestrator, secrets });
   // Optional Yo Phone channel: does nothing until a phone link is made.

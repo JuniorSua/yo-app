@@ -13,7 +13,7 @@
  * database, back to back, so they don't fail half way.
  *
  * Agents the owner hands over by hand (`settings.consolidateSkip`, Pepe on the owner's install) and helpers are
- * never touched, nor are the Work and Personal agents (Yo and Pip, see ./spaces.ts).
+ * never touched.
  */
 import type { Agent, ConsolidationAgentResult, ConsolidationPlan, ConsolidationResult } from "@yo/contracts";
 import type { AgentdClient } from "../agentd/AgentdClient";
@@ -51,7 +51,6 @@ export class Consolidator {
     if (a.id === primary.id) return "This is the main agent.";
     if (a.archivedAt) return "Already archived.";
     if (isHelper(a)) return "Helpers go away on their own.";
-    if (a.space) return "This is your Work or Personal agent.";
     const skip = this.d.store.getSettings().consolidateSkip.map((n) => n.trim().toLowerCase());
     if (skip.includes(a.name.trim().toLowerCase())) return "You're handing this one over yourself.";
     return null;

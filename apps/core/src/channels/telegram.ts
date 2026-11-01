@@ -27,7 +27,6 @@ import type { Hub } from "../hub";
 import { addSecret, logger } from "../log";
 import type { Orchestrator } from "../orchestrator/Orchestrator";
 import type { SecretStore } from "../secrets/SecretStore";
-import { activeSpaceAgent } from "../team/spaces";
 
 const log = logger("telegram");
 
@@ -196,6 +195,7 @@ export interface TelegramDeps {
     | "setKv"
     | "getAgent"
     | "listAgents"
+    | "primaryAgent"
     | "getEntry"
     | "listTimeline"
     | "maxTimelineSeq"
@@ -899,14 +899,13 @@ export class TelegramChannel {
   }
 
   /**
-   * The agent Telegram messages go to: the one picked with /use, else the main agent of the space right now (Yo
-   * for Work, Pip for Personal; the primary when spaces are off).
+   * The agent Telegram messages go to: the one picked with /use, else the primary (Yo).
    */
   private activeAgent(): Agent | undefined {
     const id = this.state().activeAgentId;
     const picked = id ? this.d.store.getAgent(id) : null;
     if (picked && !picked.archivedAt) return picked;
-    return activeSpaceAgent(this.d.store) ?? undefined;
+    return this.d.store.primaryAgent() ?? undefined;
   }
 
   private async onCallback(q: TgCallbackQuery) {

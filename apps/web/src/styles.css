@@ -3,6 +3,7 @@
 @import "@fontsource-variable/geist-mono";
 @import "./styles/shell.css";
 @import "./styles/chat.css";
+@import "./styles/dots.css";
 @import "@yo/avatar/avatar.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -530,9 +531,11 @@ html[data-glass="off"] .air-overlay {
   color: var(--link);
   text-decoration: none;
 }
-.prose-yo a:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+@media (hover: hover) and (pointer: fine) {
+  .prose-yo a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 .prose-yo :where(ul, ol) {
   padding-left: 1.3em;
@@ -653,8 +656,10 @@ html[data-glass="off"] .air-overlay {
 .prose-yo tbody tr:nth-child(even) td {
   background: color-mix(in srgb, var(--active) 45%, transparent);
 }
-.prose-yo tbody tr:hover td {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .prose-yo tbody tr:hover td {
+    background: var(--hover);
+  }
 }
 .prose-yo tr:last-child td {
   border-bottom: 0;
@@ -688,17 +693,17 @@ html[data-glass="off"] .air-overlay {
   background: transparent;
 }
 
-/* Reduced motion: must beat component-level animation declarations. */
+/* Reduced motion is gentler, not none: keyframe animations (slides, pops, loops) end at their last frame, while
+   transitions stay (they're opacity, colour and small press scales here), so a state change still reads. A spinner
+   keeps turning: it's the only sign something is working. Must beat component-level animation declarations. */
 @media (prefers-reduced-motion: reduce) {
-  *,
+  *:not([class*="animate-[spin"]),
   *::before,
   *::after {
     /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
     animation-duration: 0.001ms !important;
     /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
     animation-iteration-count: 1 !important;
-    /* biome-ignore lint/complexity/noImportantStyles: accessibility override */
-    transition-duration: 0.001ms !important;
   }
 }
 
@@ -751,8 +756,10 @@ html[data-glass="off"] .air-overlay {
 .presence-primary:active {
   scale: 0.98;
 }
-.presence-primary:hover {
-  filter: brightness(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .presence-primary:hover {
+    filter: brightness(1.1);
+  }
 }
 .presence-primary svg,
 .presence-more svg {
@@ -780,9 +787,11 @@ html[data-glass="off"] .air-overlay {
 .presence-more > button > svg {
   color: var(--muted);
 }
-.presence-more > button:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .presence-more > button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 /* Tasks · Needs you · Routines · Activity: quiet text tabs, the current one on a grey pill (Dots-style). */
 .workspace-tabs {
@@ -808,17 +817,24 @@ html[data-glass="off"] .air-overlay {
     color 0.12s,
     scale 0.12s var(--ease-out-soft);
 }
-.workspace-tabs button:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .workspace-tabs button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .workspace-tabs button:active {
   scale: 0.96;
 }
-.workspace-tabs [aria-current="page"],
-.workspace-tabs [aria-current="page"]:hover {
+.workspace-tabs [aria-current="page"] {
   background: var(--active);
   color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .workspace-tabs [aria-current="page"]:hover {
+    background: var(--active);
+    color: var(--fg);
+  }
 }
 .workspace-tabs button > b {
   display: grid;
@@ -902,8 +918,10 @@ html[data-glass="off"] .air-overlay {
     0 14px 32px -16px rgb(1 5 7 / 0.3);
   transition: transform 160ms var(--ease-out-soft, ease-out);
 }
-.fab:hover {
-  transform: scale(1.04);
+@media (hover: hover) and (pointer: fine) {
+  .fab:hover {
+    transform: scale(1.04);
+  }
 }
 .fab:active {
   transform: scale(0.94);

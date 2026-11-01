@@ -1,11 +1,12 @@
 import type RFB from "@novnc/novnc";
 import type { AgentView } from "@yo/contracts";
-import { Moon, Power, RefreshCw } from "lucide-react";
+import { Moon, Power, RefreshCw, Settings2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../lib/api";
 import { cn } from "../../lib/utils";
 import { useApp } from "../../stores/app";
 import { run } from "../../stores/sync";
+import { ui } from "../../stores/ui";
 import { AgentAvatar } from "../brand";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/controls";
@@ -19,13 +20,16 @@ function computerDown(runtime: string | undefined): boolean {
 }
 
 /** Live noVNC view of an agent's display. View-only unless `interactive` (user has control). */
-function VncScreen({ agentId, interactive }: { agentId: string; interactive: boolean }) {
+function VncScreen({ agentId, name, interactive }: { agentId: string; name: string; interactive: boolean }) {
   const el = useRef<HTMLDivElement>(null);
   const rfbRef = useRef<RFB | null>(null);
   const runtime = useApp((s) => s.computer?.runtime);
   const down = computerDown(runtime);
   const [state, setState] = useState<VncState>(down ? "off" : "connecting");
   const [attempt, setAttempt] = useState(0);
+  // Retries back off (2.5s, 5s, 10s); after four failed tries in a row it stops and says so, with Try again.
+  const fails = useRef(0);
+  const [gaveUp, setGaveUp] = useState(false);
 
   useEffect(() => {
     if (down) {
@@ -35,7 +39,8 @@ function VncScreen({ agentId, interactive }: { agentId: string; interactive: boo
     let cancelled = false;
     let retry: number | undefined;
     let sawOff = false;
-    setState("connecting");
+    // Between retries the "disconnected" line stays up instead of flipping back to "connecting".
+    if (fails.current === 0) setState("connecting");
     import("@novnc/novnc").then(({ default: RFBClass }) => {
       if (cancelled || !el.current) return;
       // Our close listener is registered first, so it runs before noVNC turns the close into "disconnect".
@@ -50,7 +55,10 @@ function VncScreen({ agentId, interactive }: { agentId: string; interactive: boo
       rfb.qualityLevel = 7;
       rfb.viewOnly = !interactive;
       rfb.focusOnClick = interactive;
-      rfb.addEventListener("connect", () => setState("connected"));
+      rfb.addEventListener("connect", () => {
+        fails.current = 0;
+        setState("connected");
+      });
       rfb.addEventListener("disconnect", () => {
         if (cancelled) return;
         if (sawOff) {
@@ -58,7 +66,15 @@ function VncScreen({ agentId, interactive }: { agentId: string; interactive: boo
           return;
         }
         setState("disconnected");
-        retry = window.setTimeout(() => setAttempt((a) => a + 1), 2500);
+        fails.current += 1;
+        if (fails.current >= 4) {
+          setGaveUp(true);
+          return;
+        }
+        retry = window.setTimeout(
+          () => setAttempt((a) => a + 1),
+          Math.min(2500 * 2 ** (fails.current - 1), 30_000),
+        );
       });
       rfbRef.current = rfb;
     });
@@ -94,15 +110,37 @@ function VncScreen({ agentId, interactive }: { agentId: string; interactive: boo
           className="absolute inset-0 grid place-items-center bg-[#0c0d10] px-6 text-center text-sm"
           data-testid="screen-computer-off"
         >
-          <div className="font-medium text-[#d4d4d8]">{COMPUTER_OFF_MESSAGE}</div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="font-medium text-[#d4d4d8]">{COMPUTER_OFF_MESSAGE}</div>
+            <Button variant="brand" size="sm" onClick={() => ui.openSettings("computer")}>
+              <Settings2 className="size-3.5" /> Open Settings → Computer
+            </Button>
+          </div>
         </div>
       ) : (
         state !== "connected" && (
-          <div className="absolute inset-0 grid place-items-center bg-[#0c0d10] text-[#9a9aa0] text-sm">
-            <div className="flex items-center gap-2">
-              {state === "connecting" ? <Spinner /> : <RefreshCw className="size-3.5" />}
-              {state === "connecting" ? "Connecting to screen…" : "Screen disconnected · retrying"}
-            </div>
+          <div className="absolute inset-0 grid place-items-center bg-[#0c0d10] px-6 text-center text-[#9a9aa0] text-sm">
+            {gaveUp ? (
+              <div className="flex flex-col items-center gap-3" data-testid="screen-unreachable">
+                <div className="font-medium text-[#d4d4d8]">Can't reach {name}'s screen</div>
+                <Button
+                  variant="brand"
+                  size="sm"
+                  onClick={() => {
+                    fails.current = 0;
+                    setGaveUp(false);
+                    setAttempt((a) => a + 1);
+                  }}
+                >
+                  <RefreshCw className="size-3.5" /> Try again
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {state === "connecting" ? <Spinner /> : <RefreshCw className="size-3.5" />}
+                {state === "connecting" ? "Connecting to screen…" : "Screen disconnected · retrying"}
+              </div>
+            )}
           </div>
         )
       )}
@@ -117,15 +155,22 @@ function Asleep({ agent, compact }: { agent: AgentView; compact?: boolean }) {
     (s) => s.computer?.host.kind === "local" && (s.settings.computerSetup ?? "done") !== "done",
   );
   const owner = useApp((s) => Object.values(s.agents).find((a) => a.isPrimary)?.name ?? "Yo");
+  const [waking, setWaking] = useState(false);
   const booting = agent.computer.state === "booting";
   const off = runtime !== "running";
+  const failed = !off && agent.computer.state === "error";
+  const wake = async () => {
+    setWaking(true);
+    await run(api().call("computer.wake", { agentId: agent.id }), "Couldn't wake the computer");
+    setWaking(false);
+  };
   return (
     <div className="relative grid h-full w-full place-items-center overflow-hidden bg-[radial-gradient(120%_90%_at_50%_120%,#1d1e25,#0b0c0e)] text-[#a1a1a7]">
-      <div className="flex flex-col items-center gap-3 text-center">
+      <div className="flex flex-col items-center gap-3 px-6 text-center">
         <AgentAvatar
           agent={agent}
           size={compact ? 44 : 84}
-          state={booting ? "working" : "sleeping"}
+          state={booting ? "working" : failed ? "error" : "sleeping"}
           className="text-[#8a8a90]"
         />
         <div className={cn("font-medium text-[#d4d4d8]", compact ? "text-sm" : "text-lg")}>
@@ -135,7 +180,9 @@ function Asleep({ agent, compact }: { agent: AgentView; compact?: boolean }) {
               ? "Not set up yet"
               : off
                 ? COMPUTER_OFF_MESSAGE
-                : `${agent.name}'s computer is asleep`}
+                : failed
+                  ? `Something went wrong with ${agent.name}'s computer`
+                  : `${agent.name}'s computer is asleep`}
         </div>
         {!compact && !booting && (
           <div className="max-w-[320px] text-sm" data-testid="screen-off-hint">
@@ -143,20 +190,29 @@ function Asleep({ agent, compact }: { agent: AgentView; compact?: boolean }) {
               ? `${owner}'s computer isn't set up yet. You can set it up in Settings → Computer.`
               : off
                 ? `Start ${owner}'s computer in Settings → Computer to see the live screen.`
-                : "It's hibernating to save memory. Wake it to watch live."}
+                : failed
+                  ? "Try again. If it keeps happening, restart the computer in Settings → Computer."
+                  : "It's hibernating to save memory. Wake it to watch live."}
           </div>
         )}
-        {!compact && !booting && !off && (
+        {!compact && !booting && off && (
           <Button
             variant="brand"
             size="sm"
-            onClick={() => run(api().call("computer.wake", { agentId: agent.id }))}
+            onClick={() => ui.openSettings("computer")}
+            data-testid="screen-settings"
           >
-            <Power className="size-3.5" /> Wake
+            <Settings2 className="size-3.5" /> {notSetUp ? "Set up in Settings" : "Open Settings → Computer"}
+          </Button>
+        )}
+        {!compact && !booting && !off && (
+          <Button variant="brand" size="sm" disabled={waking} onClick={wake} data-testid="screen-wake">
+            {failed ? <RefreshCw className="size-3.5" /> : <Power className="size-3.5" />}
+            {failed ? "Try again" : "Wake"}
           </Button>
         )}
       </div>
-      {!booting && <Moon className="absolute top-3 right-3 size-3.5 opacity-40" />}
+      {!booting && !failed && <Moon className="absolute top-3 right-3 size-3.5 opacity-40" />}
     </div>
   );
 }
@@ -172,5 +228,5 @@ export function ScreenView({
 }) {
   if (agent.computer.state !== "ready") return <Asleep agent={agent} compact={compact} />;
   if (api().mock) return <MockDesktop agent={agent} interactive={interactive} />;
-  return <VncScreen agentId={agent.id} interactive={interactive} />;
+  return <VncScreen agentId={agent.id} name={agent.name} interactive={interactive} />;
 }

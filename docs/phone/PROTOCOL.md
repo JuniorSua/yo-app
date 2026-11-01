@@ -414,7 +414,7 @@ new fields, so it never gets a message type it doesn't know: `tasks` only ever g
 | phone → core | `hello` with `localDate: "YYYY-MM-DD"` (optional) | The phone's own date. The core runs the same once-a-day claim as `brief.claim` (`apps/core/src/tools/brief.ts`: the brief is on, it isn't Yo's first day, the date is within a day of the server's, and today's brief hasn't been claimed from the Mac or the phone). If it posts, the brief's request is the phone's own turn (never steered into another), so its reply comes back like any reply. |
 | phone → core | `{ t: "tasks", id }` | "Send me the task list." The core answers with `tasks`, and from then on also pushes it when the ledger changes. |
 | phone → core | `{ t: "task", id, taskId, action }` | `action`: `start` (a suggestion, or a task the user saved), `hide` (a suggestion) or `done` (check off). |
-| core → phone | `{ t: "tasks", items: PhoneTask[], at }` | The active space's main agent's Tasks page (what `tasks.list` returns): at most 40, sorted by status (review, waiting, in_progress, open, suggested, done), newest first within a status. Kept under 40 KB of UTF-8 JSON (see Size). |
+| core → phone | `{ t: "tasks", items: PhoneTask[], at }` | The primary agent's (Yo's) Tasks page (what `tasks.list` returns): at most 40, sorted by status (review, waiting, in_progress, open, suggested, done), newest first within a status. Kept under 40 KB of UTF-8 JSON (see Size). |
 | core → phone | `reply` with `brief?: MorningBrief` | The brief the turn posted (its last completed `post_brief` call, read with `briefFromInput`, without the rows' `start` notes; left out when empty). A turn that posted a brief but wrote no text still gets a reply with the `post_brief` entry's id, `briefText: true`, and as `text` the "Needs you" titles in words ("Your brief: • Reply to Dana • Decide on the venue", or "Here's your brief. Nothing needs you right now."), so a phone that can't draw the card still reads something useful. A phone that draws the card hides a `briefText` text. |
 | core → phone | `reply` with `replies?: string[]` | Quick replies (2–3, ≤ 24 chars, as `readReplies` accepts them) when the turn's last tool call was a completed `suggest_replies`. None if another tool ran after it. |
 
@@ -428,7 +428,7 @@ clipped to 200 characters, `note` and `why` to 300. A suggestion's plan (`prompt
 - Same code and rules as the Tasks page (`createTasksApi` in `apps/core/src/tasks/tasks.ts`): Start sends what the
   user saw (a suggestion's title only; a saved task's title and details) and marks it Working; only a suggestion can
   be hidden; a suggestion can't be checked off; Yo's own to-dos aren't started from here.
-- Only the active space's main agent's tasks: one on another agent's list is refused.
+- Only the primary agent's (Yo's) tasks: one on another agent's list is refused.
 - A started task is the phone's own turn (like a `msg`): its reply, cards and status come to the phone. It counts
   toward the phone's flood cap (3 in flight, 10 a minute). A Start refused by the cap always gets an `error` (not
   the once-a-minute "busy" of `msg`), up to 10 a minute. The phone shows "Started" only once a `tasks` list has that
@@ -441,7 +441,7 @@ clipped to 200 characters, `note` and `why` to 300. A suggestion's plan (`prompt
 
 - Only to a phone that has sent `tasks` (or `task`) at least once since the link was made (`tasksCap` in the KV
   state `_phone`; a new link or Off clears it).
-- Only for changes to the active space's main agent's tasks, gathered for 5 seconds into one push, and only when the
+- Only for changes to the primary agent's tasks, gathered for 5 seconds into one push, and only when the
   list differs from the last one sent (an answer to `tasks` or an action counts as sent).
 - `updatedAt` alone changing isn't a change (the order it gives is).
 - None to a phone that hasn't been seen in the last 15 minutes: a closed phone doesn't read its mailbox, so pushes

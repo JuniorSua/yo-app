@@ -11,9 +11,10 @@
  *                                window control needs System Settings the first time, then is allowed —
  *                                and the active window session with Stop).
  *                                Off by default: the UI runs in browser mode.
- *             &mockUpdate=…      show an update notice: web | available | downloading | ready | error |
- *                                github | server | server-browser | server-ready | server-fail
- *                                (see ./updates.ts)
+ *             &mockUpdate=…      an update to offer: web | available | downloading | ready | ready-fail |
+ *                                error | github | server | server-browser | server-ready | server-fail |
+ *                                server-slow | server-other (see ./updates.ts)
+ *             &mockHold=1        a server update waits at each step for `__yoMock.updates.next()`
  *             &mockMac=…         the Mac the first agent's computer setup checks: strong (default) | intel16 |
  *                                small | nocolima | nobrew (see ./setup.ts)
  *             &mockVm=choose     an existing ~/.colima computer: the setup chat asks to keep it or move it
@@ -23,6 +24,8 @@
  *             &mockCodexCode=off ChatGPT's one-time code is never accepted ("device code sign-in" still off in
  *                                ChatGPT's settings): the sign-in ends with the "turn it on" message
  *             &mockConsolidate=… the "Yo is now one assistant" dialog: 1 | solo | fail (see ./team.ts)
+ *             &mockHelpers=2     both of Yo's helpers still working (the gift one hasn't finished): two helper
+ *                                heads and two helper tabs
  *             &mockHost=pc       core runs on a Linux PC, not this Mac (a friend on the owner's Home PC)
  *             &mockAuth=…        browser sign-in: signed-out | unsupported (see ./auth.ts; turns on browser mode)
  *             &mockEdition=pc    the PC edition in a browser: PC wording, `yo-app`, "This PC" (see ./auth.ts)
@@ -32,10 +35,8 @@
  *             &mockPhone=…       Settings → Phone: off (default) | ready | connected | nokey (see ./phone.ts)
  *             &mockOnePassword=… Settings → Accounts → 1Password: off (default) | connected | error
  *                                (see ./onepassword.ts)
- *             &space=…           Work & Personal: work (default: held in Work, so nothing depends on the clock) |
- *                                personal (held in Personal) | auto (follows the work hours, Mon–Fri 11–7) |
- *                                old (a core from before spaces: no switch)
- *             &spacesIntro=1     show the one-time "Meet Pip" intro (otherwise it counts as seen)
+ *             &mockTeam=owner    the owner's team: Pepe (no memory focus) joins Yo (Work focus), Pip (Personal focus)
+ *                                and the usual teammates
  *             &mockBrief=1       the brief is on, and the first brief.claim (opening the chat) posts it
  *
  * Chat keywords pick a scenario: "buy/order/purchase" -> approval card, "flight/trip/travel" ->
@@ -69,7 +70,6 @@ import {
   type ApiResult,
   type Artifact,
   type Attachment,
-  agentForSpace,
   BRIEF_NOTICE,
   type BugReportPreview,
   type BugReportSend,
@@ -95,9 +95,7 @@ import {
   type QueuedRequest,
   type RouteDecision,
   type RoutePreference,
-  resolveSpace,
   SECURE_INPUT_TOOL,
-  type Settings,
   STEERED_TITLE,
   type TimelineEntry,
   type TodoEntry,
@@ -115,6 +113,7 @@ import {
   CODEX_MODELS,
   GROK_MODELS,
   MOCK_DEVICE_ID,
+  MOCK_HELPERS,
   type MockFile,
   mockDevice,
   mockFiles,
@@ -307,19 +306,8 @@ export class MockClient implements YoClient {
     if (this.briefPending) this.s.settings.morningBrief = true;
     const theme = q.get("theme");
     if (theme === "light" || theme === "dark" || theme === "system") this.s.settings.theme = theme;
-    const space = q.get("space");
-    if (space === "auto") this.s.settings.spaceManual = null;
-    else if (space === "work" || space === "personal") this.s.settings.spaceManual = { space, until: null };
-    // `&space=old`: a core from before Work & Personal (no spacesOn): one space, no switch.
-    else if (space === "old") delete (this.s.settings as Partial<Settings>).spacesOn;
-    // The one-time "Meet Pip" intro would cover the chat header in every test and screenshot: it counts as seen
-    // unless `&spacesIntro=1`.
-    try {
-      if (q.get("spacesIntro") === "1") localStorage.removeItem("yo.spacesIntro");
-      else localStorage.setItem("yo.spacesIntro", "1");
-    } catch {
-      /* ignore */
-    }
+    if (q.get("mockHelpers") === "2") twoHelpersWorking(this.s);
+    if (q.get("mockTeam") === "owner") ownerTeam(this.s);
     (window as any).__yoMock = this;
     this.auth = new MockAuth(q, {
       connected: () => {
@@ -351,17 +339,14 @@ export class MockClient implements YoClient {
       routine: (r) => this.emit("routine.updated", r),
     });
     this.updates = new MockUpdates(mockUpdateScenario(q), this.scale);
+    this.updates.hold = q.get("mockHold") === "1";
     if (q.get("mockRelease") === "1")
       this.updates.release = { version: "1.4.0", url: "https://github.com/JuniorSua/yo/releases/tag/v1.4.0" };
     this.phone = new MockPhone(mockPhoneScenario(q), this.scale);
     this.tasks = new MockTasks(onboarded, "agt_yo", {
       emit: (t) => this.emit("task.updated", t),
       send: (agentId, text) => void this.handlers["chat.send"]({ agentId, text }),
-      activeAgentId: () => {
-        const st = this.s.settings;
-        const live = this.s.agents.filter((a) => !a.archivedAt);
-        return agentForSpace(live, resolveSpace(Date.now(), st).space, st.spacesOn === true)?.id;
-      },
+      primaryId: () => this.primary()?.id,
     });
     this.onePassword = new MockOnePassword(mockOnePasswordScenario(q));
     this.updates.install(window);
@@ -689,6 +674,11 @@ export class MockClient implements YoClient {
 
   private agent(id: string): AgentView | undefined {
     return this.s.agents.find((a) => a.id === id);
+  }
+
+  /** The primary agent (Yo), like core's: the phone, the Tasks page and the brief go to it. */
+  private primary(): AgentView | undefined {
+    return this.s.agents.find((a) => a.isPrimary && !a.archivedAt) ?? this.s.agents[0];
   }
 
   /**
@@ -2746,8 +2736,8 @@ export class MockClient implements YoClient {
 
     "agent.archive": ({ id }) => {
       const a = this.agent(id);
-      // Like core: the Work and Personal agents (Yo, Pip) can't be archived; turning spaces off is the way.
-      if (a?.space) throw new Error("Turn off Work & Personal in Settings instead.");
+      // Like core: the main agent can't be archived.
+      if (a?.isPrimary) throw new Error("The main agent can't be archived");
       if (a) a.archivedAt = Date.now();
       this.s.agents = this.s.agents.filter((x) => x.id !== id);
       this.emit("agent.removed", { id });
@@ -2849,8 +2839,7 @@ export class MockClient implements YoClient {
     // `&mockBrief=1`: the first open of the chat posts the morning brief (like core: a quiet notice, then the run).
     "brief.claim": () => {
       if (!this.briefPending || this.s.settings.morningBrief !== true) return { posted: false };
-      const s = this.s.settings;
-      const lead = agentForSpace(this.s.agents, resolveSpace(Date.now(), s).space, s.spacesOn === true);
+      const lead = this.primary();
       if (!lead || this.runs.has(lead.id)) return { posted: false };
       this.briefPending = false;
       this.notice(lead.id, BRIEF_NOTICE);
@@ -3347,7 +3336,7 @@ export class MockClient implements YoClient {
     "memory.update": ({ id, content, space }) => {
       const m = this.s.memories.find((x) => x.id === id);
       if (!m) throw new Error("memory not found");
-      // `space` absent leaves it where it is; null moves it to Everywhere.
+      // `space` (the label) absent leaves it as it is; null moves it to Everywhere.
       Object.assign(m, { content, updatedAt: Date.now() }, space !== undefined && { space });
       this.emit("memory.updated", m);
       return m;
@@ -3552,4 +3541,67 @@ export class MockClient implements YoClient {
     this.emit("account.updated", a);
     this.emit("account.login", { accountId: a.id, phase: "done" });
   }
+}
+
+/** `&mockTeam=owner`: Pepe joins, a teammate with no memory focus (he sees every memory), as on the owner's Yo. */
+function ownerTeam(s: SeedState) {
+  const base = s.agents.find((a) => a.name === "Dew");
+  if (!base) return;
+  s.agents.push({
+    ...base,
+    id: "agt_pepe",
+    name: "Pepe",
+    role: "Works the desk",
+    space: null,
+    unread: 0,
+    activity: "idle",
+    preview: null,
+    lastActiveAt: Date.now() - 3 * 3_600_000,
+  });
+  s.timelines.agt_pepe = [];
+}
+
+/** `&mockHelpers=2`: the gift helper is still on it too, browsing on its own computer. */
+function twoHelpersWorking(s: SeedState) {
+  const gift = s.agents.find((a) => a.id === MOCK_HELPERS.gift);
+  if (!gift) return;
+  Object.assign(gift, {
+    archivedAt: null,
+    activity: "working",
+    computer: { state: "ready", lease: "agent" },
+    preview: "Comparing herb garden kits on Etsy",
+    lastActiveAt: Date.now() - 15_000,
+  });
+  const card = s.timelines.agt_yo?.find((e) => e.id === `hcard_${gift.id}`);
+  if (card?.item.helper)
+    card.item = {
+      ...card.item,
+      status: "running",
+      helper: { ...card.item.helper, state: "working", endedAt: undefined, summary: undefined },
+    };
+  const t0 = gift.createdAt;
+  s.timelines[gift.id] = [
+    {
+      id: "hg_u1",
+      agentId: gift.id,
+      turnId: null,
+      seq: 1,
+      createdAt: t0,
+      item: { id: "hg_u1", kind: "user_message", status: "completed", text: gift.name },
+    },
+    {
+      id: "hg_b1",
+      agentId: gift.id,
+      turnId: "turn_hg1",
+      seq: 2,
+      createdAt: t0 + 4000,
+      item: {
+        id: "hg_b1",
+        kind: "browser",
+        status: "completed",
+        title: "Opened etsy.com",
+        input: { url: "https://www.etsy.com/search?q=herb+garden+kit" },
+      },
+    },
+  ];
 }

@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { openSettings, openWorkspacePage } from "./helpers";
+import { openProfile, openSettings, openTeam, openWorkspacePage } from "./helpers";
 
 async function capture(page: Page, name: string) {
   const path = test.info().outputPath(`${name}.png`);
@@ -42,11 +42,9 @@ test("Air Glass in the Mac app: see-through side columns, a solid canvas and big
   page,
 }) => {
   await open(page);
-  for (const id of ["sidebar", "roster"]) {
-    const side = await fill(page.getByTestId(id));
-    expect(side[3]).toBeGreaterThan(0);
-    expect(side[3]).toBeLessThan(255);
-  }
+  const rail = await fill(page.getByTestId("sidebar"));
+  expect(rail[3]).toBeGreaterThan(0);
+  expect(rail[3]).toBeLessThan(255);
   expect((await fill(page.locator("main.shell-main")))[3]).toBe(255);
   await capture(page, "chat");
   await openSettings(page);
@@ -65,8 +63,10 @@ test("Air Glass in the Mac app: see-through side columns, a solid canvas and big
 test("In a browser everything is solid: Dots' flat white canvas and light grey columns", async ({ page }) => {
   await open(page, { native: false });
   expect((await fill(page.getByTestId("sidebar")))[3]).toBe(255);
-  expect((await fill(page.getByTestId("roster")))[3]).toBe(255);
   expect((await fill(page.locator("main.shell-main")))[3]).toBe(255);
+  // The Team popover is a solid card.
+  await openTeam(page);
+  expect((await fill(page.locator(".team-popover")))[3]).toBe(255);
 });
 
 test("Reduce Transparency makes panes and dialogs solid and removes blur", async ({ page }) => {
@@ -90,7 +90,7 @@ test("Reduce Transparency makes panes and dialogs solid and removes blur", async
 
 test("the computer keeps its dark material in light mode", async ({ page }) => {
   await open(page);
-  await page.getByTestId("agent-options").click();
+  await openProfile(page);
   await page.getByTestId("open-computer").click();
   const computer = page.getByTestId("computer-overlay");
   await expect(computer).toBeVisible();

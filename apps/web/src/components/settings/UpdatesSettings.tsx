@@ -1,11 +1,13 @@
-/** Settings → About: versions, "Check for updates", and the update status in words. */
+/**
+ * Settings → About: versions, "Check for updates", and the update status in words. Its Restart, Reload and
+ * Download buttons open the update window, like the notice does.
+ */
 import { ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 import { useBrowserAuth } from "../../lib/browserAuth";
 import { desktopStatusText, isGithubDownload, pendingServerUpdate } from "../../lib/updates";
 import { updates, useUpdates } from "../../stores/updates";
 import { CopyBox } from "../connect/parts";
-import { ApplyBar, applyCopy, useApplying, useApplyLate } from "../UpdateProgress";
 import { Button } from "../ui/button";
 import { Group, Row } from "./parts";
 
@@ -20,9 +22,7 @@ export function UpdatesSettings() {
   const browser = useBrowserAuth((s) => s.browserMode);
   const helper = useBrowserAuth((s) => s.info?.helperCommand) || "yo-app";
   const release = browser ? server?.release : null;
-  const applying = useApplying();
-  const late = useApplyLate(applying);
-  const applyingLabel = applying ? applyCopy(applying, late).short : null;
+  const applying = useUpdates((s) => s.applying);
 
   const check = async () => {
     setChecking(true);
@@ -46,11 +46,11 @@ export function UpdatesSettings() {
   const serverText = !ownBuild
     ? "Development build: no update checks."
     : serverApplying
-      ? "Updating… Yo will be back in about 30 seconds."
+      ? "Updating now."
       : pending
-        ? "An update is ready. Restart to update when it suits you."
+        ? "An update is ready. Restart when it suits you."
         : refresh
-          ? `A new version is on the server (${serverBuild}). Refresh to load it.`
+          ? `A new version is on the server (${serverBuild}). Reload to use it.`
           : result && !result.ok
             ? `Last update didn't finish: ${result.message}`
             : webCheckedAt
@@ -63,25 +63,24 @@ export function UpdatesSettings() {
         {desktop && (
           <Row
             title={`Yo app ${desktop.currentVersion}`}
-            desc={
-              <>
-                <span data-testid="desktop-update-status">{desktopStatusText(desktop)}</span>
-                {applying?.kind === "restart" && (
-                  <ApplyBar applying={applying} className="mt-2 max-w-[220px]" />
-                )}
-              </>
-            }
+            desc={<span data-testid="desktop-update-status">{desktopStatusText(desktop)}</span>}
           >
             {desktop.status === "downloaded" ? (
-              <Button size="sm" variant="primary" disabled={!!applying} onClick={() => updates.askRestart()}>
-                {applying?.kind === "restart" ? applyingLabel : "Restart to update"}
+              <Button
+                size="sm"
+                variant="primary"
+                data-testid="settings-app-restart"
+                disabled={!!applying}
+                onClick={() => updates.open()}
+              >
+                Restart to update
               </Button>
             ) : isGithubDownload(desktop) ? (
               <Button
                 size="sm"
                 variant="primary"
                 data-testid="settings-update-download"
-                onClick={() => void updates.download()}
+                onClick={() => updates.open()}
               >
                 Download
               </Button>
@@ -92,33 +91,26 @@ export function UpdatesSettings() {
         )}
         <Row
           title={ownBuild ? `Server build ${serverBuild ?? ownBuild}` : "Server"}
-          desc={
-            <>
-              <span data-testid="web-update-status">{serverText}</span>
-              {(applying?.kind === "refresh" || serverApplying) && (
-                <ApplyBar applying={applying!} className="mt-2 max-w-[220px]" />
-              )}
-            </>
-          }
+          desc={<span data-testid="web-update-status">{serverText}</span>}
         >
           {pending || serverApplying ? (
             <Button
               size="sm"
               variant="primary"
               data-testid="settings-server-restart"
-              disabled={!!applying}
-              onClick={() => updates.askRestart()}
+              onClick={() => updates.open()}
             >
-              {serverApplying ? applyingLabel : "Restart to update"}
+              {serverApplying ? "Show progress" : "Restart to update"}
             </Button>
           ) : refresh ? (
             <Button
               size="sm"
               variant="primary"
+              data-testid="settings-server-reload"
               disabled={!!applying}
-              onClick={() => void updates.apply("refresh")}
+              onClick={() => updates.open()}
             >
-              {applying?.kind === "refresh" ? applyingLabel : "Refresh"}
+              Reload
             </Button>
           ) : !desktop && ownBuild ? (
             checkButton

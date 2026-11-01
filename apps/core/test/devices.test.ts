@@ -262,7 +262,7 @@ describe("controller sign-in", () => {
       });
       ws.on("error", reject);
     });
-    expect(result.agents).toHaveLength(2); // Yo (Work) and Pip (Personal)
+    expect(result.agents).toHaveLength(1); // Yo
     expect(result.execution.flags).toEqual({ devices: false, deviceWrites: false, control: false });
 
     await core.shutdown();

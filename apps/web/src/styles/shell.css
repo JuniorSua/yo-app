@@ -48,10 +48,15 @@ body {
   height: 16px;
   stroke-width: 1.75;
 }
-.shell-icon-button:hover,
 .shell-icon-button[data-popup-open] {
   background: var(--hover);
   color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .shell-icon-button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .shell-icon-button:active {
   scale: 0.94;
@@ -112,8 +117,10 @@ body {
   border-radius: 10px;
   transition: background-color 0.12s;
 }
-.shell-rail-brand:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .shell-rail-brand:hover {
+    background: var(--hover);
+  }
 }
 .shell-rail-links {
   display: flex;
@@ -137,9 +144,11 @@ body {
   width: 18px;
   height: 18px;
 }
-.shell-rail-link:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .shell-rail-link:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .shell-rail-link:active {
   scale: 0.94;
@@ -234,11 +243,17 @@ body {
   height: 14px;
   color: var(--muted);
 }
-.shell-profile:hover .shell-profile-mono,
 .shell-profile[data-popup-open] .shell-profile-mono {
   box-shadow:
     0 0 0 1px var(--border-strong),
     0 0 0 4px var(--hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .shell-profile:hover .shell-profile-mono {
+    box-shadow:
+      0 0 0 1px var(--border-strong),
+      0 0 0 4px var(--hover);
+  }
 }
 .shell-profile .shell-profile-dot {
   position: absolute;
@@ -308,8 +323,10 @@ body {
   user-select: none;
   transition: background-color 0.12s;
 }
-.roster-row:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  .roster-row:hover {
+    background: var(--hover);
+  }
 }
 .roster-row.is-active {
   background: var(--active);
@@ -414,9 +431,13 @@ svg.roster-star.lucide-star {
 .roster-row:is(:hover, :focus-within) .roster-end {
   opacity: 0;
 }
-.roster-row .roster-menu .shell-icon-button:hover,
 .roster-row .roster-menu .shell-icon-button[data-popup-open] {
   background: var(--active);
+}
+@media (hover: hover) and (pointer: fine) {
+  .roster-row .roster-menu .shell-icon-button:hover {
+    background: var(--active);
+  }
 }
 .roster-page {
   display: flex;
@@ -439,212 +460,15 @@ svg.roster-star.lucide-star {
   flex-shrink: 0;
   color: var(--muted);
 }
-.roster-page:hover {
-  background: var(--hover);
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .roster-page:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
 }
 .roster-page:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: -2px;
-}
-
-/* ------------------------- The space: the roster's title ------------------------- */
-
-.space-title-wrap {
-  position: relative;
-  min-width: 0;
-  flex: 1;
-}
-.space-title {
-  display: flex;
-  max-width: 100%;
-  margin-left: -8px;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 3px 8px;
-  border-radius: 8px;
-  text-align: left;
-  transition: background-color 0.12s;
-}
-.space-title:hover,
-.space-title[data-popup-open] {
-  background: var(--hover);
-}
-.space-title:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
-}
-.space-title-name {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  color: var(--fg);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 18px;
-}
-.space-title-name > svg {
-  width: 14px;
-  height: 14px;
-  color: var(--muted);
-}
-.space-title-caption {
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 11.5px;
-  line-height: 15px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.space-title-caption.is-manual {
-  color: var(--fg-2);
-}
-.space-menu {
-  width: 296px;
-  padding: 6px;
-}
-.space-menu-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 7px 10px 5px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 500;
-}
-.space-menu-head kbd {
-  font-family: inherit;
-}
-.space-menu-row {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  gap: 11px;
-  padding: 7px 10px 7px 8px;
-  border-radius: 10px;
-  outline: none;
-  text-align: left;
-  transition: background-color 0.12s;
-}
-.space-menu-row:hover,
-.space-menu-row:focus-visible {
-  background: var(--hover);
-}
-.space-menu-row.is-on {
-  background: var(--active);
-}
-.space-menu-row b {
-  display: block;
-  color: var(--fg);
-  font-size: 13.5px;
-  font-weight: 500;
-}
-.space-menu-row small {
-  display: block;
-  margin-top: 1px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.space-menu-row > svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: var(--fg);
-}
-.space-menu-icon {
-  display: grid;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 9px;
-  color: var(--muted);
-}
-.space-menu-icon.is-glyph {
-  background: var(--active);
-}
-.space-menu-icon > svg {
-  width: 16px;
-  height: 16px;
-}
-.space-menu-sep {
-  height: 1px;
-  margin: 5px 4px;
-  background: var(--border);
-}
-.space-menu-foot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 6px -6px -6px;
-  padding: 10px 12px 10px 16px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 12px;
-}
-.space-menu-foot > span {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.space-menu-foot > button {
-  height: 24px;
-  flex-shrink: 0;
-  padding: 0 8px;
-  border-radius: 7px;
-  color: var(--fg-2);
-  font-weight: 500;
-}
-.space-menu-foot > button:hover {
-  background: var(--hover);
-  color: var(--fg);
-}
-/* The one-time intro to the Personal agent, under the title. */
-.space-intro {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 10px);
-  left: -8px;
-  width: 300px;
-  padding: 14px 14px 12px;
-  border-radius: 16px;
-  background: var(--elevated);
-  box-shadow: var(--shadow-pop);
-  color: var(--fg-2);
-  font-size: 13px;
-  line-height: 1.45;
-  animation: rise 0.32s var(--ease-out-soft) backwards;
-}
-.space-intro strong {
-  display: block;
-  margin-bottom: 3px;
-  color: var(--fg);
-  font-size: 14px;
-  font-weight: 600;
-}
-.space-intro-hours {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.space-intro-hours > svg {
-  width: 13px;
-  height: 13px;
-}
-.space-intro-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 12px;
 }
 
 /* ------------------------------- Inspector ------------------------------- */
@@ -719,8 +543,10 @@ svg.roster-star.lucide-star {
   text-align: left;
   transition: background-color 0.12s;
 }
-.inspector-model:hover {
-  background: var(--active);
+@media (hover: hover) and (pointer: fine) {
+  .inspector-model:hover {
+    background: var(--active);
+  }
 }
 .inspector-model:focus-visible {
   outline: 2px solid var(--focus);
@@ -758,8 +584,10 @@ svg.roster-star.lucide-star {
   color: var(--muted);
   font-size: 12px;
 }
-.inspector-section-head > button:hover {
-  color: var(--fg);
+@media (hover: hover) and (pointer: fine) {
+  .inspector-section-head > button:hover {
+    color: var(--fg);
+  }
 }
 .inspector-rows {
   display: flex;
@@ -781,8 +609,10 @@ svg.roster-star.lucide-star {
 button.inspector-row {
   transition: background-color 0.12s;
 }
-button.inspector-row:hover {
-  background: var(--hover);
+@media (hover: hover) and (pointer: fine) {
+  button.inspector-row:hover {
+    background: var(--hover);
+  }
 }
 button.inspector-row:focus-visible {
   outline: 2px solid var(--focus);
@@ -940,15 +770,6 @@ button.inspector-row:focus-visible {
   border-radius: 999px;
 }
 
-/* ------------------------- The floating update notice ------------------------- */
-/* Bottom-left, over the foot of the roster: never over the rail's Settings or profile. Menus and popovers
-   (z-index 50) open over it. */
-body:has(.shell) .update-float {
-  left: 60px;
-  width: 236px;
-  z-index: 45;
-}
-
 /* ---------------------------------- Phones ---------------------------------- */
 /* The rail becomes a floating glass pill at the foot of the screen; the roster and inspector stay out of the way
    (the palette finds any agent). */
@@ -1024,12 +845,6 @@ body:has(.shell) .update-float {
     top: 3px;
     right: calc(50% - 20px);
     box-shadow: 0 0 0 2px var(--card);
-  }
-  body:has(.shell) .update-float {
-    left: 16px;
-    width: auto;
-    right: 16px;
-    bottom: calc(96px + env(safe-area-inset-bottom));
   }
 }
 

@@ -195,17 +195,26 @@ describe("tasks.list", () => {
     });
   });
 
-  it("defaults to the active space's main agent", async () => {
+  it("defaults to the primary agent, whatever the time; another agent's with its id", async () => {
     const core = await boot();
     const yo = yoOf(core);
-    const pip = core.store.getSpaceAgent("personal")!;
+    const pip = core.store.createAgent({
+      name: "Pip",
+      role: "your personal-time agent",
+      instructions: "",
+      avatar: { shape: "bubble", color: "yo", eyes: "capsule", accessory: "none" },
+      accountId: null,
+      model: null,
+      effort: null,
+      runtimeMode: "full-access",
+      isPrimary: false,
+      pinned: true,
+      space: "personal",
+    });
     core.store.addTask({ ownerId: yo.id, title: "Yo's task" });
     core.store.addTask({ ownerId: pip.id, title: "Pip's task" });
-    await core.api["settings.update"]({ spaceManual: { space: "work", until: null } });
     expect((await core.api["tasks.list"]({})).map((t) => t.title)).toEqual(["Yo's task"]);
-    await core.api["settings.update"]({ spaceManual: { space: "personal", until: null } });
-    expect((await core.api["tasks.list"]({})).map((t) => t.title)).toEqual(["Pip's task"]);
-    expect((await core.api["tasks.list"]({ agentId: yo.id })).map((t) => t.title)).toEqual(["Yo's task"]);
+    expect((await core.api["tasks.list"]({ agentId: pip.id })).map((t) => t.title)).toEqual(["Pip's task"]);
   });
 });
 
@@ -267,7 +276,6 @@ describe("Tasks page actions", () => {
   it("Start sends the user's tap with the suggestion's title quoted as data, keeps Yo's plan as the note, and can't run twice", async () => {
     const core = await boot();
     const yo = yoOf(core);
-    await core.api["settings.update"]({ spaceManual: { space: "work", until: null } });
     const pushes = capture(core);
     suggestTask(core.store, yo.id, {
       title: "Watch the M4 MacBook Air price",
@@ -321,7 +329,6 @@ describe("Tasks page actions", () => {
   it("+ starts a task now, or saves it for Up next", async () => {
     const core = await boot();
     const yo = yoOf(core);
-    await core.api["settings.update"]({ spaceManual: { space: "work", until: null } });
     const saved = await core.api["tasks.create"]({ title: "  Compare  phone plans ", start: false });
     expect(saved).toMatchObject({
       ownerId: yo.id,

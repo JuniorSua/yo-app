@@ -49,27 +49,29 @@ const AssistantText = memo(function AssistantText({
 }) {
   return (
     <div className={cn("chat-reply prose-yo", streaming && "streaming")} data-testid="assistant-message">
-      {text ? (
-        <Markdown
-          remarkPlugins={MD_PLUGINS}
-          components={{
-            ...CHAT_MD,
-            img: ({ src, alt }) => (
-              <ChatImage
-                agentId={agentId}
-                src={typeof src === "string" ? src : undefined}
-                alt={alt}
-                snapshot={typeof src === "string" ? images?.[src] : undefined}
-                version={entryId}
-              />
-            ),
-          }}
-        >
-          {text}
-        </Markdown>
-      ) : (
-        <p className="stream-caret" />
-      )}
+      <div className="chat-reply-bubble">
+        {text ? (
+          <Markdown
+            remarkPlugins={MD_PLUGINS}
+            components={{
+              ...CHAT_MD,
+              img: ({ src, alt }) => (
+                <ChatImage
+                  agentId={agentId}
+                  src={typeof src === "string" ? src : undefined}
+                  alt={alt}
+                  snapshot={typeof src === "string" ? images?.[src] : undefined}
+                  version={entryId}
+                />
+              ),
+            }}
+          >
+            {text}
+          </Markdown>
+        ) : (
+          <p className="stream-caret" />
+        )}
+      </div>
       {/* Once the reply is finished, one click copies all of it (as written, Markdown and all). */}
       {text && !streaming && (
         <div className="chat-reply-actions">
@@ -308,7 +310,8 @@ function WorkingRow({ agent, since, delayed }: { agent: AgentView; since: number
         <span className="chat-live-dot" aria-hidden />
         <span className="min-w-0 truncate">{agent.preview || `${agent.name} is thinking it through…`}</span>
         {since && elapsed >= 5000 && (
-          <span className="shrink-0 tabular-nums" data-testid="working-elapsed">
+          // Not read out: the status line would be announced again every second.
+          <span className="shrink-0 tabular-nums" data-testid="working-elapsed" aria-hidden>
             · {shortDuration(elapsed)}
           </span>
         )}
@@ -495,6 +498,7 @@ export function Timeline({
     const b = blocks[i];
     return !!b && b.type === "user" && !b.entry.item.from;
   };
+  const lastMine = blocks.findLastIndex((b) => b.type === "user" && !b.entry.item.from);
   const joins = (i: number) =>
     mine(i) &&
     mine(i - 1) &&
@@ -503,15 +507,26 @@ export function Timeline({
     chips?.before !== firstEntry(blocks[i]!).id;
 
   return (
-    <div className="relative min-h-0 flex-1">
+    <div className="chat-timeline relative min-h-0 flex-1">
       <div
         ref={scroller}
         onScroll={onScroll}
         data-testid="timeline"
         className="scroll-fade h-full overflow-y-auto [--scroll-fade:56px]"
       >
-        <div ref={content} className="chat-feed">
+        {/* New replies and cards are announced; held back while the agent is mid-turn so a streaming reply isn't
+            read out token by token. */}
+        <div
+          ref={content}
+          className="chat-feed"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-busy={agent.activity === "working" || undefined}
+        >
           {blocks.map((b, i) => {
+            // Dots' read receipt: under your newest message, once the agent has answered it.
+            const read = i === lastMine && blocks[i + 1] ? firstEntry(blocks[i + 1]!).createdAt : undefined;
             const isUser = b.type === "user";
             const isNotice = b.type === "notice" && b.entry.item.status !== "failed";
             const header = !isUser && !isNotice && prevWasUser;
@@ -536,6 +551,11 @@ export function Timeline({
                   bugBelow={bugTurn.has(i + 1)}
                   group={group}
                 />
+                {read !== undefined && (
+                  <div className="chat-read" data-testid="read-receipt">
+                    Read {clockTime(read)}
+                  </div>
+                )}
               </Fragment>
             );
           })}

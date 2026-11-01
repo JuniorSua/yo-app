@@ -10,6 +10,7 @@ import {
   type LedgerTask,
   type LedgerTaskStatus,
   type Memory,
+  type MemoryLabel,
   type ModelInfo,
   newId,
   PageKind,
@@ -21,7 +22,6 @@ import {
   type Routine,
   type RuntimeMode,
   type Settings,
-  type Space,
   type TimelineEntry,
   type WorkspaceSearchResult,
 } from "@yo/contracts";
@@ -29,8 +29,8 @@ import type { Db } from "./db";
 
 type Row = Record<string, any>;
 
-/** A space column ("work" | "personal" | null); anything else reads as null. */
-const spaceOf = (v: unknown): Space | null => (v === "work" || v === "personal" ? v : null);
+/** A `space` column: a memory's label or an agent's memory focus ("work" | "personal"); anything else is null. */
+const labelOf = (v: unknown): MemoryLabel | null => (v === "work" || v === "personal" ? v : null);
 
 const json = <T>(v: string | null | undefined, fallback: T): T => {
   if (v == null) return fallback;
@@ -143,7 +143,7 @@ export class Store {
       kind: r.kind === "helper" ? "helper" : "agent",
       parentId: r.parent_id ?? null,
       brief: r.brief ?? null,
-      space: spaceOf(r.space),
+      space: labelOf(r.space),
       unread: r.unread ?? 0,
       lastActiveAt: r.last_active_at ?? null,
     };
@@ -205,18 +205,13 @@ export class Store {
     return this.getAgent(id)!;
   }
 
-  /** Make an agent the main agent of a space (null: of none). Throws if another live agent already leads it. */
-  setAgentSpace(id: string, space: Space | null) {
-    this.db.prepare("UPDATE agents SET space = ? WHERE id = ?").run(space, id);
-    return this.getAgent(id);
-  }
-
-  /** The live agent leading a space, if any. */
-  getSpaceAgent(space: Space) {
-    const r = this.db
-      .prepare("SELECT * FROM agents WHERE space = ? AND archived_at IS NULL AND kind != 'helper' LIMIT 1")
-      .get(space) as Row | undefined;
-    return r ? this.toAgent(r) : null;
+  /**
+   * The agent the phone, Telegram, the Tasks page and the morning brief go to unless the user picked another: the
+   * primary (Yo), else the first live agent.
+   */
+  primaryAgent() {
+    const agents = this.listAgents();
+    return agents.find((a) => a.isPrimary) ?? agents[0] ?? null;
   }
 
   updateAgent(id: string, patch: Partial<Omit<Agent, "id" | "createdAt" | "kind" | "parentId">>) {
@@ -904,24 +899,24 @@ export class Store {
       content: r.content,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
-      space: spaceOf(r.space),
+      space: labelOf(r.space),
     };
   }
 
   /**
-   * Memories an agent sees: shared ones and its own (no agent: every memory). With `space`, only that space's
-   * and Everywhere's (space null); without it, every space.
+   * Memories an agent sees: shared ones and its own (no agent: every memory). With `focus`, only that label's and
+   * Everywhere's (label null); without it, every label.
    */
-  listMemories(agentId?: string | null, opts: { space?: Space } = {}): Memory[] {
+  listMemories(agentId?: string | null, opts: { focus?: MemoryLabel } = {}): Memory[] {
     const where: string[] = [];
     const args: string[] = [];
     if (agentId) {
       where.push("(agent_id IS NULL OR agent_id = ?)");
       args.push(agentId);
     }
-    if (opts.space) {
+    if (opts.focus) {
       where.push("(space IS NULL OR space = ?)");
-      args.push(opts.space);
+      args.push(opts.focus);
     }
     const rows = this.db
       .prepare(
@@ -931,15 +926,15 @@ export class Store {
     return rows.map((r) => this.toMemory(r));
   }
 
-  /** `space`: which space's agents see it in their prompt (null = Everywhere). */
-  addMemory(content: string, agentId: string | null, space: Space | null = null): Memory {
+  /** `label`: work or personal (null = Everywhere). */
+  addMemory(content: string, agentId: string | null, label: MemoryLabel | null = null): Memory {
     const id = newId("mem");
     const now = Date.now();
     this.db
       .prepare(
         "INSERT INTO memories (id, agent_id, content, created_at, updated_at, space) VALUES (?,?,?,?,?,?)",
       )
-      .run(id, agentId, content, now, now, space);
+      .run(id, agentId, content, now, now, label);
     return this.toMemory(this.db.prepare("SELECT * FROM memories WHERE id = ?").get(id) as Row);
   }
 
@@ -954,16 +949,16 @@ export class Store {
     );
   }
 
-  /** `space` undefined leaves it as it is; null moves it to Everywhere. */
-  updateMemory(id: string, content: string, space?: Space | null): Memory | null {
-    if (space === undefined)
+  /** `label` undefined leaves it as it is; null moves it to Everywhere. */
+  updateMemory(id: string, content: string, label?: MemoryLabel | null): Memory | null {
+    if (label === undefined)
       this.db
         .prepare("UPDATE memories SET content = ?, updated_at = ? WHERE id = ?")
         .run(content, Date.now(), id);
     else
       this.db
         .prepare("UPDATE memories SET content = ?, space = ?, updated_at = ? WHERE id = ?")
-        .run(content, space, Date.now(), id);
+        .run(content, label, Date.now(), id);
     const r = this.db.prepare("SELECT * FROM memories WHERE id = ?").get(id) as Row | undefined;
     return r ? this.toMemory(r) : null;
   }
@@ -973,10 +968,10 @@ export class Store {
   }
 
   /**
-   * Memories matching a query, from every space (best first). `prefer`: on a tie, that space's memories and
-   * Everywhere's come before the other space's.
+   * Memories matching a query, whatever their label (best first). `prefer`: on a tie, that label's memories and
+   * Everywhere's come before the other label's.
    */
-  searchMemories(query: string, agentId: string, opts: { prefer?: Space } = {}): Memory[] {
+  searchMemories(query: string, agentId: string, opts: { prefer?: MemoryLabel } = {}): Memory[] {
     const terms = query
       .toLowerCase()
       .split(/\W+/)

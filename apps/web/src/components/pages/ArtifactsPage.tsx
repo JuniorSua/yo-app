@@ -15,8 +15,7 @@ import {
 } from "../../lib/make";
 import { sortPinnedFirst } from "../../lib/pins";
 import { ago, cn, fileSize } from "../../lib/utils";
-import { useApp } from "../../stores/app";
-import { useActiveAgent } from "../../stores/space";
+import { useApp, usePrimaryAgent } from "../../stores/app";
 import { load } from "../../stores/sync";
 import { ui } from "../../stores/ui";
 import { openPage, PageThumb, PinButton } from "../agent/Pages";
@@ -35,7 +34,7 @@ const CHIP_BUTTON =
  */
 export function ArtifactsPage() {
   const artifacts = useApp((s) => s.artifacts);
-  const yo = useActiveAgent();
+  const yo = usePrimaryAgent();
   const status = useLoad(() => load.artifacts(true));
   const [filter, setFilter] = useState<MakeFilter>("all");
   const [menuOpen, setMenuOpen] = useState(false);

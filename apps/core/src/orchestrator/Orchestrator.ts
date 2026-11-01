@@ -11,7 +11,6 @@ import {
   cleanSecureValues,
   DEVICE_TOOLS,
   type Decision,
-  describeWorkHours,
   type FsEntry,
   fieldList as fieldWords,
   type HelperState,
@@ -33,7 +32,6 @@ import {
   type QueueSteerResult,
   RequestSecureInputInput,
   type RoutePreference,
-  resolveSpace,
   SECURE_INPUT_TOOL,
   type SecureField,
   type SecureForm,
@@ -48,6 +46,7 @@ import {
   type TodoEntry,
   teammateAvatar,
   toolAllowed,
+  workHoursNow,
   type YoToolset,
 } from "@yo/contracts";
 import type { AgentdClient } from "../agentd/AgentdClient";
@@ -62,7 +61,7 @@ import {
   ruleFor as onePasswordRule,
 } from "../onepassword/tools";
 import { findSensitiveFor } from "../safety/sensitive";
-import { focusOf } from "../team/spaces";
+import { memoryFocus } from "../team/memoryFocus";
 import {
   base64Bytes,
   formatBytes,
@@ -1193,13 +1192,13 @@ export class Orchestrator {
     }
   }
 
-  /** The time stamped on a message, with "· personal time" / "· work time" when Work & Personal is on. */
+  /** The time stamped on a message, with "· work hours" / "· outside work hours" when the user has work hours. */
   private clock(): string {
     const s = this.d.store.getSettings();
-    return messageClock(new Date(), s.timezone, s.spacesOn ? resolveSpace(Date.now(), s).space : undefined);
+    return messageClock(new Date(), s.timezone, workHoursNow(Date.now(), s));
   }
 
-  /** Who goes to sleep first: least recently used, but the main agents (Yo, and Pip for Personal) last. */
+  /** Who goes to sleep first: least recently used, but the main agent (Yo) last. */
   private sleepOrder(a: AgentRuntime, b: AgentRuntime): number {
     const lead = (r: AgentRuntime) => {
       const x = this.d.store.getAgent(r.agentId);
@@ -1448,10 +1447,9 @@ export class Orchestrator {
     const compactRun = !!this.rt(agentId).input?.compact;
     const openTasks = agent.kind === "helper" ? [] : this.d.store.listTasks(agentId);
     const parent = agent.kind === "helper" && agent.parentId ? this.d.store.getAgent(agent.parentId) : null;
-    // Work & Personal: an agent leading a space (and its helpers) sees that space's memories and Everywhere's.
-    const focus = focusOf(this.d.store, agent);
-    const others = this.d.store.listAgents().filter((a) => a.id !== agentId);
-    const counterpart = focus ? (others.find((a) => a.space && a.space !== focus) ?? null) : null;
+    // An agent with a memory focus (Yo: work, Pip: personal), and its helpers, sees that label's memories and
+    // Everywhere's; one without sees them all.
+    const focus = memoryFocus(this.d.store, agent);
     const team = parent ? [] : this.teamOf(agentId);
     const systemAppend = parent
       ? buildHelperSystemAppend({
@@ -1460,21 +1458,15 @@ export class Orchestrator {
           brief: agent.brief ?? "",
           playbook: this.d.store.playbookRunOfHelper(agentId)?.playbook ?? null,
           settings,
-          memories: this.d.store.listMemories(parent.id, { space: focus }),
+          memories: this.d.store.listMemories(parent.id, { focus }),
           onePassword: this.d.onePasswordInfo?.() ?? null,
           now: new Date(),
         })
       : buildSystemAppend({
           agent,
           team,
-          spaces: focus
-            ? {
-                hours: describeWorkHours(settings.workHours),
-                counterpart: counterpart && { name: counterpart.name, role: counterpart.role },
-              }
-            : undefined,
           settings,
-          memories: this.d.store.listMemories(agentId, { space: focus }),
+          memories: this.d.store.listMemories(agentId, { focus }),
           scratchpad: this.d.store.getScratchpad(agentId),
           routines: this.d.store.listRoutines(agentId),
           // A resumed native session already has its own history; a fresh one gets Yo's transcript — after a
@@ -3735,23 +3727,19 @@ export class Orchestrator {
 
   /**
    * The team as `agentId` sees it in its prompt: itself and the other long-lived agents, each with its job,
-   * status and model. A space's main agent doesn't list the other space's: that's its counterpart (# Your space).
+   * status and model.
    */
   private teamOf(agentId: string): TeamMember[] {
     const me = this.d.store.getAgent(agentId);
     if (!me || me.kind === "helper") return [];
-    const focus = focusOf(this.d.store, me);
-    return this.d.store
-      .listAgents()
-      .filter((a) => a.id === agentId || !(focus && a.space && a.space !== focus))
-      .map((a) => ({
-        name: a.name,
-        role: a.role,
-        status: this.rosterStatus(a.id),
-        model: this.modelLabel(a),
-        main: isLead(a),
-        ...(a.id === agentId ? { you: true } : {}),
-      }));
+    return this.d.store.listAgents().map((a) => ({
+      name: a.name,
+      role: a.role,
+      status: this.rosterStatus(a.id),
+      model: this.modelLabel(a),
+      main: isLead(a),
+      ...(a.id === agentId ? { you: true } : {}),
+    }));
   }
 
   private rosterStatus(agentId: string): TeamMember["status"] {
@@ -3774,11 +3762,9 @@ export class Orchestrator {
    * all the time, and not model labels, which arrive after an account is checked).
    */
   private teamSig(agentId: string): string {
-    const me = this.d.store.getAgent(agentId);
-    const focus = focusOf(this.d.store, me);
     return this.d.store
       .listAgents()
-      .filter((a) => a.id !== agentId && !(focus && a.space && a.space !== focus))
+      .filter((a) => a.id !== agentId)
       .map((a) => [a.id, a.name, a.role, a.accountId, a.model, isLead(a)].join("|"))
       .join("\n");
   }

@@ -329,6 +329,18 @@ const MIGRATIONS: string[] = [
    */ `
   DELETE FROM settings WHERE key = 'morningBrief' AND value_json = 'true';
   `,
+  /*
+   * 16 — Work & Personal spaces are gone (docs/work-hours.md): no switch, nothing changes with the time of day.
+   * Their two settings go; the work hours stay, as context in every agent's prompt. The `space` columns stay as
+   * memory labels and each agent's memory focus (Yo: work, Pip: personal), except where the user had turned
+   * spaces off: there every agent saw every memory, so live agents lose the focus migration 11 gave Yo and still
+   * do. No agent is archived or brought back (a Pip archived when spaces were turned off stays archived), and no
+   * memory, label or chat changes.
+   */ `
+  UPDATE agents SET space = NULL WHERE space IS NOT NULL AND archived_at IS NULL
+    AND EXISTS (SELECT 1 FROM settings WHERE key = 'spacesOn' AND value_json = 'false');
+  DELETE FROM settings WHERE key IN ('spacesOn', 'spaceManual');
+  `,
 ];
 
 export type Db = DatabaseSync;

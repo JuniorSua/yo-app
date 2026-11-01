@@ -10,6 +10,7 @@ import { accountFor, useApp } from "../../stores/app";
 import { run } from "../../stores/sync";
 import { ui, useUI } from "../../stores/ui";
 import { Tip } from "../ui/overlay";
+import { ModelPicker } from "./ModelPicker";
 import { RouteSelector, routeChoiceAvailable, useRoute } from "./RouteSelector";
 import { TaskSuggestion } from "./TaskSuggestion";
 import { UpNext } from "./UpNext";
@@ -66,9 +67,16 @@ export const composerBus = {
   sendPlain: null as null | ((text: string) => void),
 };
 
+/** A mouse or trackpad: focusing the box on its own is fine. On touch it would pop the keyboard up unasked. */
+const finePointer = () => typeof matchMedia !== "function" || matchMedia("(pointer: fine)").matches;
+
 export function Composer({ agent }: { agent: AgentView }) {
   const focus = useUI((s) => s.composerFocus);
+  const mounted = useRef(false);
   useEffect(() => {
+    const first = !mounted.current;
+    mounted.current = true;
+    if (first && !finePointer()) return;
     ta.current?.focus();
   }, [focus]);
   // A line to start with (the Make page's + menu): taken once, focused, the cursor at the end.
@@ -117,7 +125,7 @@ export function Composer({ agent }: { agent: AgentView }) {
   useEffect(() => {
     setText(drafts.get(agent.id) ?? "");
     setFiles([]);
-    ta.current?.focus();
+    if (finePointer()) ta.current?.focus();
   }, [agent.id]);
 
   useLayoutEffect(() => {
@@ -127,7 +135,8 @@ export function Composer({ agent }: { agent: AgentView }) {
     // At most 220px, and less on a short window so the chat above stays visible.
     const max = Math.min(220, Math.round(window.innerHeight * 0.3));
     el.style.height = `${Math.min(max, Math.max(36, el.scrollHeight))}px`;
-  }, [text]);
+    // The placeholder changes with `working` ("Queue a message for…" can wrap in the narrow column): re-measure.
+  }, [text, working]);
 
   const slashMatches =
     text.startsWith("/") && !text.includes("\n")
@@ -314,6 +323,7 @@ export function Composer({ agent }: { agent: AgentView }) {
             <textarea
               ref={ta}
               data-testid="composer-input"
+              aria-label={`Message ${agent.name}`}
               value={text}
               rows={1}
               onChange={(e) => {
@@ -364,6 +374,8 @@ export function Composer({ agent }: { agent: AgentView }) {
               </span>
             )}
             {showRoute && <RouteSelector value={route} onChange={setRoute} />}
+            {/* What it runs on (Dots' "Auto"), beside Send; the busy hint takes its place mid-task. */}
+            {!(working && canSend) && !newest && <ModelPicker agent={agent} side="top" />}
             {newest && (
               <Tip label={`Send “${newest.text.slice(0, 60)}” into ${agent.name}’s current task now`}>
                 <button

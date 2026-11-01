@@ -1,41 +1,36 @@
-import { type AgentView, isLead } from "@yo/contracts";
+import type { AgentView } from "@yo/contracts";
 import { Archive, MoreHorizontal, Pin, PinOff, Plus, Settings, Star } from "lucide-react";
 import { memo, useEffect, useMemo } from "react";
 import { accentVars } from "../lib/accent";
 import { api } from "../lib/api";
-import { hasTrafficLights } from "../lib/desktop";
 import { makeKindOf } from "../lib/make";
-import { roster, rosterState } from "../lib/roster";
+import { rosterState } from "../lib/roster";
 import { cn } from "../lib/utils";
-import { useApp } from "../stores/app";
-import { useSpace } from "../stores/space";
+import { sortAgents, useApp } from "../stores/app";
 import { load, run } from "../stores/sync";
 import { ui, useUI } from "../stores/ui";
 import { openPage } from "./agent/Pages";
 import { usePaintedTheme } from "./agent/paintedTheme";
 import { AgentAvatar } from "./brand";
 import { KindIcon } from "./pages/KindIcon";
-import { SpaceTitle } from "./SpaceSwitch";
 import { Menu, MenuItem, MenuSeparator, Tip } from "./ui/overlay";
 
 /** How many pages the sidebar lists (pinned first, then the newest); the rest are on the Make page. */
 const PAGE_LIMIT = 5;
 
 /**
- * The sidebar is the team, like a contact list: the space's main agent first (with a star), then every teammate,
- * each with a live line on what it's doing. The faces are the navigation. Pages the team made sit below. Helpers
- * never join the roster (they show inside the chat that started them).
+ * The team, like a contact list (the rail's Team popover): the main agent first (with a star), then every
+ * teammate, each with a live line on what it's doing. Picking one makes it the big head. Pages
+ * the team made sit below. Helpers never join the roster (they pop in beside the head that started them).
  */
-export function Sidebar() {
+export function TeamPanel() {
   const agents = useApp((s) => s.agents);
-  const space = useSpace((s) => s.space);
-  const spaces = useSpace((s) => s.available);
   const openId = useUI((s) => (s.page === "agent" ? s.agentId : null));
-  const team = useMemo(() => roster(agents, space, spaces), [agents, space, spaces]);
+  const team = useMemo(() => sortAgents(agents), [agents]);
   return (
-    <aside className="shell-sidebar" aria-label="Team" data-testid="roster">
-      <div className={cn("shell-sidebar-head app-drag", hasTrafficLights && "with-window-controls")}>
-        {spaces ? <SpaceTitle /> : <span className="shell-sidebar-title">Team</span>}
+    <section className="shell-sidebar team-panel" aria-label="Team" data-testid="roster">
+      <div className="shell-sidebar-head">
+        <span className="shell-sidebar-title">Team</span>
         <Tip label="New teammate" side="bottom">
           <button
             type="button"
@@ -63,7 +58,7 @@ export function Sidebar() {
         </section>
         <RecentPages />
       </div>
-    </aside>
+    </section>
   );
 }
 
@@ -80,7 +75,7 @@ const AgentRow = memo(function AgentRow({
   const theme = usePaintedTheme();
   const accent = useMemo(() => accentVars(agent.avatar, theme), [agent.avatar, theme]);
   const { tone, line } = rosterState(agent, agents);
-  const lead = isLead(agent);
+  const lead = agent.isPrimary;
   const busy = tone === "working" || tone === "thinking";
   return (
     <div
@@ -100,7 +95,7 @@ const AgentRow = memo(function AgentRow({
       style={accent}
     >
       <span className="roster-avatar">
-        <AgentAvatar agent={agent} size={28} quiet />
+        <AgentAvatar agent={agent} size={48} quiet />
       </span>
       <span className="roster-text">
         <span className="roster-name">
@@ -144,14 +139,21 @@ const AgentRow = memo(function AgentRow({
           <MenuItem icon={<Settings />} onClick={() => useUI.setState({ agentSettingsId: agent.id })}>
             Customize {agent.name}
           </MenuItem>
-          {/* Yo and Pip can't be archived (turning Work & Personal off is the way). */}
+          {/* The main agent can't be archived. */}
           {!lead && (
             <>
               <MenuSeparator />
               <MenuItem
                 danger
                 icon={<Archive />}
-                onClick={() => run(api().call("agent.archive", { id: agent.id }))}
+                onClick={() =>
+                  ui.confirm({
+                    title: `Archive ${agent.name}?`,
+                    body: "It stops what it's doing, drops its queued messages and turns its routines off. You can't bring it back from the app.",
+                    action: `Archive ${agent.name}`,
+                    run: () => run(api().call("agent.archive", { id: agent.id })),
+                  })
+                }
               >
                 Archive
               </MenuItem>

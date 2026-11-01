@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openAgent, openApp } from "./helpers";
+import { openAgent, openApp, openProfile, openTeam, openWorkspace } from "./helpers";
 
 test("⌘N brings you to Yo's message box without creating an assistant or losing its draft/history", async ({
   page,
@@ -63,19 +63,18 @@ test("Search opens messages, routines, memories, and files at their source", asy
   }
 });
 
-test("The sidebar is the team: the space's main agent first, every teammate with a live line, never a helper", async ({
+test("The Team popover is the team: the main agent first, every teammate (Pip too) with a live line, never a helper", async ({
   page,
 }) => {
   await openApp(page);
   const { names, helpers } = await page.evaluate(() => {
     const agents = (window as any).__yoMock.s.agents;
     return {
-      // Pip leads Personal time: one switch away, not in the Work roster.
-      names: agents.filter((a: any) => a.kind !== "helper" && a.space !== "personal").map((a: any) => a.name),
+      names: agents.filter((a: any) => a.kind !== "helper" && !a.archivedAt).map((a: any) => a.name),
       helpers: agents.filter((a: any) => a.kind === "helper").map((a: any) => a.name),
     };
   });
-  const roster = page.getByTestId("roster");
+  const roster = await openTeam(page);
   const rows = roster.locator('[data-testid^="agent-row-"]');
   await expect(rows).toHaveCount(names.length);
   await expect(rows.first()).toHaveAttribute("data-testid", "agent-row-Yo");
@@ -96,8 +95,11 @@ test("The sidebar is the team: the space's main agent first, every teammate with
   expect(helpers.length).toBeGreaterThan(0);
   for (const name of helpers) await expect(page.getByTestId(`agent-row-${name}`)).toHaveCount(0);
   for (const name of helpers) await expect(page.getByTestId("sidebar")).not.toContainText(name);
+  for (const name of helpers) await expect(roster).not.toContainText(name);
   // The faces are the navigation: a row opens that agent's chat, and stays marked as open.
   await openAgent(page, "Pico");
+  await expect(roster).toHaveCount(0);
+  await openTeam(page);
   await expect(roster.getByTestId("agent-row-Pico")).toHaveAttribute("aria-current", "page");
   // Its quiet "messages with Dew" row: the full exchange is behind a click (team-chat.spec).
   await expect(page.getByTestId("team-exchange").first()).toContainText("Dew");
@@ -136,7 +138,7 @@ test("Phone navigation: a floating tab bar that fits the screen, keeps the messa
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("The frame: a thin rail, the team roster, the chat with the agent's head, and the inspector; Search opens Recent requests", async ({
+test("The frame: a thin rail, the chat with the agent's big head, and the workspace beside it; Search opens Recent requests", async ({
   page,
 }) => {
   await openApp(page);
@@ -144,26 +146,37 @@ test("The frame: a thin rail, the team roster, the chat with the agent's head, a
   await expect(page.getByLabel("Today's work")).toHaveCount(0);
   await expect(page.getByTestId("new-request")).toHaveCount(0);
   const rail = page.getByTestId("sidebar");
-  const roster = page.getByTestId("roster");
   const header = page.getByTestId("presence-header");
-  const inspector = page.getByTestId("work-pane");
+  const workspace = page.getByTestId("workspace");
+  // The roster isn't a column any more: it lives in the rail's Team popover.
+  await expect(page.getByTestId("roster")).toHaveCount(0);
   for (const width of [1440, 1100, 1920]) {
     await page.setViewportSize({ width, height: 900 });
-    // A fixed, narrow rail and a roster that never grow with the window.
-    await expect.poll(async () => (await rail.boundingBox())?.width).toBe(48);
+    // A fixed, narrow rail that never grows with the window.
+    await expect.poll(async () => (await rail.boundingBox())?.width).toBe(52);
     const r = (await rail.boundingBox())!;
-    const s = (await roster.boundingBox())!;
-    expect(s.x).toBe(r.x + r.width);
-    expect(s.width).toBeGreaterThanOrEqual(240);
-    expect(s.width).toBeLessThanOrEqual(264);
-    // The chat sits between the roster and the inspector, the head at least 56px.
+    // The chat sits between the rail and the workspace; the big head is at least 56px.
     const h = (await header.boundingBox())!;
-    const i = (await inspector.boundingBox())!;
-    expect(h.x).toBeGreaterThanOrEqual(s.x + s.width - 1);
-    expect(i.x).toBeGreaterThanOrEqual(h.x + h.width - 1);
-    expect(i.x + i.width).toBeLessThanOrEqual(width);
+    const w = (await workspace.boundingBox())!;
+    expect(h.x).toBeGreaterThanOrEqual(r.x + r.width - 1);
+    expect(w.x).toBeGreaterThanOrEqual(h.x + h.width - 1);
+    expect(w.x + w.width).toBeLessThanOrEqual(width);
     expect((await page.getByTestId("presence-avatar").boundingBox())!.width).toBeGreaterThanOrEqual(56);
   }
+  // Below 1100 the workspace is a sheet on demand, not a column.
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await expect(workspace).toHaveCount(0);
+  await page.getByTestId("toggle-workspace").click();
+  await expect(workspace).toBeVisible();
+  // A modal sheet: focus moves into it, the chat behind is out of reach, and Escape closes it.
+  await expect(workspace).toHaveAttribute("role", "dialog");
+  await expect.poll(() => workspace.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(workspace).toHaveCount(0);
+  await page.getByTestId("toggle-workspace").click();
+  await expect(workspace).toBeVisible();
+  await page.getByTestId("workspace-close").click();
+  await expect(workspace).toHaveCount(0);
 
   await page.getByTestId("rail-search").click();
   const palette = page.getByTestId("command-palette");
@@ -179,66 +192,82 @@ async function openPresence(page: Page) {
   await page.goto("/?mock=1&fast=1&onboarded=1");
   await expect(page.getByTestId("sidebar")).toBeVisible();
   const avatar = page.getByTestId("presence-avatar");
-  const header = page.locator("header").filter({ has: avatar });
-  const card = page.getByTestId("presence-card");
+  const header = page.getByTestId("presence-header");
   const patch = (p: object) => page.evaluate((p) => (window as any).__yoMock.patchAgent("agt_yo", p), p);
-  return { avatar, header, card, patch };
+  return { avatar, header, patch };
 }
 
-test("Yo's presence: a large live avatar with what he's doing, and the right next step on a click", async ({
+test("Yo's presence: a big live head with what he's doing, and the profile popover on a click", async ({
   page,
 }) => {
-  const { avatar, header, card, patch } = await openPresence(page);
+  const { avatar, header, patch } = await openPresence(page);
   // Yo's Softie: the logo bubble, drawn live (SVG, no canvas).
   await expect(header.locator('[data-softie="yo"]')).toHaveCount(1);
   expect((await avatar.boundingBox())!.width).toBeGreaterThanOrEqual(56);
-  // Yo is idle, but one of his helpers is busy: the header says so (never by the helper's name).
-  await expect(page.getByTestId("presence-line")).toHaveText(
-    "1 helper working · Checking times at Joe's Stone Crab",
-  );
+  // Yo is idle, but one of his helpers is busy: one calm line says so (never by the helper's name), and the
+  // helper's small head is tucked at the big head's lower right, much smaller than it.
+  await expect(page.getByTestId("presence-line")).toHaveText("Working with 1 helper");
+  await expect(header.getByTestId("helper-head")).toHaveCount(1);
+  await expect(page.getByTestId("helpers-pill")).toHaveCount(0);
+  const big = (await avatar.boundingBox())!;
+  const small = (await header.getByTestId("helper-head").boundingBox())!;
+  expect(small.width).toBeLessThanOrEqual(big.width / 3);
+  expect(small.x).toBeGreaterThan(big.x + big.width / 2);
+  expect(small.y).toBeGreaterThan(big.y + big.height / 3);
 
-  // Idle: the main action is a new request (the draft stays).
+  // A click on the head opens the profile popover; Escape closes it and the draft stays.
   await page.getByTestId("composer-input").fill("Keep this draft");
-  await avatar.click();
-  await expect(card).toContainText("Yo");
-  await card.getByTestId("presence-new").click();
-  await expect(card).toHaveCount(0);
-  await expect(page.getByTestId("composer-input")).toBeFocused();
+  const profile = await openProfile(page);
+  await expect(profile).toContainText("Yo");
+  await page.keyboard.press("Escape");
+  await expect(profile).toHaveCount(0);
   await expect(page.getByTestId("composer-input")).toHaveValue("Keep this draft");
 
-  // Working: the line follows his plan, his pose follows the turn, and the main action is to watch him.
+  // Working: the line follows his plan and his pose follows the turn.
   await patch({ activity: "working", todos: [{ text: "Comparing three stores", status: "in_progress" }] });
-  await expect(page.getByTestId("presence-line")).toHaveText(/^Comparing three stores( · \d+m)?$/);
+  // (His helper is still on its task: the line counts it.)
+  await expect(page.getByTestId("presence-line")).toHaveText(
+    /^Working on comparing three stores · 1 helper$/,
+  );
   await expect(header.locator('[data-softie="yo"]')).toHaveAttribute("data-state", /^(thinking|working)$/);
-  await avatar.click();
-  // On a wide window his screen opens in the right pane, beside the chat.
-  await card.getByTestId("presence-computer").click();
-  await expect(page.getByTestId("work-pane")).toBeVisible();
-  await expect(page.getByTestId("toggle-workspace")).toHaveAttribute("aria-expanded", "true");
+  // The computer button in the chat's top-right brings his screen up in the workspace beside the chat.
   await page.getByTestId("toggle-workspace").click();
-  await expect(page.getByTestId("work-pane")).toBeHidden();
+  await expect(page.getByTestId("workspace")).toHaveCount(0);
+  await page.getByTestId("topbar-computer").click();
+  await expect(page.getByTestId("workspace")).toBeVisible();
+  await expect(page.getByTestId("toggle-workspace")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("ws-tab-computer")).toContainText("Yo’s computer");
+  await page.getByTestId("toggle-workspace").click();
+  await expect(page.getByTestId("workspace")).toHaveCount(0);
 });
 
 // Split from the test above so each walkthrough fits its time budget on a busy machine.
 test("Yo's presence when he's asleep or needs you: wake him, or go straight to what's waiting", async ({
   page,
 }) => {
-  const { avatar, header, card, patch } = await openPresence(page);
+  const { header, patch } = await openPresence(page);
 
-  // Sleeping: wake him up from the card.
+  // Sleeping: wake him up from the profile's computer card.
   await patch({ activity: "sleeping", todos: [], computer: { state: "hibernated", lease: "agent" } });
-  await expect(header.getByTestId("status-pill")).toHaveText("Sleeping");
-  await avatar.click();
-  await card.getByTestId("presence-wake").click();
-  await expect(card).toHaveCount(0);
-  await expect(header.getByTestId("status-pill")).toHaveText("Ready");
+  await expect(page.getByTestId("presence-line")).toHaveText("Asleep");
+  await expect(header).toHaveAttribute("data-tone", "sleeping");
+  const profile = await openProfile(page);
+  await expect(profile.getByTestId("computer-status")).toHaveText("Asleep");
+  await profile.getByRole("button", { name: "Wake" }).click();
+  await expect(profile.getByTestId("computer-status")).toHaveText(/Ready|Waking up/);
+  await expect(page.getByTestId("presence-line")).not.toHaveText("Asleep");
+  await page.keyboard.press("Escape");
 
-  // Needs you: straight to what's waiting.
+  // Needs you: the line says so, and what's waiting is in the profile.
   await patch({ activity: "waiting" });
-  await expect(page.getByTestId("presence-line")).toContainText("Waiting for your OK");
-  await avatar.click();
-  await card.getByTestId("presence-review").click();
-  await expect(page.getByRole("heading", { name: "Needs you" })).toBeVisible();
+  await expect(page.getByTestId("presence-line")).toHaveText("Waiting for you");
+  // What's waiting is listed in the profile of the agent it waits on (the mock's approval is Pico's): one click
+  // closes the profile and brings that request into view in the chat.
+  await openAgent(page, "Pico");
+  const pico = await openProfile(page);
+  await pico.getByTestId("pane-approval").first().click();
+  await expect(pico).toHaveCount(0);
+  await expect(page.getByTestId("approval-card")).toBeInViewport();
 });
 
 test("One calm look for every agent: neutral surfaces, and each agent's colour only in its own world", async ({
@@ -253,17 +282,25 @@ test("One calm look for every agent: neutral surfaces, and each agent's colour o
       .evaluate((el) => getComputedStyle(el).getPropertyValue("--accent").trim().toLowerCase());
   expect(await token("--bg")).toBe("#ffffff");
   expect(await token("--sidebar")).toBe("#f7f7f7");
-  // No per-character or per-space re-skin of the whole window any more.
+  // No per-character re-skin of the whole window any more.
   await expect(page.locator("html")).not.toHaveAttribute("data-hue");
-  await expect(page.locator("html")).not.toHaveAttribute("data-space");
   // Every teammate brings its own colour to its row (its unread dot, "Waiting for you").
+  await openTeam(page);
   const colours = new Set([await accent("Yo"), await accent("Dew"), await accent("Pico")]);
   expect(colours.size).toBe(3);
-  // Opening a teammate tints its inspector, not the app.
+  const pico = await accent("Pico");
+  // Opening a teammate tints its profile and workspace, not the app.
   await openAgent(page, "Pico");
-  const inspector = page.getByTestId("work-pane");
+  const profile = await openProfile(page);
   expect(
-    await inspector.evaluate((el) => getComputedStyle(el).getPropertyValue("--accent").trim().toLowerCase()),
-  ).toBe(await accent("Pico"));
+    await profile.evaluate((el) => getComputedStyle(el).getPropertyValue("--accent").trim().toLowerCase()),
+  ).toBe(pico);
+  await page.keyboard.press("Escape");
+  const workspace = await openWorkspace(page);
+  expect(
+    await workspace
+      .locator(".ws-body")
+      .evaluate((el) => getComputedStyle(el).getPropertyValue("--accent").trim().toLowerCase()),
+  ).toBe(pico);
   expect(await token("--bg")).toBe("#ffffff");
 });

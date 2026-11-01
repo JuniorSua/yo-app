@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { ComputerState, LeaseHolder, ModelInfo } from "./agentd";
 import { Item, PendingRequest, ProviderKind, RateLimitInfo, RuntimeMode, TodoEntry } from "./events";
-import { DEFAULT_WORK_HOURS, Space, SpaceManual, WorkHours } from "./spaces";
+import { MemoryLabel } from "./memoryLabels";
+import { NO_WORK_HOURS, WorkHours } from "./workHours";
 
 /* --------------------------------- Avatar --------------------------------- */
 
@@ -208,10 +209,10 @@ export const Agent = z.object({
   /** Helpers only: the job it was given. */
   brief: z.string().nullable().optional(),
   /**
-   * The space this agent is the main agent of (Yo: "work", Pip: "personal"), or null for any other agent.
-   * Absent from older cores.
+   * Its memory focus (see ./memoryLabels.ts): Yo "work", Pip "personal", null for any other agent (it sees every
+   * memory). Absent from older cores.
    */
-  space: Space.nullable().optional(),
+  space: MemoryLabel.nullable().optional(),
 });
 export type Agent = z.infer<typeof Agent>;
 
@@ -296,10 +297,10 @@ export const Memory = z.object({
   createdAt: z.number(),
   updatedAt: z.number(),
   /**
-   * Which space's agents see it in their prompt: "work", "personal", or null for Everywhere (core facts like
-   * the owner's name and home). `recall` searches every space. Absent from older cores (= Everywhere).
+   * Its label (see ./memoryLabels.ts): "work", "personal", or null for Everywhere (core facts like the owner's name
+   * and home). Absent from older cores (= Everywhere).
    */
-  space: Space.nullable().optional(),
+  space: MemoryLabel.nullable().optional(),
 });
 export type Memory = z.infer<typeof Memory>;
 
@@ -443,12 +444,8 @@ export const Settings = z.object({
    * hands them over by hand. Pepe is the owner's own: Yo takes him over in a chat, then the owner deletes him.
    */
   consolidateSkip: z.array(z.string()),
-  /** Work & Personal spaces (see ./spaces.ts): on by default; off = one Work space, as before. */
-  spacesOn: z.boolean(),
-  /** When it's Work time (index 0 = Sunday); everything else is Personal. */
+  /** The user's work hours (index 0 = Sunday, see ./workHours.ts): every agent's prompt says them. */
   workHours: WorkHours,
-  /** A space picked by hand, or null to follow the work hours. */
-  spaceManual: SpaceManual.nullable(),
 });
 export type Settings = z.infer<typeof Settings>;
 
@@ -484,7 +481,5 @@ export const DEFAULT_SETTINGS: Settings = {
   macControl: false,
   computerSetup: "pending",
   consolidateSkip: ["Pepe"],
-  spacesOn: true,
-  workHours: DEFAULT_WORK_HOURS,
-  spaceManual: null,
+  workHours: NO_WORK_HOURS,
 };

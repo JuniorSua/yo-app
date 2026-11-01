@@ -100,22 +100,14 @@ export function trackWorkingSince(
   return rest;
 }
 
-/** Where a main agent sits: the Work agent (or the primary) first, then the Personal agent, then everyone else. */
-function leadRank(a: AgentView): number {
-  if (a.space === "work" || (a.isPrimary && a.space !== "personal")) return 0;
-  return a.space === "personal" ? 1 : 2;
-}
-
 /**
- * Roster order: the main agents (Work, then Personal), then pinned, then most recently active. Helpers never
- * join the roster.
+ * Roster order: the primary (Yo), then pinned, then most recently active. Helpers never join the roster.
  */
 export function sortAgents(agents: Record<string, AgentView>): AgentView[] {
   return Object.values(agents)
     .filter((a) => !a.archivedAt && a.kind !== "helper")
     .sort((a, b) => {
-      const rank = leadRank(a) - leadRank(b);
-      if (rank) return rank;
+      if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       return (b.lastActiveAt ?? b.createdAt) - (a.lastActiveAt ?? a.createdAt);
     });
@@ -129,6 +121,21 @@ export function chatFor(agents: Record<string, AgentView>, agentId: string): str
 
 export function primaryAgent(agents: Record<string, AgentView>): AgentView | undefined {
   return Object.values(agents).find((a) => a.isPrimary) ?? sortAgents(agents)[0];
+}
+
+/** The primary agent (Yo): where Chat, ⌘N, Tasks, Make and the morning brief go unless another chat is open. */
+export function usePrimaryAgent(): AgentView | undefined {
+  return useApp((s) => primaryAgent(s.agents));
+}
+
+/**
+ * The chat a window opens on: the one the user last had open on this device, unless it's gone (archived or
+ * deleted); else the primary.
+ */
+export function pickAgentId(agents: Record<string, AgentView>, saved: string | null): string | null {
+  const a = saved ? agents[saved] : undefined;
+  if (a && !a.archivedAt && a.kind !== "helper") return a.id;
+  return primaryAgent(agents)?.id ?? null;
 }
 
 /**

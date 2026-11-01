@@ -1,6 +1,6 @@
-import { DEFAULT_WORK_HOURS, type Memory } from "@yo/contracts";
+import type { Memory } from "@yo/contracts";
 import { describe, expect, it } from "vitest";
-import { defaultMemorySpace, filterMemories, memorySpace, spaceCounts } from "./memoryFilter";
+import { filterMemories, labelCounts, memoryLabel, whoSees } from "./memoryFilter";
 
 const mem = (id: string, space: Memory["space"], agentId: string | null = null): Memory => ({
   id,
@@ -17,17 +17,17 @@ const list = [
   mem("quotes", "work"),
   mem("visa", null, "agt_shop"),
   mem("review", "work", "agt_cos"),
-  // From a core that predates spaces: no `space` at all.
+  // From a core that predates labels: no `space` at all.
   { id: "old", agentId: null, content: "old", createdAt: 0, updatedAt: 0 } as Memory,
 ];
 const ids = (ms: Memory[]) => ms.map((m) => m.id);
 
 describe("memory filters", () => {
-  it("counts a memory with no space as Everywhere", () => {
-    expect(memorySpace(list[5] as Memory)).toBeNull();
+  it("counts a memory with no label as Everywhere", () => {
+    expect(memoryLabel(list[5] as Memory)).toBeNull();
   });
 
-  it("filters by space", () => {
+  it("filters by label", () => {
     expect(ids(filterMemories(list, "all"))).toEqual(ids(list));
     expect(ids(filterMemories(list, "work"))).toEqual(["quotes", "review"]);
     expect(ids(filterMemories(list, "personal"))).toEqual(["budget"]);
@@ -41,19 +41,32 @@ describe("memory filters", () => {
     expect(filterMemories(list, "personal", "agt_cos")).toEqual([]);
   });
 
-  it("counts each space", () => {
-    expect(spaceCounts(list)).toEqual({ all: 6, work: 2, personal: 1, everywhere: 3 });
-    expect(spaceCounts(list, "shared")).toEqual({ all: 4, work: 1, personal: 1, everywhere: 2 });
+  it("counts each label", () => {
+    expect(labelCounts(list)).toEqual({ all: 6, work: 2, personal: 1, everywhere: 3 });
+    expect(labelCounts(list, "shared")).toEqual({ all: 4, work: 1, personal: 1, everywhere: 2 });
+  });
+});
+
+describe("who sees a memory", () => {
+  // The owner's team: Yo (Work focus), Pip (Personal focus), Pepe (no focus).
+  const team = [
+    { name: "Yo", space: "work" as const },
+    { name: "Pip", space: "personal" as const },
+    { name: "Pepe", space: null },
+  ];
+
+  it("names the agents whose prompt shows it", () => {
+    expect(whoSees("work", team)).toBe("Yo and Pepe see it");
+    expect(whoSees("personal", team)).toBe("Pip and Pepe see it");
+    expect(whoSees(null, team)).toBe("Every agent sees it");
+    expect(whoSees("personal", [team[0]!, team[1]!])).toBe("Pip sees it");
   });
 
-  it("adds new memories to the space you're in", () => {
-    const s = { spacesOn: true, workHours: DEFAULT_WORK_HOURS, timezone: "America/New_York" };
-    // Tue Oct 13 2026: 3 PM is Work, 9 PM is Personal (New York).
-    expect(defaultMemorySpace({ ...s, spaceManual: null }, Date.UTC(2026, 9, 13, 19))).toBe("work");
-    expect(defaultMemorySpace({ ...s, spaceManual: null }, Date.UTC(2026, 9, 14, 1))).toBe("personal");
-    expect(defaultMemorySpace({ ...s, spaceManual: { space: "personal", until: null } })).toBe("personal");
-    // Spaces off (or an older core): Everywhere.
-    expect(defaultMemorySpace({ ...s, spacesOn: false })).toBeNull();
-    expect(defaultMemorySpace({})).toBeNull();
+  it("with no focused agents, everyone sees every label", () => {
+    const plain = [{ name: "Yo", space: null }, { name: "Pepe" }];
+    expect(whoSees("work", plain)).toBe("Every agent sees it");
+    expect(whoSees("work", [team[1]!])).toBe("Found when an agent searches memory");
+    const many = ["A", "B", "C", "D"].map((name) => ({ name, space: null }));
+    expect(whoSees("work", [...many, team[1]!])).toBe("A, B and 2 more see it");
   });
 });

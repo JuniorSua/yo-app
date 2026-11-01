@@ -5,7 +5,6 @@
 import { type ApiMethods, type LedgerTask, startRequestText } from "@yo/contracts";
 import type { Store } from "../db/store";
 import type { Orchestrator } from "../orchestrator/Orchestrator";
-import { activeSpaceAgent } from "../team/spaces";
 
 /** How long a checked-off task stays under Resolved. */
 export const RESOLVED_FOR_MS = 7 * 24 * 60 * 60 * 1000;
@@ -74,7 +73,7 @@ type Handlers = {
 /** What the Tasks API needs from the store (Yo Phone passes its own narrow view). */
 export type TasksStore = Pick<
   Store,
-  "getTask" | "updateTask" | "addTask" | "listTaskPage" | "getAgent" | "getSettings" | "listAgents"
+  "getTask" | "updateTask" | "addTask" | "listTaskPage" | "getAgent" | "primaryAgent"
 >;
 
 export function createTasksApi(d: {
@@ -124,7 +123,7 @@ export function createTasksApi(d: {
 
   return {
     "tasks.list": async ({ agentId }) => {
-      const owner = agentId ? store.getAgent(agentId) : activeSpaceAgent(store, now());
+      const owner = agentId ? store.getAgent(agentId) : store.primaryAgent();
       if (!owner) return [];
       return store.listTaskPage(owner.id, now() - RESOLVED_FOR_MS);
     },
@@ -135,7 +134,7 @@ export function createTasksApi(d: {
         .slice(0, 200);
       if (!clean) throw new Error("Give the task a title.");
       const details = note?.trim() ? note.trim().slice(0, 2000) : null;
-      const owner = activeSpaceAgent(store, now());
+      const owner = store.primaryAgent();
       if (!owner) throw new Error("There's no agent to give it to yet.");
       const t = store.addTask({
         ownerId: owner.id,

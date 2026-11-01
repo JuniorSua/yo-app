@@ -7,7 +7,7 @@ import { KIND_COLOUR, KIND_LABEL, kindTint, makeKindOf } from "../../lib/make";
 import { cn } from "../../lib/utils";
 import { useApp } from "../../stores/app";
 import { load } from "../../stores/sync";
-import { useUI } from "../../stores/ui";
+import { ui, useUI } from "../../stores/ui";
 import { KindIcon } from "../pages/KindIcon";
 import { Button } from "../ui/button";
 import { Modal, Tip } from "../ui/overlay";
@@ -57,8 +57,10 @@ export function PageThumb({ a, className }: { a: Pick<Artifact, "id" | "title">;
   );
 }
 
+/** In a chat, a page opens as a workspace tab; elsewhere (the Make page) in the page viewer. */
 export function openPage(id: string) {
-  useUI.setState({ pageViewerId: id });
+  if (useUI.getState().page === "agent") ui.showTab(`page:${id}`);
+  else useUI.setState({ pageViewerId: id });
 }
 
 export async function setPinned(a: Artifact, pinned: boolean) {

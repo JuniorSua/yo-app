@@ -3,7 +3,7 @@
  * and the watch / take over / stop controls, against the mock's two seeded helpers.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { openApp } from "./helpers";
+import { openApp, openTeam } from "./helpers";
 
 const GIFT = "agt_hlp_gift";
 const TABLE = "agt_hlp_table";
@@ -37,7 +37,7 @@ test.describe("helpers", () => {
     await expect.poll(() => table.getByTestId("helper-status").textContent()).not.toBe(before);
   });
 
-  test("never appear in the sidebar or the command palette", async ({ page }) => {
+  test("never appear in the rail, the Team popover or the command palette", async ({ page }) => {
     await openApp(page);
     await expect(card(page, TABLE)).toBeVisible();
     // The rail and Yo's presence header never list a helper.
@@ -46,11 +46,13 @@ test.describe("helpers", () => {
       await expect(area).not.toContainText("Book a table for 4 on Friday at 8 PM");
       await expect(area).not.toContainText("Find a birthday gift for Maria under $50");
     }
-    // The team in the sidebar shows Yo, never its helpers.
-    const roster = page.getByTestId("roster");
+    // The Team popover shows Yo, never its helpers.
+    const roster = await openTeam(page);
     await expect(roster.getByTestId("agent-row-Yo")).toBeVisible();
     await expect(roster).not.toContainText("Book a table");
     await expect(roster).not.toContainText("birthday gift");
+    await page.keyboard.press("Escape");
+    await expect(roster).toHaveCount(0);
     await page.keyboard.press("ControlOrMeta+k");
     const palette = page.getByTestId("command-palette");
     await expect(palette).toBeVisible();

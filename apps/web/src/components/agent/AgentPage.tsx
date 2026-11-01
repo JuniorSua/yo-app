@@ -1,4 +1,4 @@
-import { type AgentView, isLead, type TimelineEntry } from "@yo/contracts";
+import type { AgentView, TimelineEntry } from "@yo/contracts";
 import {
   CalendarClock,
   CloudOff,
@@ -11,18 +11,21 @@ import {
   Sun,
   UtensilsCrossed,
 } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef } from "react";
 import { accentVars } from "../../lib/accent";
 import { api } from "../../lib/api";
 import { useMorningBriefClaim } from "../../lib/brief";
+import { chatWidthCss } from "../../lib/chatWidth";
 import { useApp } from "../../stores/app";
 import { useTimeline } from "../../stores/timeline";
-import { useUI } from "../../stores/ui";
+import { useUI, WORKSPACE_QUERY } from "../../stores/ui";
 import { SetupBanner, SetupChat, useSetupChat } from "../setup/SetupChat";
+import { ChatResizer } from "../shell/ChatResizer";
+import { Workspace } from "../shell/Workspace";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/controls";
 import { Composer, composerBus } from "./Composer";
-import { ChatBar, PresenceHeader } from "./Presence";
+import { ChatTop, PresenceHeader, useMedia } from "./Presence";
 import { usePaintedTheme } from "./paintedTheme";
 import { Timeline } from "./Timeline";
 
@@ -33,7 +36,7 @@ const SUGGESTIONS = [
   { icon: ShoppingBag, text: "Buy me a USB-C charging cable under $15" },
 ];
 
-/** Personal time: life outside work. */
+/** For a Personal-focused agent (Pip): life outside work. */
 const HOME_SUGGESTIONS = [
   { icon: Sun, text: "Plan my weekend" },
   { icon: Gift, text: "Gift ideas for a friend's birthday" },
@@ -66,6 +69,7 @@ function sentence(text: string): string {
 function EmptyState({ agent }: { agent: AgentView }) {
   const userName = useApp((s) => s.settings.userName).trim();
   const tz = useApp((s) => s.settings.timezone);
+  // A Personal-focused agent (Pip) suggests things for home.
   const home = agent.space === "personal";
   const suggestions = (home ? HOME_SUGGESTIONS : SUGGESTIONS).slice(0, 3);
   const part = partOfDay(Date.now(), tz);
@@ -83,8 +87,8 @@ function EmptyState({ agent }: { agent: AgentView }) {
         <p className="chat-empty-text">
           {greeting}{" "}
           {home
-            ? "Off the clock, I'm here for the rest of life: plans, errands, family and fun."
-            : isLead(agent)
+            ? "I'm here for the rest of life: plans, errands, family and fun."
+            : agent.isPrimary
               ? "I work on my own computer, with my own browser. Tell me what you need done and I'll check in when it matters."
               : `${sentence(agent.role)} I work on my own computer and ask before anything important.`}
         </p>
@@ -141,9 +145,11 @@ function LoadFailed({
  */
 function StaleWarning({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <div className="shrink-0 px-7 pt-3">
+    // Over the top of the conversation, under the head: it arrives late (after a reconnect) and must not push the
+    // timeline down.
+    <div className="!mt-0 absolute inset-x-0 top-[var(--head-zone)] z-[4] px-5 pt-1">
       <div
-        className="mx-auto flex w-full max-w-[720px] items-center gap-2.5 rounded-xl border border-warning/30 bg-warning/10 px-3.5 py-2 text-sm"
+        className="mx-auto flex w-full max-w-[720px] items-center gap-2.5 rounded-xl border border-warning/30 bg-elevated px-3.5 py-2 text-sm shadow-soft"
         data-testid="timeline-stale"
         role="alert"
       >
@@ -175,6 +181,10 @@ export function AgentPage() {
   const loaded = useTimeline((s) => (agentId ? s.loaded[agentId] : false));
   const loadError = useTimeline((s) => (agentId ? s.errors[agentId] : undefined));
   const setupChat = useSetupChat(agent);
+  const wide = useMedia(WORKSPACE_QUERY);
+  const workspace = useUI((s) => (wide ? s.workPaneOpen : s.workspaceSheet));
+  // The width the chat was dragged to beside the workspace (ChatResizer); the default when there's none.
+  const chatWidth = useUI((s) => s.chatWidth);
   // The agent's colour tints its own chat: your bubbles, the send button, its unread dots.
   const theme = usePaintedTheme();
   const avatar = agent?.avatar;
@@ -183,7 +193,7 @@ export function AgentPage() {
     () => (avatar ? accentVars(avatar, theme, { primary }) : undefined),
     [avatar, theme, primary],
   );
-  // The first time today the active space's main agent's chat opens, it may post the morning brief.
+  // The first time today the primary agent's chat opens, it may post the morning brief.
   useMorningBriefClaim(agent, !!loaded && !setupChat);
   // How many finished tasks were unread on opening the chat, read before it's marked read below: the chat draws a
   // "New" line above them. Not while the agent is still on a task: that one isn't counted yet, so the count
@@ -209,15 +219,25 @@ export function AgentPage() {
   const empty = loaded && !hasEntries;
   // An empty chat shows the agent's head big, in the middle, with its greeting.
   const hero = empty && !setupChat;
+  // Until a chat with nothing on screen has loaded, the spinner shows alone: the head arrives once, in its place.
+  const settling = !loaded && !hasEntries && !loadError && !setupChat;
+  const head = !hero && !settling;
 
+  const split = workspace && wide;
   return (
-    <div className="flex h-full min-h-0">
-      <div className="chat chat-column air-page flex min-w-0 flex-1 flex-col" style={accent}>
-        {/* One drag area for the whole top, so the bar's buttons (later in the page) stay clickable in the Mac app. */}
-        <div className="chat-top app-drag">
-          <ChatBar agent={agent} />
-          {!hero && <PresenceHeader agent={agent} />}
-        </div>
+    <div
+      className="dots-split"
+      data-workspace={split || undefined}
+      style={split && chatWidth ? ({ "--chat-w": chatWidthCss(chatWidth) } as CSSProperties) : undefined}
+    >
+      <div
+        id="chat-column"
+        className="chat chat-column air-page flex min-w-0 flex-col"
+        data-head={head || undefined}
+        style={accent}
+      >
+        {/* One drag area for the whole top, so its buttons (later in the page) stay clickable in the Mac app. */}
+        <ChatTop agent={agent} head={head} />
         {/* First run: the agent sets up its own computer (components/setup). */}
         {setupChat ? (
           <SetupChat agent={agent} />
@@ -245,6 +265,11 @@ export function AgentPage() {
         {!setupChat && <SetupBanner />}
         {!setupChat && <Composer agent={agent} />}
       </div>
+      {split && <Workspace agent={agent} />}
+      {/* Last, so its no-drag wins in the Mac app over the drag areas it overlaps. */}
+      {split && <ChatResizer />}
+      {/* Narrow: a modal sheet (focus inside, Escape and the scrim close it, the chat behind is inert). */}
+      {workspace && !wide && <Workspace agent={agent} sheet />}
     </div>
   );
 }

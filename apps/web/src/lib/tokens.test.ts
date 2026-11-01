@@ -73,8 +73,7 @@ describe("Yo 2 tokens", () => {
     expect(THEMES[1]!.t["--bg"]).toBe("#171717");
   });
 
-  it("nothing re-skins the app per character or per space any more", () => {
+  it("nothing re-skins the app per character any more", () => {
     expect(css).not.toMatch(/\[data-hue/);
-    expect(css).not.toMatch(/\[data-space="personal"\]/);
   });
 });

@@ -15,7 +15,7 @@ import {
 import { ago, clockTime, cn, whenLabel } from "../../lib/utils";
 import { sortAgents, useApp } from "../../stores/app";
 import { load, run } from "../../stores/sync";
-import { useUI } from "../../stores/ui";
+import { ui, useUI } from "../../stores/ui";
 import { AgentAvatar } from "../brand";
 import { LoadState, useLoad } from "../LoadState";
 import { EmptyNote, PageShell } from "../PageHeader";
@@ -184,6 +184,7 @@ export function RoutineDialog({
             {(preset === "daily" || preset === "weekdays" || preset === "days") && (
               <Input
                 type="time"
+                aria-label="Run at (time)"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 className="w-32 tabular-nums"
@@ -371,7 +372,14 @@ export function RoutinesPage() {
                 <MenuItem
                   danger
                   icon={<Trash2 />}
-                  onClick={() => run(api().call("routine.delete", { id: r.id }))}
+                  onClick={() =>
+                    ui.confirm({
+                      title: `Delete ${r.name}?`,
+                      body: "It won't run again, and this can't be undone.",
+                      action: "Delete routine",
+                      run: () => run(api().call("routine.delete", { id: r.id })),
+                    })
+                  }
                 >
                   Delete
                 </MenuItem>

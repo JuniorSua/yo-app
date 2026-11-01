@@ -1,0 +1,1238 @@
+/* ============================ Yo 2.1: the Dots workspace ============================ */
+/* One agent front and centre: the rail, a ~440px chat column with the agent's big head floating at its top, and
+   the rest of the window a browser-like workspace whose first tab is the agent's computer, big. Helpers pop in
+   beside the head only while they work. Numbers are measured from the reference layout.
+   Loaded after shell.css and chat.css, so these win where they overlap. */
+
+.shell {
+  --rail-w: 52px;
+  --bar-h: 48px;
+}
+
+/* No double-tap zoom delay on controls; no text selection or callout on a long press of an icon control. */
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[role="tab"] {
+  touch-action: manipulation;
+}
+.shell-rail-link,
+.ws-tab-main,
+.ws-strip-plus,
+.ws-nav-button,
+.chat-head-avatar,
+.chat-helper-head,
+.chat-round {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Pull-to-refresh and rubber-banding stay out of the app; inner lists don't scroll the page past their end. */
+html,
+body {
+  overscroll-behavior: none;
+}
+.scroll-fade,
+.inspector-scroll,
+.shell-sidebar-scroll {
+  overscroll-behavior: contain;
+}
+
+/* ------------------------------------------ Rail ------------------------------------------ */
+
+.shell-rail-top {
+  height: 52px;
+}
+.shell-rail-links {
+  gap: 2px;
+}
+/* The team: up to three stacked mini faces, the newest news as a dot. */
+.shell-rail-team {
+  position: relative;
+  display: flex;
+  margin-top: 14px;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 4px;
+  border-radius: 14px;
+  transition:
+    background-color 0.15s,
+    scale 0.12s var(--ease-out-soft);
+}
+.shell-rail-team.is-open {
+  background: var(--hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .shell-rail-team:hover {
+    background: var(--hover);
+  }
+}
+.shell-rail-team:active {
+  scale: 0.95;
+}
+.shell-rail-team:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.shell-rail-team-face {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow:
+    0 0 0 2px var(--rail),
+    0 0 0 3px var(--border);
+}
+.shell-rail-team-face + .shell-rail-team-face {
+  margin-top: -12px;
+}
+.shell-rail-team-dot {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--unread);
+  box-shadow: 0 0 0 2px var(--rail);
+}
+/* The Team popover: the roster as a card. */
+.team-popover {
+  width: 316px;
+  max-height: min(560px, calc(100dvh - 32px));
+  overflow: hidden;
+  display: flex;
+}
+.team-popover .team-panel {
+  width: 100%;
+  min-height: 0;
+  background: none;
+}
+.team-popover .shell-sidebar-head {
+  padding: 10px 10px 4px 14px;
+  height: auto;
+}
+.team-popover .shell-sidebar-scroll {
+  padding-bottom: 10px;
+}
+/* Faces you can recognise at a glance (Grok Bot's contact list): 48px, the rows taller to match. */
+.team-popover .roster-row {
+  min-height: 62px;
+  gap: 12px;
+  padding: 6px 8px 6px 6px;
+}
+.team-popover .roster-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+/* ------------------------------------------ The split ------------------------------------------ */
+
+.dots-split {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+.dots-split > .chat-column {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* The chat's width beside the workspace: the default here, or the width it was dragged to (an inline --chat-w on the
+   split, still clamped to the window: lib/chatWidth.ts). */
+.dots-split[data-workspace] {
+  --chat-w: clamp(400px, 38vw, 580px);
+}
+.dots-split[data-workspace] > .chat-column {
+  --chat-measure: 100%;
+  flex: 0 0 var(--chat-w);
+  width: var(--chat-w);
+}
+/* The edge between them (ChatResizer): a 10px grab strip over the seam, mostly over the workspace's gutter so the
+   chat's scrollbar stays clear. A small grip always shows at its middle, so you can tell the edge moves; on hover,
+   focus and while dragging the grip firms up and a hairline runs the seam's full height. */
+.chat-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--chat-w) - 3px);
+  z-index: 6;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.chat-resizer::before,
+.chat-resizer::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  transition:
+    opacity 0.15s var(--ease-out-soft),
+    height 0.15s var(--ease-out-soft),
+    background-color 0.15s;
+}
+.chat-resizer::before {
+  inset-block: 0;
+  left: 2px;
+  width: 2px;
+  background: var(--border-strong);
+  opacity: 0;
+}
+.chat-resizer::after {
+  top: 50%;
+  left: 1px;
+  width: 6px;
+  height: 28px;
+  translate: 0 -50%;
+  background: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chat-resizer:hover::before {
+    opacity: 0.8;
+    transition-delay: 0.08s;
+  }
+  .chat-resizer:hover::after {
+    height: 40px;
+    background: var(--fg-2);
+    transition-delay: 0.08s;
+  }
+}
+.chat-resizer.is-dragging::before,
+.chat-resizer:focus-visible::before {
+  opacity: 1;
+  transition-delay: 0s;
+}
+.chat-resizer.is-dragging::after,
+.chat-resizer:focus-visible::after {
+  height: 40px;
+  background: var(--fg-2);
+  transition-delay: 0s;
+}
+.chat-resizer:focus-visible::before,
+.chat-resizer.is-dragging::before {
+  background: var(--focus);
+}
+/* While dragging: the cursor stays a resize arrow everywhere, nothing gets selected, and the live screen or a page
+   under the pointer can't take the drag. */
+.dots-split[data-resizing] {
+  cursor: col-resize;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dots-split[data-resizing] > :not(.chat-resizer) {
+  pointer-events: none;
+}
+.dots-split[data-workspace] .chat-feed {
+  padding-inline: 18px;
+}
+.dots-split[data-workspace] .chat-dock {
+  padding-inline: 14px;
+}
+
+/* ------------------------------------------ Chat top and the big head ------------------------------------------ */
+
+.chat-column {
+  --head-zone: 52px;
+}
+/* The head zone, top to bottom: the big head (176px box), its name pill and its status line on a solid ground
+   (--head-solid ends just under the status pill), then a short translucent fade (--head-fade) where the messages
+   show through softly as they scroll away. Nothing ever shows behind the head, the name or the status line. */
+.chat-column[data-head] {
+  --head-solid: 226px;
+  --head-fade: 40px;
+  --head-zone: calc(var(--head-solid) + var(--head-fade));
+}
+@media (max-height: 800px) {
+  .chat-column[data-head] {
+    --head-solid: 198px;
+  }
+}
+@media (max-height: 640px) {
+  .chat-column[data-head] {
+    --head-solid: 170px;
+    --head-fade: 32px;
+  }
+}
+.chat-top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 3;
+  min-height: 52px;
+}
+/* The head floats over the conversation, and the messages scroll on under it (Dots), but on a solid ground: the
+   head, its name and its status line never have text behind them. Below the status line a short fade lets the
+   messages show through, veiled and softly blurred, until they're gone.
+   - The fade is a click- and scroll-through ::before, so a message you can see in it stays clickable.
+   - The box itself covers only the solid part: that's the window's drag area in the Mac app. A wheel or trackpad
+     scroll over it still scrolls the chat (ChatTop forwards it). */
+.chat-top.has-head {
+  height: var(--head-solid);
+}
+.chat-top.has-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: var(--head-zone);
+  background: linear-gradient(
+    to bottom,
+    var(--glass-page) 0,
+    var(--glass-page) var(--head-solid),
+    color-mix(in srgb, var(--glass-page) 72%, transparent) calc(var(--head-solid) + var(--head-fade) * 0.45),
+    color-mix(in srgb, var(--glass-page) 36%, transparent) 100%
+  );
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  /* The fade's last stretch takes the whole layer (tint and blur) out, so there's no line where the zone ends. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 calc(var(--head-solid) + var(--head-fade) * 0.4),
+    transparent
+  );
+  mask-image: linear-gradient(to bottom, #000 calc(var(--head-solid) + var(--head-fade) * 0.4), transparent);
+  pointer-events: none;
+}
+/* Less transparency asked for (or more contrast): no see-through part, just a soft edge. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .chat-top.has-head::before {
+    background: linear-gradient(to bottom, var(--glass-page) calc(100% - 22px), transparent);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+.chat-bar {
+  height: 52px;
+  padding: 0 12px;
+}
+.chat-bar .shell-bar-buttons {
+  gap: 4px;
+}
+/* The first thing under the top (a setup chat, an error): starts below the head. The timeline scrolls under it. */
+.chat-column > .chat-top + :not(.chat-timeline) {
+  margin-top: var(--head-zone);
+}
+.chat-column .chat-timeline [data-testid="timeline"] {
+  --scroll-fade: 0px;
+}
+.chat-column .chat-timeline .chat-feed {
+  padding-top: calc(var(--head-zone) - 8px);
+}
+.chat-head {
+  padding: 12px 64px 0;
+}
+/* The big head starts right under the window's top edge: the bar's buttons sit at the right, clear of it. */
+.chat-top .chat-head:not(.is-compact) {
+  padding-top: 6px;
+}
+.chat-head-stack {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+}
+/* Yo's own touch: the agent's colour glows softly behind its head, and breathes a little while it works. */
+.chat-top .chat-head-stack::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: calc(var(--head-size) * 1.05);
+  height: calc(var(--head-size) * 0.95);
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  pointer-events: none;
+}
+.dark .chat-top .chat-head-stack::before {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 24%, transparent), transparent);
+}
+.chat-top .chat-head[data-tone="working"] .chat-head-stack::before {
+  animation: head-glow 3.2s ease-in-out infinite;
+}
+@keyframes head-glow {
+  50% {
+    opacity: 0.55;
+    scale: 0.94;
+  }
+}
+.chat-head-avatar {
+  border-radius: 999px;
+}
+.chat-head-name {
+  /* An <h1> (the chat's title for screen readers); it keeps the pill's look. */
+  margin-bottom: 0;
+}
+.chat-head-name {
+  margin-top: -12px;
+  padding: 1px 12px 2px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 2px 10px rgb(0 0 0 / 0.06);
+}
+/* The status line sits on its own soft pill, so it stays legible over whatever scrolls under the head. */
+.chat-head-status {
+  justify-content: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-page) 86%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fg) 5%, transparent);
+}
+.dark .chat-head-status {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fg) 7%, transparent);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .chat-head-status {
+    background: var(--glass-page);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+.chat-head-line {
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+.chat-head-line.is-live {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    var(--muted) 40%,
+    var(--fg) 50%,
+    var(--muted) 60%,
+    var(--muted) 100%
+  );
+  background-size: 300% 100%;
+  background-clip: text;
+  color: transparent;
+  animation: head-shimmer 2.4s linear infinite;
+}
+@keyframes head-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+/* Helpers: small heads tucked at the big head's lower right, each with a working ring. They stay small: the big head
+   is the one to look at. */
+.chat-head-helper-heads {
+  position: absolute;
+  top: calc(var(--head-size) * 0.62);
+  left: calc(50% + var(--head-size) * 0.28);
+  display: flex;
+}
+.chat-helper-head {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 2px 8px rgb(0 0 0 / 0.12);
+  animation: helper-pop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+.chat-helper-head:first-child {
+  margin-left: 0;
+}
+.chat-helper-head > :first-child {
+  transition: translate 0.15s var(--ease-out-soft);
+}
+.chat-helper-head:active {
+  scale: 0.94;
+}
+.chat-helper-head:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.chat-helper-head::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  border-top-color: var(--online);
+  animation: helper-ring 1.4s linear infinite;
+}
+.chat-helper-head[data-waiting]::after {
+  border-top-color: var(--warning);
+  animation-duration: 3s;
+}
+@keyframes helper-pop {
+  from {
+    opacity: 0;
+    scale: 0.4;
+    translate: -10px 0;
+  }
+}
+@keyframes helper-ring {
+  to {
+    rotate: 1turn;
+  }
+}
+/* Inside the head zone (see .chat-top.has-head) only the head, its pills and the bar's buttons take the pointer. */
+.chat-top.has-head .chat-head {
+  pointer-events: none;
+}
+.chat-top.has-head :is(.chat-head-avatar, .chat-head-name, .chat-head-status, .chat-helper-head) {
+  pointer-events: auto;
+}
+/* The profile popover: the old inspector as a Dots card under the head. */
+.profile-popover {
+  overflow: hidden;
+}
+.profile-popover .shell-inspector {
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  /* Never past the window's bottom edge: the room Base UI measured under the head. */
+  max-height: min(620px, var(--available-height, calc(100dvh - 140px)));
+  border-radius: inherit;
+  background: none;
+  box-shadow: none;
+}
+/* The list scrolls under a soft fade at the foot, so a row is never cut mid-line against the card's edge. */
+.profile-popover .inspector-scroll {
+  padding-bottom: 28px;
+  overscroll-behavior: contain;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+.inspector-options {
+  display: flex;
+  flex-direction: column;
+}
+.inspector-options > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  margin: 0 -8px;
+  padding: 0 8px;
+  border-radius: 9px;
+  color: var(--fg-2);
+  font-size: 13px;
+  text-align: left;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    scale 0.12s var(--ease-out-soft);
+}
+.inspector-options > button:active {
+  scale: 0.98;
+}
+@media (hover: hover) and (pointer: fine) {
+  .inspector-options > button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+}
+.inspector-options > button > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+/* ------------------------------------------ Bubbles ------------------------------------------ */
+
+/* The agent's reply in a neutral bubble; its copy button under it. */
+.chat .chat-reply.prose-yo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+}
+.chat-reply-bubble {
+  max-width: min(100%, 560px);
+  min-width: 0;
+  padding: 9px 14px;
+  border-radius: 18px;
+  border-top-left-radius: 9px;
+  background: var(--bubble);
+}
+.chat-reply-bubble > * + * {
+  margin-top: 10px;
+}
+/* Tables and code scroll sideways inside the bubble instead of widening it. */
+.chat-reply-bubble :where(.table-wrap, pre, .code-card) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.chat .chat-reply-bubble .table-wrap,
+.chat .chat-reply-bubble .code-card {
+  background: var(--bg);
+}
+.chat-bubble {
+  max-width: min(560px, 86%);
+  padding: 9px 14px;
+}
+.chat-read {
+  margin-top: -8px;
+  align-self: flex-end;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Helpers in the chat: one light row each (Dots), a hairline instead of a filled card, quiet small actions. */
+.chat-column .chat-task {
+  padding: 8px 10px;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.chat-column .chat-mini-pill {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+/* Faces you recognise at a glance (Grok Bot's presence): a helper's in a 46px disc on its own soft colour, a
+   teammate's 22px in its handoff line. */
+.chat-column .chat-task-face {
+  width: 52px;
+  height: 52px;
+}
+.chat-column .chat-task-toggle {
+  margin-left: 52px;
+}
+.chat-column .chat-handoff-row {
+  height: 30px;
+}
+.chat-column .chat-team-text {
+  padding-left: 24px;
+}
+@container (max-width: 560px) {
+  .chat-column .chat-task-actions {
+    margin-top: 2px;
+    padding-left: 56px;
+  }
+}
+
+/* ------------------------------------------ Composer ------------------------------------------ */
+
+.chat-composer-row .chat-model-chip {
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 150px;
+  height: 30px;
+  margin-bottom: 1px;
+  overflow: hidden;
+}
+.chat-composer-row .chat-model-chip > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* In the ~440px column the chip keeps its provider mark; the model's name is its tooltip and the popover. */
+@container (max-width: 540px) {
+  .chat-composer-row .chat-model-chip > span:not(.chat-model-chip-warn) {
+    display: none;
+  }
+}
+
+/* ------------------------------------------ Workspace ------------------------------------------ */
+
+.ws {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  background: var(--glass-sidebar);
+  box-shadow: inset 1px 0 0 var(--border);
+  animation: ws-in 0.15s var(--ease-out-soft) backwards;
+}
+@keyframes ws-in {
+  from {
+    opacity: 0;
+  }
+}
+/* The tab strip sits in the title bar, centred on the traffic-light row; its empty space drags the window. */
+.ws-strip {
+  display: flex;
+  height: var(--bar-h);
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  overflow: hidden;
+}
+.ws-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 4px;
+}
+/* However many tabs, the strip keeps some empty space to drag the Mac window by (tabs shrink first). */
+.ws-strip::after {
+  content: "";
+  flex: 1 0 48px;
+  align-self: stretch;
+}
+.ws-tab {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  max-width: 220px;
+  flex: 0 1 auto;
+  align-items: center;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--muted);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+  animation: ws-tab-in 0.3s var(--ease-out-soft) backwards;
+}
+@keyframes ws-tab-in {
+  from {
+    opacity: 0;
+    scale: 0.92;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-tab:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+}
+.ws-tab.is-active {
+  background: var(--card);
+  color: var(--fg);
+  box-shadow: var(--shadow-raised);
+}
+.ws-tab-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  height: 100%;
+  padding: 0 12px 0 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: inherit;
+}
+.ws-tab-main:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+.ws-tab-face {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.ws-tab-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.ws-tab-live {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--online);
+  animation: ws-live 1.6s ease-in-out infinite;
+}
+@keyframes ws-live {
+  50% {
+    opacity: 0.35;
+  }
+}
+.ws-tab-close {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 6px 0 -6px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  color: var(--muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-tab-close:hover {
+    background: var(--active);
+    color: var(--fg);
+  }
+}
+.ws-tab-close > svg,
+.ws-strip-plus > svg,
+.ws-strip-close > svg {
+  width: 14px;
+  height: 14px;
+}
+.ws-strip-plus,
+.ws-strip-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.ws-strip-close {
+  order: 1;
+}
+.ws-strip-plus[data-popup-open] {
+  background: var(--hover);
+  color: var(--fg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-strip-plus:hover,
+  .ws-strip-close:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+}
+.ws-body {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  margin: 0 8px 8px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow-raised);
+}
+/* The nav row: the address the agent's browser is on, Watch and Take over. (No back / forward: Yo can't drive
+   them from here, and dead buttons are worse than none.) */
+.ws-nav {
+  display: flex;
+  height: 46px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+.ws-url {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--hover);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.ws-url > svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.ws-url-host {
+  flex-shrink: 0;
+  min-width: 0;
+  max-width: 70%;
+  overflow: hidden;
+  color: var(--fg);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-url-rest {
+  min-width: 0;
+  margin-left: -6px;
+}
+.ws-nav-end {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+.ws-nav-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: var(--muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-nav-button:hover {
+    background: var(--hover);
+    color: var(--fg);
+  }
+  .ws-control > button:hover {
+    background: rgb(255 255 255 / 0.26);
+  }
+  .chat-helper-head:hover > :first-child {
+    translate: 0 -2px;
+  }
+}
+.ws-nav-button > svg {
+  width: 15px;
+  height: 15px;
+}
+/* The stage: the agent's wallpaper (its colour) with the live screen as big as the width allows, a small inset all
+   round, top-aligned. Who has control sits in a pill over the foot of the screen (Dots). */
+.ws-stage {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 14px;
+  background:
+    radial-gradient(120% 90% at 85% 110%, color-mix(in srgb, var(--accent) 55%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 0% 0%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
+    color-mix(in srgb, var(--accent) 14%, var(--bg));
+}
+/* Dark: the accent stays visible in the wallpaper, and the screen gets a light edge so it never melts into it. */
+.dark .ws-stage {
+  background:
+    radial-gradient(120% 90% at 85% 110%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--accent) 20%, #121317);
+}
+.ws-frame {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 10;
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: #0f0f10;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.12),
+    0 24px 60px -18px rgb(0 0 0 / 0.45);
+  transition: box-shadow 0.3s;
+}
+.dark .ws-frame {
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.12),
+    0 24px 60px -18px rgb(0 0 0 / 0.6);
+}
+.ws-frame.is-control,
+.dark .ws-frame.is-control {
+  box-shadow:
+    0 0 0 3px var(--accent),
+    0 24px 60px -18px rgb(0 0 0 / 0.45);
+}
+.ws-control {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  z-index: 1;
+  display: inline-flex;
+  max-width: calc(100% - 28px);
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 5px 0 12px;
+  border-radius: 999px;
+  background: rgb(20 20 22 / 0.78);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  color: #fff;
+  font-size: 12.5px;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 8px 24px -8px rgb(0 0 0 / 0.4);
+  translate: -50% 0;
+}
+.ws-control > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+}
+.ws-control-label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ws-control > button {
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.16);
+  font-weight: 550;
+  transition:
+    background-color 0.15s,
+    scale 0.12s var(--ease-out-soft);
+}
+.ws-control > button:active {
+  scale: 0.96;
+}
+.ws-control > button:disabled {
+  opacity: 0.5;
+}
+.ws-control.is-control {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 8px 24px -8px rgb(0 0 0 / 0.4);
+}
+.ws-control.is-control > button {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+[data-testid="ws-helper-status"] > span {
+  padding-right: 8px;
+}
+.ws-page {
+  min-height: 0;
+  flex: 1;
+  background: #fff;
+}
+
+/* ------------------------------------------ Narrow: the workspace as a sheet ------------------------------------------ */
+/* A modal sheet (Base UI dialog, in a portal): focus moves into it, Escape closes it, the chat behind is inert. */
+
+.ws.is-sheet {
+  --bar-h: 48px;
+  position: fixed;
+  inset: 8px 8px 8px auto;
+  z-index: 50;
+  width: min(760px, calc(100% - 56px));
+  border-radius: 18px;
+  background: var(--sidebar);
+  box-shadow: var(--shadow-dialog);
+  animation: ws-sheet-in 0.3s var(--ease-out-soft) backwards;
+}
+@keyframes ws-sheet-in {
+  from {
+    translate: 40px 0;
+    opacity: 0;
+  }
+}
+.ws.is-sheet .ws-strip {
+  padding-left: 10px;
+}
+.ws-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--scrim);
+  animation: fade-in 0.3s var(--ease-out-soft) backwards;
+}
+
+/* ------------------------------------------ Phones ------------------------------------------ */
+
+@media (max-width: 600px) {
+  .chat-column[data-head] {
+    --head-solid: 116px;
+    --head-fade: 32px;
+  }
+  /* An update notice (UpdateNotice) gets its own strip just above the tab bar: the chat and the pages make room. */
+  :root:has(.update-notice-phone) .shell {
+    --tabbar-space: calc(136px + env(safe-area-inset-bottom));
+  }
+  .chat-head {
+    padding-inline: 56px;
+  }
+  /* Full screen, over the floating tab bar (40). */
+  .ws.is-sheet {
+    inset: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+  .shell-rail-team {
+    display: none;
+  }
+  /* The team opens from the chat's top-left instead: one face, finger-sized. */
+  .chat-bar .shell-rail-team {
+    display: flex;
+    flex-direction: row;
+    min-width: 44px;
+    height: 44px;
+    margin: 0 auto 0 -6px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border-radius: 22px;
+  }
+  .chat-bar .shell-rail-team-face + .shell-rail-team-face {
+    margin-top: 0;
+    margin-left: -12px;
+  }
+}
+
+/* ------------------------------------------ Touch ------------------------------------------ */
+
+/* 16px text in every field on a touch screen: iOS zooms into anything smaller on focus and never zooms back.
+   Unlayered, so it wins over the theme's 14px utilities. */
+@media (pointer: coarse) {
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="color"],
+    [type="file"],
+    [type="button"],
+    [type="submit"]
+  ),
+  textarea,
+  select,
+  .chat-composer-input {
+    font-size: 16px;
+  }
+}
+/* Instant press feedback on the workspace's controls (the browser's tap flash is off). */
+.ws-tab-main,
+.ws-tab-close,
+.ws-strip-plus,
+.ws-strip-close,
+.ws-nav-button {
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    scale 0.12s var(--ease-out-soft);
+}
+.ws-tab-main:active,
+.ws-tab-close:active,
+.ws-strip-plus:active,
+.ws-strip-close:active,
+.ws-nav-button:active {
+  scale: 0.96;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws,
+  .ws-tab,
+  .chat-helper-head {
+    animation: none;
+  }
+  /* Gentler, not gone: the sheet fades in without sliding. */
+  .ws.is-sheet {
+    animation-name: ws-in;
+  }
+  .chat-helper-head::after,
+  .ws-tab-live,
+  .chat-head-line.is-live,
+  .chat-top .chat-head-stack::before {
+    animation: none;
+  }
+  .chat-head-line.is-live {
+    background: none;
+    color: var(--muted);
+  }
+}
+
+/* ------------------------------------------ Onboarding: the welcome ------------------------------------------ */
+
+/* Fits a 1100×720 window without scrolling; shorter windows and phones scroll, with Get started pinned at the
+   bottom on the page's own ground so it's always in view. */
+/* The pinned button has its own soft ground: no scroll fade over it. */
+#onb-scroll:has(.onb-welcome) {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.onb-welcome .onb-hero {
+  margin-bottom: 20px;
+}
+.onb-welcome .onb-gap {
+  margin-top: 36px;
+}
+.onb-team {
+  gap: 24px;
+}
+.onb-team > li {
+  width: 72px;
+}
+.onb-features {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.onb-feature-icon {
+  margin-bottom: 12px;
+}
+.onb-cta {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 16px 0 12px;
+  background: linear-gradient(to top, var(--glass-page) 72%, transparent);
+}
+@media (max-height: 800px) {
+  .onb-step:has(.onb-welcome) {
+    padding-block: 20px 8px;
+  }
+  .onb-welcome .onb-hero {
+    margin-bottom: 14px;
+  }
+  .onb-welcome .onb-gap {
+    margin-top: 24px;
+  }
+  .onb-cta {
+    margin-top: 8px;
+  }
+}
+@media (max-width: 600px) {
+  .onb-team {
+    gap: 6px;
+  }
+  .onb-team > li {
+    width: 60px;
+  }
+  .onb-features {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .onb-feature {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: 12px;
+    padding: 12px 14px;
+  }
+  .onb-feature > :not(svg) {
+    grid-column: 2;
+  }
+  .onb-feature-icon {
+    grid-row: span 2;
+    margin: 2px 0 0;
+  }
+  .onb-cta {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}

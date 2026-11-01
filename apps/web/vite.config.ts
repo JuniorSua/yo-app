@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { buildId } from "../../scripts/build-info.mjs";
+import { appVersion, buildId } from "../../scripts/build-info.mjs";
 
 const CORE = process.env.YO_CORE_URL ?? "http://127.0.0.1:7777";
 
@@ -19,11 +19,13 @@ function buildInfo(id: string | null): Plugin {
 export default defineConfig(({ command }) => {
   // Only real builds get an id; the dev server (and the mock UI) leave the refresh check off.
   const id = command === "build" ? buildId() : null;
+  // The release number ("2.0.<count>", like core's): "Updated to Yo 2.0.N" after an update.
+  const version = command === "build" ? appVersion(null) : null;
   return {
     // Relative base so the build works when served by yo-core, from file:// or under any sub-path.
     base: "./",
     plugins: [react(), tailwindcss(), buildInfo(id)],
-    define: { __YO_BUILD__: JSON.stringify(id) },
+    define: { __YO_BUILD__: JSON.stringify(id), __YO_VERSION__: JSON.stringify(version) },
     server: {
       port: Number(process.env.PORT ?? 5173),
       strictPort: true,

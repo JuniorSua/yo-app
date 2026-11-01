@@ -6,10 +6,11 @@ import { PageViewer } from "./components/agent/Pages";
 import { PANE_QUERY, useMedia } from "./components/agent/Presence";
 import { SignIn } from "./components/auth/SignIn";
 import { CommandPalette } from "./components/CommandPalette";
-import { RestartConfirm } from "./components/RestartConfirm";
+import { ConfirmHost } from "./components/ConfirmHost";
 import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { Shell } from "./components/shell/Shell";
-import { UpdateNotice } from "./components/UpdateNotice";
+import { UpdateDialog } from "./components/UpdateDialog";
+import { FloatingUpdateNotice } from "./components/UpdateNotice";
 import { Button } from "./components/ui/button";
 import { TooltipProvider } from "./components/ui/overlay";
 import { WindowSessionBanner } from "./components/WindowSessionBanner";
@@ -21,9 +22,9 @@ import { clientIsWindows } from "./lib/platform";
 import { useNow } from "./lib/useNow";
 import { useShortcuts } from "./lib/useShortcuts";
 import { useApp } from "./stores/app";
-import { startSpaceClock } from "./stores/space";
 import { retryConnection } from "./stores/sync";
 import { type UIState, ui, useUI } from "./stores/ui";
+import { useUpdates } from "./stores/updates";
 
 // Not needed to show the chat, so they load after it (see lib/lazy).
 const Onboarding = lazyComponent(() =>
@@ -67,7 +68,7 @@ function OnceOpened({ when, children }: { when: (s: UIState) => boolean; childre
   return opened || open ? <Suspense fallback={null}>{children}</Suspense> : null;
 }
 
-/** Light or dark (or the system's), on <html> and the window chrome. Work and Personal share one calm look. */
+/** Light or dark (or the system's), on <html> and the window chrome. */
 function useTheme() {
   const theme = useApp((s) => s.settings.theme);
   const booted = useApp((s) => s.booted);
@@ -155,7 +156,9 @@ function ConnectionBanner() {
   const connection = useApp((s) => s.connection);
   const booted = useApp((s) => s.booted);
   const signedOut = useBrowserAuth((s) => s.status === "signed-out" || s.status === "unsupported");
-  return booted && connection !== "open" && !signedOut ? <Reconnecting /> : null;
+  // An update restarts Yo on purpose: the update window (or its notice) says so, not a second banner.
+  const updating = useUpdates((s) => !!s.applying);
+  return booted && connection !== "open" && !signedOut && !updating ? <Reconnecting /> : null;
 }
 
 function Main() {
@@ -185,17 +188,16 @@ export function App() {
   const onboarded = useApp((s) => s.settings.onboarded);
   const theme = useApp((s) => s.settings.theme);
   const chat = useUI((s) => s.page === "agent");
-  // The inspector (300px card + 8px gutter) sits on the right of a chat: toasts float just left of it.
+  // The workspace fills the right of a chat: toasts float at the chat column's right edge, under its head.
   const paneOpen = useUI((s) => s.workPaneOpen);
   const wide = useMedia(PANE_QUERY);
-  const inspector = chat && paneOpen && wide;
+  const workspace = chat && paneOpen && wide;
   // A browser that isn't signed in (lib/browserAuth.ts): the sign-in screen comes before everything else.
   const signedOut = useBrowserAuth((s) => s.status === "signed-out" || s.status === "unsupported");
 
   useEffect(() => {
     if (booted) preloadWhenIdle();
   }, [booted]);
-  useEffect(() => startSpaceClock(), []);
 
   useEffect(() => {
     if (!desktop) return;
@@ -242,18 +244,21 @@ export function App() {
           <OnceOpened when={(s) => s.shortcutsOpen}>
             <ShortcutsDialog />
           </OnceOpened>
+          <OnceOpened when={(s) => !!s.confirm}>
+            <ConfirmHost />
+          </OnceOpened>
         </div>
       )}
       <ConnectionBanner />
-      {/* Floats bottom-left, over the foot of the sidebar. */}
-      {booted && !signedOut && <UpdateNotice floating />}
-      {booted && !signedOut && <RestartConfirm />}
+      {/* The update notice floats only where the rail's update button can't carry it (phones, onboarding). */}
+      {booted && !signedOut && <FloatingUpdateNotice />}
+      {booted && !signedOut && <UpdateDialog />}
       <Toaster
         theme={theme === "system" ? "system" : theme}
         // In a chat: top-right, below the chat header (at the bottom it covered the Send button). Other pages have
         // their main buttons top-right and no message box: bottom-right there.
         position={chat ? "top-right" : "bottom-right"}
-        offset={chat ? { top: 104, right: inspector ? 328 : 20 } : { bottom: 20, right: 20 }}
+        offset={chat ? { top: workspace ? 100 : 104, right: 20 } : { bottom: 20, right: 20 }}
         // Phones: under the compact chat header, or above the floating tab bar.
         mobileOffset={chat ? { top: 76 } : { bottom: "calc(96px + env(safe-area-inset-bottom))" }}
         gap={10}

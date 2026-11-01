@@ -3,7 +3,7 @@ import { create } from "zustand";
 export type Page = "agent" | "tasks" | "activity" | "approvals" | "routines" | "memory" | "artifacts";
 export type SettingsSection =
   | "accounts"
-  | "spaces"
+  | "profile"
   | "computer"
   | "devices"
   | "browsers"
@@ -18,8 +18,19 @@ export type SettingsSection =
 export interface UIState {
   page: Page;
   agentId: string | null;
-  /** The inspector beside the chat (the agent's profile, computer, activity and outputs). Was the work pane. */
+  /**
+   * The workspace beside the chat (Yo 2.1, Dots): the agent's computer, its helpers' screens and opened pages as
+   * browser-like tabs. ⌘\ or the chat's panel button toggles it. Below 1100px it opens as a sheet instead
+   * (`workspaceSheet`), so a narrow window starts on the chat.
+   */
   workPaneOpen: boolean;
+  workspaceSheet: boolean;
+  /** The chat column's width beside the workspace, dragged by its edge (px); null = the default. Remembered. */
+  chatWidth: number | null;
+  /** The workspace's open tab: "computer", `helper:<agentId>` or `page:<artifactId>`. */
+  workspaceTab: string;
+  /** Pages and artifacts opened as workspace tabs, in the order they were opened. */
+  pageTabs: string[];
   computerAgentId: string | null;
   settingsOpen: boolean;
   settingsSection: SettingsSection;
@@ -41,9 +52,19 @@ export interface UIState {
    * Yo's computer, so the setup chat comes first and ends with that sign-in. Remembered across restarts.
    */
   signInAfterSetup: SignInAfterSetup | null;
+  /** A one-click action that can't be undone, waiting for "Archive Pico?" to be confirmed (ConfirmHost). */
+  confirm: ConfirmRequest | null;
 }
 
 export type SignInAfterSetup = "claude" | "codex";
+
+export interface ConfirmRequest {
+  title: string;
+  body: string;
+  /** The button, named for what it does: "Archive Pico". */
+  action: string;
+  run: () => unknown;
+}
 
 const saved = (() => {
   try {
@@ -67,6 +88,10 @@ export const useUI = create<UIState>(() => ({
   page: "agent",
   agentId: saved.agentId ?? null,
   workPaneOpen: saved.workPaneOpen ?? true,
+  workspaceSheet: false,
+  chatWidth: typeof saved.chatWidth === "number" && saved.chatWidth > 0 ? saved.chatWidth : null,
+  workspaceTab: "computer",
+  pageTabs: [],
   computerAgentId: null,
   settingsOpen: false,
   settingsSection: "accounts",
@@ -81,6 +106,7 @@ export const useUI = create<UIState>(() => ({
   focusEntryId: null,
   focusRecordId: null,
   signInAfterSetup: savedSignIn,
+  confirm: null,
 }));
 
 // Only the remembered fields are written (not every keystroke in the agent search).
@@ -88,6 +114,7 @@ useUI.subscribe((s, prev) => {
   if (
     s.agentId === prev.agentId &&
     s.workPaneOpen === prev.workPaneOpen &&
+    s.chatWidth === prev.chatWidth &&
     s.signInAfterSetup === prev.signInAfterSetup
   )
     return;
@@ -97,6 +124,7 @@ useUI.subscribe((s, prev) => {
       JSON.stringify({
         agentId: s.agentId,
         workPaneOpen: s.workPaneOpen,
+        chatWidth: s.chatWidth,
         signInAfterSetup: s.signInAfterSetup,
       }),
     );
@@ -112,10 +140,12 @@ export const ui = {
       agentId,
       focusRecordId: null,
       focusEntryId: null,
+      // A narrow window's workspace sheet never reopens on its own over the next chat.
+      workspaceSheet: false,
     });
   },
   goto(page: Page) {
-    useUI.setState({ page, focusRecordId: null });
+    useUI.setState({ page, focusRecordId: null, workspaceSheet: false });
   },
   /** An agent's chat with its composer focused. */
   focusComposer(agentId: string) {
@@ -138,14 +168,44 @@ export const ui = {
       composerFocus: s.composerFocus + 1,
     }));
   },
+  /** Ask before a one-click action that can't be undone (from a menu or popover that closes as the dialog opens). */
+  confirm(request: ConfirmRequest) {
+    useUI.setState({ confirm: request });
+  },
   openSettings(section: SettingsSection = "accounts") {
     useUI.setState({ settingsOpen: true, settingsSection: section });
   },
   openComputer(agentId: string | null) {
     useUI.setState({ computerAgentId: agentId });
   },
-  /** Show or hide the inspector (⌘\ or the chat's inspector button). */
+  /** Show or hide the workspace (⌘\ or the chat's panel button); on a narrow window, its sheet. */
   toggleInspector() {
-    useUI.setState((s) => ({ workPaneOpen: !s.workPaneOpen }));
+    if (!wideWindow()) useUI.setState((s) => ({ workspaceSheet: !s.workspaceSheet }));
+    else useUI.setState((s) => ({ workPaneOpen: !s.workPaneOpen }));
+  },
+  /** Show a workspace tab ("computer", `helper:<id>`, `page:<id>`), opening the workspace (or its sheet). */
+  showTab(tab: string) {
+    useUI.setState((s) => ({
+      workspaceTab: tab,
+      ...(wideWindow() ? { workPaneOpen: true } : { workspaceSheet: true }),
+      pageTabs:
+        tab.startsWith("page:") && !s.pageTabs.includes(tab.slice(5))
+          ? [...s.pageTabs, tab.slice(5)]
+          : s.pageTabs,
+    }));
+  },
+  /** Close a page's tab; the computer takes over when it was the open one. */
+  closePageTab(id: string) {
+    useUI.setState((s) => ({
+      pageTabs: s.pageTabs.filter((p) => p !== id),
+      workspaceTab: s.workspaceTab === `page:${id}` ? "computer" : s.workspaceTab,
+    }));
   },
 };
+
+/** Wide enough for the workspace beside the chat (the Mac app's smallest window is 1100 wide). */
+export const WORKSPACE_QUERY = "(min-width: 1100px)";
+
+function wideWindow() {
+  return typeof matchMedia !== "function" || matchMedia(WORKSPACE_QUERY).matches;
+}

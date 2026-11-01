@@ -12,8 +12,7 @@ import {
   upNext,
 } from "../../lib/tasks";
 import { cn } from "../../lib/utils";
-import { useApp } from "../../stores/app";
-import { useActiveAgent } from "../../stores/space";
+import { useApp, usePrimaryAgent } from "../../stores/app";
 import { load, run } from "../../stores/sync";
 import { ui } from "../../stores/ui";
 import { keepTask, StartedLine, SuggestionCard, setTaskStatus, startTask } from "../agent/TaskSuggestion";
@@ -26,7 +25,7 @@ import { Modal } from "../ui/overlay";
 
 /** Tasks: what Yo is working on, what's ready for review or needs you, and what it could take on next. */
 export function TasksPage() {
-  const agent = useActiveAgent();
+  const agent = usePrimaryAgent();
   const name = agent?.name ?? "Yo";
   const [view, setView] = useState<TasksView>(rememberedView);
   const [adding, setAdding] = useState(false);
@@ -52,7 +51,7 @@ export function TasksPage() {
       <div data-testid="tasks-page" className="pb-24">
         {started && <StartedLine name={name} className="mb-4" />}
         {agent ? (
-          // Keyed: switching spaces (Yo ⇄ Pip) loads that agent's list afresh.
+          // Keyed: a different primary (a fresh install's first load) loads its list afresh.
           <TaskLists
             key={agent.id}
             agentId={agent.id}

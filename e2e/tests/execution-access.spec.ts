@@ -150,7 +150,9 @@ test("composer route choice is sent with the message", async ({ page }) => {
 
   await send(page, "Hello there");
   await expect.poll(() => page.evaluate(() => (window as any).__yoMock.sends.at(-1)?.route)).toBe("auto");
-  await expect(page.getByTestId("status-pill").first()).toHaveText(/Done|Ready/, { timeout: 20_000 });
+  await expect(page.getByTestId("presence-line")).toHaveText(/^(Idle|Working with \d+ helpers?)$/, {
+    timeout: 20_000,
+  });
 
   await page.getByTestId("composer-input").click();
   await trigger.click();

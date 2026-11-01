@@ -1,7 +1,6 @@
 import { type AgentView, localDateOf } from "@yo/contracts";
 import { useEffect } from "react";
-import { useApp } from "../stores/app";
-import { useActiveAgent } from "../stores/space";
+import { useApp, usePrimaryAgent } from "../stores/app";
 import { api } from "./api";
 
 /** The local date this browser last asked core for the morning brief. */
@@ -32,11 +31,11 @@ export function claimBriefToday(now = new Date()) {
 }
 
 /**
- * The chat of the active space's main agent opened (never a helper's or another agent's): claim the day's brief.
+ * The primary agent's chat opened (never a helper's or another agent's): claim the day's brief.
  * `ready`: its conversation has loaded and the first-run setup chat isn't showing.
  */
 export function useMorningBriefClaim(agent: AgentView | undefined, ready: boolean) {
-  const lead = useActiveAgent();
+  const lead = usePrimaryAgent();
   // Opt-in (absent = off): the app only claims a brief once the user turned it on in Settings.
   const on = useApp((s) => s.settings.morningBrief === true && s.settings.onboarded !== false);
   const mine = !!agent && agent.id === lead?.id && agent.kind !== "helper";

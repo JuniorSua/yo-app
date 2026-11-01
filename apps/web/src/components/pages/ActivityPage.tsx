@@ -62,6 +62,7 @@ export function ActivityPage() {
       actions={
         <div className="w-52">
           <Select
+            label="Filter by agent"
             value={agentFilter}
             onChange={setAgentFilter}
             options={[

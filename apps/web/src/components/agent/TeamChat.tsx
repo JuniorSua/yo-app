@@ -39,7 +39,7 @@ function SmallMarkdown({ text }: { text: string }) {
 }
 
 /** A teammate's small face, or a people glyph when it isn't in Yo. */
-function MiniFace({ who, size = 18 }: { who: AgentView | null; size?: number }) {
+function MiniFace({ who, size = 22 }: { who: AgentView | null; size?: number }) {
   return who ? (
     <AgentAvatar agent={who} size={size} quiet />
   ) : (
@@ -68,7 +68,7 @@ function Turn({
   return (
     <div className="chat-team-turn" data-testid={`team-${tone}`}>
       <div className="chat-team-who">
-        <MiniFace who={who} size={16} />
+        <MiniFace who={who} size={18} />
         <span className="chat-team-name">{name}</span>
         {to && (
           <>

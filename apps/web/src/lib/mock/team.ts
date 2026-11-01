@@ -17,8 +17,7 @@
  *   (absent)  no dialog: the plan is always empty, so the other scenarios and screenshots are untouched
  *   1         the usual extra agents are consolidation candidates, plus Pepe, who is never offered (the owner
  *             hands him over by hand)
- *   solo      only Yo and Pip, the Work and Personal agents (a new user, or the owner's friend): nothing to
- *             consolidate
+ *   solo      only Yo (a new user, or the owner's friend): nothing to consolidate
  *   fail      like 1, but the first attempt can't copy the files (Yo's computer is off) and the second works
  */
 import type {
@@ -150,8 +149,7 @@ export class MockTeam {
       routine: (r: Routine) => void;
     },
   ) {
-    // Core still creates Pip for a new user, so "solo" keeps the Work and Personal agents.
-    if (scenario === "solo") this.s.agents = this.s.agents.filter((a) => a.isPrimary || a.space);
+    if (scenario === "solo") this.s.agents = this.s.agents.filter((a) => a.isPrimary);
     if (scenario === "fail") this.failures = 1;
     if (scenario === "on" || scenario === "fail") {
       const base = this.s.agents.find((a) => !a.isPrimary && !a.space && a.kind !== "helper");
@@ -169,8 +167,10 @@ export class MockTeam {
 
   private candidates() {
     if (this.scenario === "off") return [];
-    // Like core's Consolidator: the Work and Personal agents (Yo, Pip) are never folded in.
-    return this.s.agents.filter((a) => !a.isPrimary && !a.space && !SKIP.includes(a.name.toLowerCase()));
+    // Like core's Consolidator: the main agent, helpers and the ones handed over by hand are never folded in.
+    return this.s.agents.filter(
+      (a) => !a.isPrimary && a.kind !== "helper" && !SKIP.includes(a.name.toLowerCase()),
+    );
   }
 
   plan(): ConsolidationPlan {

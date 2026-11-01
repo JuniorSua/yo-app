@@ -10,6 +10,7 @@ import {
 import {
   Bell,
   Bug,
+  CircleUser,
   Cpu,
   Globe,
   HeartHandshake,
@@ -28,7 +29,6 @@ import {
   Smartphone,
   Star,
   Sun,
-  SunMoon,
   Trash2,
   Users,
   X,
@@ -47,21 +47,21 @@ import { ConnectModel } from "../connect/ConnectModel";
 import { setComputerSetup } from "../setup/SetupChat";
 import { Button } from "../ui/button";
 import { Badge, Input, Select, Switch } from "../ui/controls";
-import { DialogClose, DialogTitle, Menu, MenuItem, MenuSeparator, Modal } from "../ui/overlay";
+import { ConfirmDialog, DialogClose, DialogTitle, Menu, MenuItem, MenuSeparator, Modal } from "../ui/overlay";
 import { BrowsersSettings } from "./BrowsersSettings";
 import { BugReportSettings } from "./BugReportSettings";
 import { DevicesAccessSettings } from "./DevicesAccessSettings";
 import { LoginPanel } from "./LoginPanel";
 import { OnePasswordCard } from "./OnePasswordCard";
 import { PhoneSettings } from "./PhoneSettings";
+import { ProfileSettings } from "./ProfileSettings";
 import { Group, H, Row } from "./parts";
-import { SpacesSettings } from "./SpacesSettings";
 import { SupportSettings } from "./SupportSettings";
 import { UpdatesSettings } from "./UpdatesSettings";
 
 const SECTIONS: { id: SettingsSection; label: string; icon: typeof Users }[] = [
   { id: "accounts", label: "Accounts", icon: Users },
-  { id: "spaces", label: "Work & Personal", icon: SunMoon },
+  { id: "profile", label: "Profile", icon: CircleUser },
   { id: "computer", label: "Computer", icon: Cpu },
   { id: "devices", label: "Devices & access", icon: LaptopMinimal },
   { id: "browsers", label: "Browsers & apps", icon: Globe },
@@ -88,6 +88,7 @@ export function AccountCard({
 }) {
   const [showKey, setShowKey] = useState(false);
   const [key, setKey] = useState("");
+  const [removing, setRemoving] = useState(false);
   const tone = accountTone(account);
   const signingIn = account.status === "signing_in";
   const authed = isUsable(account);
@@ -157,15 +158,19 @@ export function AccountCard({
               Use an API key instead
             </MenuItem>
             <MenuSeparator />
-            <MenuItem
-              danger
-              icon={<Trash2 />}
-              onClick={() => run(api().call("account.remove", { id: account.id }))}
-            >
+            <MenuItem danger icon={<Trash2 />} onClick={() => setRemoving(true)}>
               Sign out & remove
             </MenuItem>
           </Menu>
         )}
+        <ConfirmDialog
+          open={removing}
+          onOpenChange={setRemoving}
+          title={`Sign out of ${PROVIDER_NAME[account.provider]}?`}
+          body="Yo signs out of this account and forgets it. Agents that run on it will need another model."
+          action="Sign out and remove"
+          onConfirm={() => run(api().call("account.remove", { id: account.id }))}
+        />
       </div>
       {notice && (
         <div
@@ -229,6 +234,10 @@ export function AccountCard({
               onChange={(e) => setKey(e.target.value)}
               type="password"
               placeholder={`${PROVIDER_VENDOR[account.provider]} API key`}
+              aria-label={`${PROVIDER_VENDOR[account.provider]} API key`}
+              autoComplete="off"
+              spellCheck={false}
+              data-1p-ignore
             />
             <Button type="submit" variant="secondary" disabled={!key.trim()}>
               Save key
@@ -540,6 +549,7 @@ function Computer() {
         >
           <div className="w-28">
             <Select
+              label="Awake computers"
               value={String(settings.maxAwakeComputers)}
               onChange={(v) => update({ maxAwakeComputers: Number(v) })}
               options={["1", "2", "3", "4"].map((n) => ({
@@ -552,6 +562,7 @@ function Computer() {
         <Row title="Auto-sleep" desc="Hibernate an idle agent's computer after this long.">
           <div className="w-32">
             <Select
+              label="Auto-sleep"
               value={String(settings.autoSleepMinutes)}
               onChange={(v) => update({ autoSleepMinutes: Number(v) })}
               options={[
@@ -673,7 +684,6 @@ function Notifications() {
 
 function Appearance() {
   const settings = useApp((s) => s.settings);
-  const [name, setName] = useState(settings.userName);
   const glass = useGlassPref((s) => s.on);
   // Little pictures of the window in each theme: the grey roster beside the white (or dark) canvas.
   const themes = [
@@ -726,14 +736,6 @@ function Appearance() {
           desc="In the Mac app, the side columns let a little of your desktop show through. Off keeps them solid."
         >
           <Switch checked={glass} label="Air Glass" testId="air-glass" onCheckedChange={setGlassPref} />
-        </Row>
-        <Row title="Your name" desc="What Yo calls you.">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => name !== settings.userName && update({ userName: name })}
-            className="w-48"
-          />
         </Row>
       </div>
     </div>
@@ -801,7 +803,7 @@ export function SettingsDialog() {
         </DialogClose>
         <div className="scroll-fade min-w-0 flex-1 overflow-y-auto bg-elevated px-9 py-8 max-sm:px-4 max-sm:py-5">
           {section === "accounts" && <Accounts />}
-          {section === "spaces" && <SpacesSettings />}
+          {section === "profile" && <ProfileSettings />}
           {section === "computer" && <Computer />}
           {section === "devices" && <DevicesAccessSettings />}
           {section === "browsers" && <BrowsersSettings />}

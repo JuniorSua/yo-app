@@ -120,7 +120,7 @@ export const HelperCard = memo(function HelperCard({ entry }: { entry: TimelineE
     >
       <div className="chat-task-row">
         <div className="chat-task-face">
-          <AgentAvatar agent={{ avatar, name: h.title }} size={22} state={status.pose} quiet />
+          <AgentAvatar agent={{ avatar, name: h.title }} size={46} state={status.pose} quiet />
         </div>
         <div className="min-w-0 flex-1">
           <div className="chat-task-title" data-testid="helper-title" title={h.title}>

@@ -6,9 +6,9 @@ import {
   type ChannelApiMethods,
   type ComputerOverview,
   type LicenseState,
+  MemoryLabel,
   newId,
   type Settings,
-  Space,
 } from "@yo/contracts";
 import type { AgentdClient } from "../agentd/AgentdClient";
 import type { ControllerAuth } from "../auth/ControllerAuth";
@@ -27,7 +27,6 @@ import type { Scheduler } from "../scheduler/Scheduler";
 import type { createSetupApi } from "../setup";
 import { createTasksApi } from "../tasks/tasks";
 import { Consolidator } from "../team/Consolidator";
-import { ensureSpaceAgents, shelvePersonalAgent } from "../team/spaces";
 import { forUi } from "../timelineView";
 import { claimBrief, sendBriefRequest } from "../tools/brief";
 import type { BugInbox } from "../tools/bugInbox";
@@ -93,7 +92,6 @@ export function createApi(d: ApiDeps): Handlers {
     const a = store.getAgent(id);
     if (!a) throw new Error("Unknown agent");
     if (a.isPrimary) throw new Error("The main agent can't be archived");
-    if (a.space) throw new Error("Turn off Work & Personal in Settings instead.");
     await stopAgent(id);
     store.updateAgent(id, { archivedAt: Date.now() });
     for (const r of store.listRoutines(id)) d.scheduler.update(r.id, { enabled: false });
@@ -104,27 +102,9 @@ export function createApi(d: ApiDeps): Handlers {
     if (d.agentd.connected) await d.agentd.request("computer.hibernate", { agentId: id }).catch(() => {});
   };
 
-  /**
-   * Spaces turned on: make sure Work and Personal each have their agent (Pip appears, or comes back). Turned off:
-   * Pip is put away (archived, chats kept; its routines stay as they were and come back with it).
-   */
-  const applySpacesOn = async (on: boolean) => {
-    if (on) {
-      for (const id of ensureSpaceAgents(store)) {
-        const v = orchestrator.view(id);
-        if (v) d.hub.push("agent.updated", v);
-      }
-      return;
-    }
-    const personal = store.getSpaceAgent("personal");
-    if (!personal) return;
-    await stopAgent(personal.id);
-    if (shelvePersonalAgent(store)) d.hub.push("agent.removed", { id: personal.id });
-  };
-
-  /** A space from the apps: "work" / "personal", null (Everywhere); absent stays absent. */
-  const spaceParam = (v: unknown) =>
-    v === undefined ? undefined : Space.safeParse(v).success ? (v as Space) : null;
+  /** A memory label from the apps: "work" / "personal", null (Everywhere); absent stays absent. */
+  const labelParam = (v: unknown) =>
+    v === undefined ? undefined : MemoryLabel.safeParse(v).success ? (v as MemoryLabel) : null;
   const consolidator = new Consolidator({ store, hub: d.hub, agentd: d.agentd, archive: archiveAgent });
 
   const draftPatch = (p: Partial<AgentDraft> & { pinned?: boolean }) => ({
@@ -151,7 +131,6 @@ export function createApi(d: ApiDeps): Handlers {
 
     "settings.update": async (patch) => {
       const s: Settings = store.updateSettings(patch);
-      if (typeof patch.spacesOn === "boolean") await applySpacesOn(patch.spacesOn);
       d.hub.push("settings.updated", s);
       return s;
     },
@@ -349,12 +328,12 @@ export function createApi(d: ApiDeps): Handlers {
 
     "memory.list": async ({ agentId }) => store.listMemories(agentId ?? null),
     "memory.add": async ({ content, agentId, space }) => {
-      const m = store.addMemory(content, agentId ?? null, spaceParam(space) ?? null);
+      const m = store.addMemory(content, agentId ?? null, labelParam(space) ?? null);
       d.hub.push("memory.updated", m);
       return m;
     },
     "memory.update": async ({ id, content, space }) => {
-      const m = store.updateMemory(id, content, spaceParam(space));
+      const m = store.updateMemory(id, content, labelParam(space));
       if (!m) throw new Error("Unknown memory");
       d.hub.push("memory.updated", m);
       return m;

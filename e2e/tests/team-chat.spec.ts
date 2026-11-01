@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openAgent, openApp, send } from "./helpers";
+import { openAgent, openApp, openTeam, send } from "./helpers";
 
 test.describe("team chat", () => {
   test("shows both sides of an agent-to-agent exchange", async ({ page }) => {
@@ -69,8 +69,8 @@ test.describe("team chat", () => {
     await expect(card).toContainText("Add a new agent: Pepe, Head of Polestar");
     await expect(card.getByText("Always allow")).toHaveCount(0);
     await card.getByTestId("approve-once").click();
-    // The new teammate joins the roster in the sidebar, says hello and asks one question about its job.
-    await expect(page.getByTestId("roster").getByTestId("agent-row-Pepe")).toBeVisible();
+    // The new teammate joins the roster in the Team popover, says hello and asks one question about its job.
+    await expect((await openTeam(page)).getByTestId("agent-row-Pepe")).toBeVisible();
     await openAgent(page, "Pepe");
     await expect(page.getByText("Hi, I'm Pepe, your Head of Polestar teammate!")).toBeVisible({
       timeout: 15_000,

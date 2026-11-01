@@ -102,12 +102,9 @@ describe("yo-core", () => {
   it("creates the primary agent and default accounts on first run", async () => {
     const core = await boot();
     const boot1 = await core.api.bootstrap({});
-    // Yo leads Work; Pip, made next to it, leads Personal (Work & Personal is on by default).
-    expect(boot1.agents.map((a) => [a.name, a.space, a.isPrimary])).toEqual([
-      ["Yo", "work", true],
-      ["Pip", "personal", false],
-    ]);
-    expect(boot1.agents[0]!.role).toBe("your work assistant");
+    // Just Yo: a new user's other agents are the ones they add (no Pip), and Yo has no memory focus.
+    expect(boot1.agents.map((a) => [a.name, a.space, a.isPrimary])).toEqual([["Yo", null, true]]);
+    expect(boot1.agents[0]!.role).toBe("your personal agent");
     // One account per provider Yo offers (ENABLED_PROVIDERS), Claude the default.
     expect(boot1.accounts.map((a) => a.provider).sort()).toEqual(["claude", "codex", "grok"]);
     expect(boot1.accounts.find((a) => a.isDefault)?.provider).toBe("claude");
@@ -180,7 +177,7 @@ describe("yo-core", () => {
     expect(tl[1]!.item.text).toBe("echo: hello there");
     // The model sees when each message was sent (a native session can last for days)...
     expect(mock.turnTexts.at(-1)).toMatch(
-      /^\[\w{3}, \w{3} \d{1,2}, \d{4}, \d{1,2}:\d{2}\s?[AP]M · (work|personal) time\] hello there$/,
+      /^\[\w{3}, \w{3} \d{1,2}, \d{4}, \d{1,2}:\d{2}\s?[AP]M\] hello there$/, // no work hours set: no suffix
     );
     // ...while the chat shows exactly what was typed.
     expect(tl[0]!.item.text).toBe("hello there");
@@ -1709,7 +1706,7 @@ describe("team chat (agent to agent)", () => {
 
     await core.api["chat.send"]({ agentId: yo.id, text: 'tool message_agent {"to":"Zed","message":"hi"}' });
     await until(() => said(core, yo.id).length === 2, 8000, "second reply");
-    expect(said(core, yo.id)[1]).toBe('tool: Error: No teammate named "Zed". Your teammates: Pip, Pepe.');
+    expect(said(core, yo.id)[1]).toBe('tool: Error: No teammate named "Zed". Your teammates: Pepe.');
   });
 
   it("tells the asker when the teammate is stopped before replying", async () => {
@@ -2005,9 +2002,8 @@ describe("team chat (agent to agent)", () => {
     expect(core.store.listTimeline(dew.id).some((e) => e.item.kind === "user_message")).toBe(false);
     const dewStart = mock.requests.find((r) => r.type === "session.start" && r.agentId === dew.id) as any;
     expect(dewStart.toolset).toBe("agent");
-    // Yo leads Work and Pip leads Personal: both are front doors.
     expect(dewStart.systemAppend).toContain(
-      "Yo and Pip are the main agents: the user's front door. You're Dew, a teammate (your job: Research).",
+      "Yo is the main agent: the user's front door. You're Dew, a teammate (your job: Research).",
     );
     // The next one gets the next Softie.
     const pico = await hire("Pico", "Builder");
@@ -2058,7 +2054,7 @@ describe("team chat (agent to agent)", () => {
     expect(start(yo.id).systemAppend).toContain(`- Pepe (Inbox): `);
     expect(start(yo.id).systemAppend).toContain(` · ${grok.label} · Grok 4.3`);
     expect(start(pepe.id).systemAppend).toContain(`You run on ${grok.label} · Grok 4.3.`);
-    expect(start(pepe.id).systemAppend).toContain(`- Yo (main agent, your work assistant): `);
+    expect(start(pepe.id).systemAppend).toContain(`- Yo (main agent, your personal agent): `);
     expect(start(pepe.id).systemAppend).toContain(` · ${claude.label} · Sonnet 5.5`);
     // Switching Pepe's model: Pepe's session follows, and Yo hears the team changed on its next message.
     await core.api["agent.update"]({ id: pepe.id, patch: { model: "grok-build" } });
@@ -2198,7 +2194,7 @@ describe("team chat (agent to agent)", () => {
     });
     await until(() => said(core, yo.id).length === 1, 5000, "denied reply");
     expect(said(core, yo.id)[0]).toMatch(/^tool: DENIED by the user/);
-    expect(core.store.listAgents().map((a) => a.name)).toEqual(["Yo", "Pip"]);
+    expect(core.store.listAgents().map((a) => a.name)).toEqual(["Yo"]);
 
     await core.api["chat.send"]({ agentId: yo.id, text: call });
     await until(() => core.store.pendingRequests().length === 1, 5000, "second card");
@@ -3198,7 +3194,7 @@ describe("one-off helpers (start_helper)", () => {
     await until(() => replies(core, pepe.id).length === 1);
     const ps = mock.last("session.start")!;
     expect(ps.toolset).toBe("agent");
-    expect(ps.systemAppend).toContain("# Your team\nYo and Pip are the main agents");
+    expect(ps.systemAppend).toContain("# Your team\nYo is the main agent");
     await core.api["chat.send"]({ agentId: yo.id, text: "hi" });
     await until(() => replies(core, yo.id).length === 1);
     const ys = mock.last("session.start")!;
